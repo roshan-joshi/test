@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo · Timeline — Systemboom</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Leaflet (real, free map — no API key) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
+          colors: {
+            'primary-theme': '#f05540',
+            'primary-red': '#dd2f39',
+            'accent-blue': '#36454f',
+            'accent-light-blue': '#2d688f',
+            'light-blue': '#2D688F',
+            'grey-light': '#f5f6fa',
+            'accent-grey': '#dfe2ed',
+          },
+          boxShadow: {
+            soft: '0 10px 40px -12px rgba(54,69,79,0.18)',
+            glow: '0 8px 30px -6px rgba(240,85,64,0.45)',
+            card: '0 18px 50px -16px rgba(54,69,79,0.28)',
+          },
+          borderRadius: { '4xl': '2rem' },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body { background:
+      radial-gradient(1200px 500px at 100% -10%, rgba(240,85,64,0.08), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgba(45,104,143,0.10), transparent 55%),
+      #f5f6fa; }
+    .scrollbar-hide::-webkit-scrollbar { display:none; }
+    .scrollbar-hide { -ms-overflow-style:none; scrollbar-width:none; }
+    .boom-scrollbar::-webkit-scrollbar { width:6px; }
+    .boom-scrollbar::-webkit-scrollbar-thumb { background:#cfd5e0; border-radius:9999px; }
+    .glass { background: rgba(255,255,255,0.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+    .glass-dark { background: rgba(20,28,33,0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    /* Facebook-style translucent button over photos */
+    .fbtn { background: rgba(0,0,0,.42); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color:#fff; border:1px solid rgba(255,255,255,.22); transition: background .2s, transform .12s; }
+    .fbtn:hover { background: rgba(0,0,0,.62); }
+    .fbtn:active { transform: scale(.92); }
+    /* iOS "Liquid Glass" floating player — heavily translucent like iPhone Now-Playing */
+    .liquid { background: rgba(30,36,42,.26); backdrop-filter: blur(34px) saturate(185%); -webkit-backdrop-filter: blur(34px) saturate(185%);
+      border: 1px solid rgba(255,255,255,.28); box-shadow: 0 14px 44px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.35); color:#fff; }
+    .liquid p { text-shadow: 0 1px 3px rgba(0,0,0,.35); }
+    .liq-btn { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.35); transition: background .2s, transform .12s; }
+    .liq-btn:hover { background: rgba(255,255,255,.16); }
+    .liq-btn:active { transform: scale(.9); }
+    /* light liquid glass for elements over the light page (navbar, timeline, chips) */
+    .liquid-light { background: rgba(255,255,255,.5); backdrop-filter: blur(26px) saturate(180%); -webkit-backdrop-filter: blur(26px) saturate(180%);
+      border: 1px solid rgba(255,255,255,.65); box-shadow: 0 8px 30px rgba(54,69,79,.10), inset 0 1px 0 rgba(255,255,255,.85); }
+    .chip { background: rgba(255,255,255,.5); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%);
+      border: 1px solid rgba(255,255,255,.6); box-shadow: inset 0 1px 0 rgba(255,255,255,.7); }
+    /* hover tooltip */
+    .tip { position: relative; }
+    .tip::after { content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 8px); transform: translateX(-50%) translateY(4px);
+      background: #36454f; color: #fff; font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 8px; white-space: nowrap;
+      opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; z-index: 60; box-shadow: 0 6px 16px rgba(0,0,0,.2); }
+    .tip:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+    /* soft edge fades so partially-scrolled photos don't look hard-cut */
+    .maskx { -webkit-mask-image: linear-gradient(to right, transparent, #000 26px, #000 calc(100% - 26px), transparent); mask-image: linear-gradient(to right, transparent, #000 26px, #000 calc(100% - 26px), transparent); }
+    .masky { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 18px, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
+    /* circular progress ring around the active date number (story-style) */
+    @property --p { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+    .ring { width: 42px; height: 42px; border-radius: 50%; padding: 3px; display: grid; place-items: center;
+      background: conic-gradient(#f05540 var(--p), #e2e6ee 0deg); transition: transform .25s; }
+    .snap-x-m { scroll-snap-type: x mandatory; }
+    .snap-c { scroll-snap-align: center; }
+    .grad-text { background: linear-gradient(95deg,#f05540,#dd2f39); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .fade-up { animation: fadeUp .6s cubic-bezier(.2,.7,.2,1) both; }
+    @keyframes fadeUp { from { opacity:0; transform: translateY(14px);} to {opacity:1; transform:none;} }
+    .card-img { transition: transform .7s cubic-bezier(.2,.7,.2,1); }
+    .group:hover .card-img { transform: scale(1.07); }
+    /* map markers */
+    .sb-pin { display:grid; place-items:center; width:30px; height:30px; border-radius:50% 50% 50% 0;
+      background:#36454f; transform: rotate(-45deg); box-shadow:0 6px 16px rgba(0,0,0,.3); border:2px solid #fff; }
+    .sb-pin i { transform: rotate(45deg); color:#fff; font-size:11px; }
+    /* active = directional arrow disc */
+    .sb-arrow { position:relative; display:grid; place-items:center; width:46px; height:46px; border-radius:50%;
+      background:#f05540; border:3px solid #fff; box-shadow:0 8px 22px rgba(240,85,64,.55); animation: pinPulse 1.4s infinite; }
+    .sb-arrow .arw { color:#fff; font-size:20px; transition: transform .5s cubic-bezier(.2,.7,.2,1); transform: rotate(var(--brg,0deg)); }
+    .sb-arrow::after { content:''; position:absolute; inset:-6px; border-radius:50%; border:2px solid rgba(240,85,64,.45); animation: ring 1.6s infinite; }
+    @keyframes pinPulse { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-6px);} }
+    @keyframes ring { 0%{ transform:scale(.8); opacity:.8;} 100%{ transform:scale(1.6); opacity:0;} }
+    .leaflet-popup-content { margin:0; font-family:'Plus Jakarta Sans',sans-serif; }
+    .leaflet-popup-content-wrapper { border-radius:14px; padding:0; overflow:hidden; }
+    .leaflet-container { border-radius: 2rem; font-family:'Plus Jakarta Sans',sans-serif; }
+  </style>
+</head>
+
+<body class="font-sans text-accent-blue antialiased">
+
+  <!-- ===================== NAVBAR ===================== -->
+  <nav class="liquid-light sticky top-0 z-50">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+      <a href="#" class="flex select-none items-center" aria-label="Systemboom home">
+        <!-- mobile: bomb mark on a glass badge -->
+        <span class="grid h-11 w-11 place-items-center overflow-hidden rounded-2xl chip shadow-soft sm:hidden">
+          <span class="block h-9 w-[26px] overflow-hidden">
+            <img src="logo.png" class="h-9 w-auto max-w-none object-left" alt="Systemboom" />
+          </span>
+        </span>
+        <!-- desktop: full logo -->
+        <img src="logo.png" class="hidden h-8 w-auto sm:block" alt="Systemboom" />
+      </a>
+      <div class="hidden items-center gap-7 text-sm font-medium md:flex">
+        <a href="#" class="text-accent-blue/70 transition hover:text-primary-theme">Home</a>
+        <a href="#" class="text-accent-blue/70 transition hover:text-primary-theme">Circle of Life</a>
+        <a href="#" class="relative font-semibold text-primary-theme">Photo
+          <span class="absolute -bottom-2 left-0 h-0.5 w-full rounded-full bg-primary-theme"></span>
+        </a>
+        <a href="#" class="text-accent-blue/70 transition hover:text-primary-theme">Friends</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="grid h-9 w-9 place-items-center rounded-full text-accent-blue/60 transition hover:bg-white hover:text-primary-theme">
+          <i class="fa-regular fa-bell"></i>
+        </button>
+        <img class="h-9 w-9 rounded-full object-cover ring-2 ring-primary-theme/70" src="https://i.pravatar.cc/80?img=12" alt="me" />
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===================== PAGE ===================== -->
+  <main class="mx-auto max-w-7xl px-4 pb-6 pt-6 sm:px-6 sm:pb-8">
+
+    <!-- (A) HEADER -->
+    <header class="fade-up mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <span class="chip inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-light-blue">
+          <i class="fa-regular fa-image"></i> Photo · Timeline
+        </span>
+        <h1 class="mt-3 text-3xl font-extrabold tracking-tight text-accent-blue sm:text-4xl">
+          June <span class="grad-text">9</span>, 2026
+        </h1>
+        <p class="mt-1 text-sm text-accent-blue/60">Relive your moments from this day.</p>
+      </div>
+    </header>
+
+    <!-- (B2) FILTER CHIPS -->
+    <div class="fade-up mb-6 flex gap-2 overflow-x-auto pb-1 text-sm scrollbar-hide">
+      <button onclick="setFilter(this)" class="shrink-0 rounded-full bg-accent-blue px-4 py-1.5 font-semibold text-white shadow-soft">All</button>
+      <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme">Photos</button>
+      <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme">Videos</button>
+      <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme"><i class="fa fa-star text-primary-theme"></i> Faves</button>
+    </div>
+
+    <!-- (B3) MEMORIES HIGHLIGHT CARD -->
+    <div class="fade-up mb-6 flex items-center gap-3 overflow-hidden rounded-3xl bg-gradient-to-r from-primary-theme to-primary-red p-4 text-white shadow-glow">
+      <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/20 text-xl"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+      <div class="min-w-0">
+        <p class="text-base font-bold leading-tight">Your June journey</p>
+        <p id="memoryStats" class="text-xs text-white/85">6 moments · 6 places · 6 countries</p>
+      </div>
+      <button onclick="playMemories()" class="ml-auto shrink-0 rounded-full bg-white px-4 py-2 text-sm font-bold text-primary-theme shadow transition hover:brightness-95 active:scale-95">
+        <i class="fa fa-play"></i> Play all
+      </button>
+    </div>
+
+    <!-- (B4) UNIFIED TOOLBAR (above the map) -->
+    <div class="fade-up mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <!-- map enable / disable -->
+        <button id="mapBtn" onclick="toggleMap()" data-tip="Show / hide map" class="tip flex items-center gap-2 rounded-full bg-primary-theme px-3.5 py-2 text-sm font-semibold text-white shadow-glow transition active:scale-95">
+          <i class="fa-solid fa-map-location-dot"></i><span id="mapBtnLabel" class="hidden sm:inline">Map on</span>
+        </button>
+        <!-- playback speed -->
+        <label data-tip="Slideshow speed" class="tip chip flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-accent-blue">
+          <i class="fa-solid fa-gauge-high text-accent-blue/70"></i>
+          <select id="speedSel" onchange="setSpeed(parseFloat(this.value))" class="cursor-pointer bg-transparent font-semibold text-accent-blue outline-none">
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+          </select>
+        </label>
+      </div>
+      <!-- photo view switcher -->
+      <div class="chip flex items-center gap-1 rounded-full p-1">
+        <button id="viewH" onclick="setView('horizontal')" data-tip="Horizontal reel" aria-label="Horizontal reel" class="tip grid h-9 w-9 place-items-center rounded-full text-sm transition hover:text-primary-theme"><i class="fa-solid fa-film"></i></button>
+        <button id="viewV" onclick="setView('vertical')" data-tip="Vertical reel" aria-label="Vertical reel" class="tip grid h-9 w-9 place-items-center rounded-full text-sm transition hover:text-primary-theme"><i class="fa-solid fa-mobile-screen-button"></i></button>
+        <button id="viewG" onclick="setView('grid')" data-tip="Grid view" aria-label="Grid" class="tip grid h-9 w-9 place-items-center rounded-full text-sm transition hover:text-primary-theme"><i class="fa-solid fa-table-cells-large"></i></button>
+      </div>
+    </div>
+
+    <!-- TIMELINE (short, above the map) — connecting progress line + red circles -->
+    <section class="fade-up liquid-light mb-3 rounded-3xl px-4 py-2.5">
+      <div id="timelineRail" class="flex items-start overflow-x-auto scrollbar-hide"></div>
+    </section>
+
+    <!-- (C) MAP PANEL (real Leaflet map) -->
+    <section id="mapPanel" class="fade-up relative mb-4 h-[28vh] w-full overflow-hidden rounded-4xl shadow-card transition-all duration-500 sm:h-[34vh]">
+      <div id="map" class="h-full w-full"></div>
+      <div class="glass-dark pointer-events-none absolute left-4 top-4 z-[500] rounded-xl px-3 py-1.5 text-xs font-medium text-white">
+        <i class="fa-solid fa-location-dot text-primary-theme"></i> <span id="mapLabel">Morning hike</span>
+      </div>
+      <!-- Map lock toggle -->
+      <button id="mapLock" title="Lock map view"
+        class="glass absolute right-4 top-4 z-[500] grid h-10 w-10 place-items-center rounded-xl text-accent-blue shadow-soft transition hover:text-primary-theme">
+        <i id="mapLockIcon" class="fa fa-lock-open"></i>
+      </button>
+      <div id="mapLockBadge" class="hidden absolute bottom-4 right-4 z-[500] items-center gap-1.5 rounded-full bg-primary-theme px-3 py-1 text-xs font-semibold text-white shadow-glow">
+        <i class="fa fa-lock"></i> Map locked
+      </div>
+    </section>
+
+    <!-- (D) PHOTOS -->
+    <section>
+      <div class="mb-3 hidden sm:block">
+        <h2 class="text-lg font-bold text-accent-blue">Photos</h2>
+      </div>
+
+      <div id="carousel"></div>
+
+      <!-- PLAYER (inline, right below the photos) -->
+      <div class="mt-4 flex justify-center">
+        <div class="liquid relative flex w-full max-w-md items-center justify-between gap-2 rounded-full p-2 pr-2.5">
+          <div class="flex min-w-0 items-center gap-2.5">
+            <img id="fabThumb" class="h-12 w-12 shrink-0 rounded-2xl object-cover ring-2 ring-white/30" alt="" />
+            <div class="min-w-0 leading-tight">
+              <p id="fabName" class="truncate text-sm font-bold text-white">Kathmandu trek</p>
+              <p id="fabIdx" class="text-xs font-medium text-white/60">1 / 6</p>
+            </div>
+          </div>
+          <div class="flex shrink-0 items-center gap-0.5">
+            <button onclick="move(-1)" aria-label="Previous" class="liq-btn grid h-11 w-11 place-items-center rounded-full"><i class="fa fa-backward-step text-lg"></i></button>
+            <button id="fabPlay" onclick="togglePlay()" aria-label="Play/Pause" class="grid h-14 w-14 place-items-center rounded-full bg-primary-theme text-white shadow-glow transition active:scale-90"><i class="fa fa-play text-xl"></i></button>
+            <button onclick="move(1)" aria-label="Next" class="liq-btn grid h-11 w-11 place-items-center rounded-full"><i class="fa fa-forward-step text-lg"></i></button>
+          </div>
+          <div class="absolute -bottom-0.5 left-5 right-5 h-1 overflow-hidden rounded-full bg-white/20">
+            <div id="fabProgressFill" class="h-full w-0 rounded-full bg-primary-theme"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ===================== DETAIL MODAL ===================== -->
+  <div id="modal" class="hidden">
+    <div class="fixed inset-0 z-[1000] bg-accent-blue/70 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div class="fixed inset-0 z-[1001] m-auto flex h-full w-full flex-col overflow-hidden bg-white shadow-card sm:h-[82vh] sm:w-11/12 sm:flex-row sm:rounded-4xl xl:w-9/12">
+
+      <!-- LEFT media -->
+      <div id="mediaPane" class="relative h-[45%] w-full overflow-hidden bg-black sm:h-full sm:w-[68%]">
+        <img id="modalImg" class="h-full w-full object-cover" src="" alt="" />
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20"></div>
+        <!-- story progress bars -->
+        <div id="storyBars" class="absolute left-3 right-16 top-3 z-20 flex gap-1"></div>
+
+        <!-- caption -->
+        <div class="absolute bottom-24 left-0 w-full px-6 text-center text-white sm:bottom-28">
+          <p id="modalDate" class="text-3xl font-extrabold uppercase tracking-wide drop-shadow sm:text-5xl">09 Jun</p>
+          <p class="text-lg font-semibold opacity-90 sm:text-2xl">2026</p>
+          <p id="modalName" class="mt-1 text-base font-medium opacity-90 sm:text-lg">Morning hike</p>
+        </div>
+
+        <!-- media controls (FB-style floating translucent) -->
+        <div class="absolute bottom-5 left-0 flex w-full items-center justify-center gap-7 px-4">
+          <button onclick="move(-1)" class="fbtn grid h-11 w-11 place-items-center rounded-full"><i class="fa fa-chevron-left"></i></button>
+          <button id="modalPlay" onclick="togglePlay()" class="grid h-14 w-14 place-items-center rounded-full bg-primary-theme text-white shadow-glow active:scale-90"><i class="fa fa-play text-lg"></i></button>
+          <button onclick="move(1)" class="fbtn grid h-11 w-11 place-items-center rounded-full"><i class="fa fa-chevron-right"></i></button>
+        </div>
+
+        <!-- comment toggle -->
+        <button class="fbtn absolute right-0 top-1/2 hidden h-12 w-9 -translate-y-1/2 items-center justify-center rounded-l-2xl sm:flex" onclick="toggleComments()">
+          <i id="commentChevron" class="fa fa-chevron-left"></i>
+        </button>
+      </div>
+
+      <!-- RIGHT comments -->
+      <div id="commentPane" class="flex h-[55%] w-full flex-col sm:h-full sm:w-[32%]">
+        <div class="boom-scrollbar flex-1 overflow-y-auto p-5">
+          <!-- author -->
+          <div class="flex items-start justify-between">
+            <div class="flex gap-3">
+              <img class="h-11 w-11 rounded-full object-cover ring-2 ring-primary-theme/30" src="https://i.pravatar.cc/80?img=12" />
+              <div>
+                <h3 class="font-bold leading-tight">Roshan Joshi</h3>
+                <div class="flex items-center gap-2 text-xs text-accent-blue/50">
+                  <span>2 hours ago</span>
+                  <i class="fas fa-globe-americas" title="Public"></i>
+                </div>
+                <p class="mt-0.5 text-xs text-accent-blue/50"><i class="fa fa-location-dot mr-1"></i>Kathmandu, Nepal</p>
+              </div>
+            </div>
+            <button class="grid h-8 w-8 place-items-center rounded-full text-accent-blue/40 hover:bg-grey-light"><i class="fa fa-ellipsis"></i></button>
+          </div>
+
+          <!-- title/desc -->
+          <div class="mt-4">
+            <h2 class="text-lg font-bold text-accent-light-blue">Morning hike</h2>
+            <p class="mt-1 text-sm text-accent-blue/80">Caught a beautiful sunrise on the trail today. 🌄</p>
+          </div>
+
+          <!-- counters -->
+          <div class="mt-4 flex items-center justify-between text-sm">
+            <div class="flex items-center">
+              <span class="grid h-6 w-6 place-items-center rounded-full bg-blue-500 text-[10px] text-white"><i class="fa fa-thumbs-up"></i></span>
+              <span class="-ml-1.5 grid h-6 w-6 place-items-center rounded-full bg-red-500 text-[10px] text-white"><i class="fa fa-heart"></i></span>
+              <span class="-ml-1.5 grid h-6 w-6 place-items-center rounded-full bg-yellow-400 text-[10px] text-white"><i class="fas fa-laugh-beam"></i></span>
+              <span class="ml-2 text-accent-blue/70">12</span>
+            </div>
+            <span class="text-accent-blue/60">3 comments</span>
+          </div>
+
+          <!-- actions -->
+          <div class="mt-3 grid grid-cols-3 gap-1 border-y border-grey-light py-1 text-sm">
+            <button class="flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-regular fa-thumbs-up"></i> Like</button>
+            <button class="flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-regular fa-comment"></i> Comment</button>
+            <button class="flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-solid fa-share-nodes"></i> Share</button>
+          </div>
+
+          <!-- comments -->
+          <div class="mt-4 space-y-3">
+            <div class="flex gap-2">
+              <img class="h-8 w-8 rounded-full object-cover" src="https://i.pravatar.cc/60?img=32" />
+              <div class="rounded-2xl rounded-tl-sm bg-grey-light px-3 py-2">
+                <p class="text-xs font-bold">Alice Sharma</p>
+                <p class="text-sm">Stunning view! 😍</p>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <img class="h-8 w-8 rounded-full object-cover" src="https://i.pravatar.cc/60?img=45" />
+              <div class="rounded-2xl rounded-tl-sm bg-grey-light px-3 py-2">
+                <p class="text-xs font-bold">Bob Thapa</p>
+                <p class="text-sm">Where is this? 🏔️</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- input -->
+        <div class="border-t border-grey-light p-3">
+          <div class="flex items-center gap-2 rounded-full bg-grey-light px-4 py-2.5">
+            <input class="w-full bg-transparent text-sm outline-none placeholder:text-accent-blue/40" placeholder="Write a comment..." />
+            <button class="grid h-8 w-8 place-items-center rounded-full bg-primary-theme text-white shadow-glow transition hover:brightness-110"><i class="fa fa-paper-plane text-xs"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="closeModal()" class="fbtn absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full">
+        <i class="fa fa-xmark text-lg"></i>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="relative mt-6 overflow-hidden bg-accent-blue text-white">
+    <!-- brand accent line + soft glow -->
+    <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-theme via-primary-red to-primary-theme"></div>
+    <div class="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary-theme/20 blur-3xl"></div>
+
+    <div class="mx-auto max-w-7xl px-6 py-10">
+      <div class="flex flex-col items-center gap-8 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
+        <!-- brand -->
+        <div class="max-w-xs">
+          <div class="flex items-center justify-center sm:justify-start">
+            <img src="logo.png" class="h-9 w-auto" alt="Systemboom" />
+          </div>
+          <p class="mt-3 text-sm text-white/60">Capture, relive and share the moments that make up your Circle of Life.</p>
+          <!-- socials -->
+          <div class="mt-5 flex justify-center gap-2.5 sm:justify-start">
+            <a href="#" aria-label="Facebook" class="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition hover:-translate-y-0.5 hover:bg-primary-theme"><i class="fa-brands fa-facebook-f text-sm"></i></a>
+            <a href="#" aria-label="Instagram" class="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition hover:-translate-y-0.5 hover:bg-primary-theme"><i class="fa-brands fa-instagram text-sm"></i></a>
+            <a href="#" aria-label="X" class="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition hover:-translate-y-0.5 hover:bg-primary-theme"><i class="fa-brands fa-x-twitter text-sm"></i></a>
+            <a href="#" aria-label="YouTube" class="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition hover:-translate-y-0.5 hover:bg-primary-theme"><i class="fa-brands fa-youtube text-sm"></i></a>
+          </div>
+        </div>
+
+        <!-- link columns -->
+        <div class="grid grid-cols-2 gap-x-12 gap-y-6 text-sm sm:grid-cols-3">
+          <div>
+            <p class="mb-2 text-xs font-bold uppercase tracking-widest text-white/40">Explore</p>
+            <ul class="space-y-1.5 text-white/70">
+              <li><a href="#" class="transition hover:text-primary-theme">Timeline</a></li>
+              <li><a href="#" class="transition hover:text-primary-theme">Circle of Life</a></li>
+              <li><a href="#" class="transition hover:text-primary-theme">Friends</a></li>
+            </ul>
+          </div>
+          <div>
+            <p class="mb-2 text-xs font-bold uppercase tracking-widest text-white/40">Company</p>
+            <ul class="space-y-1.5 text-white/70">
+              <li><a href="#" class="transition hover:text-primary-theme">About</a></li>
+              <li><a href="#" class="transition hover:text-primary-theme">Blog</a></li>
+              <li><a href="#" class="transition hover:text-primary-theme">Contact</a></li>
+            </ul>
+          </div>
+          <div class="col-span-2 sm:col-span-1">
+            <p class="mb-2 text-xs font-bold uppercase tracking-widest text-white/40">Legal</p>
+            <ul class="space-y-1.5 text-white/70">
+              <li><a href="#" class="transition hover:text-primary-theme">Privacy</a></li>
+              <li><a href="#" class="transition hover:text-primary-theme">Terms</a></li>
+              <li><a href="#" class="transition hover:text-primary-theme">Help</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- bottom bar -->
+      <div class="mt-9 flex flex-col items-center justify-between gap-2 border-t border-white/10 pt-5 text-xs text-white/50 sm:flex-row">
+        <p>© 2026 Systemboom. All rights reserved.</p>
+        <p class="flex items-center gap-1.5">Made with <i class="fa-solid fa-heart text-primary-theme"></i> for the Circle of Life</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===================== SCRIPT ===================== -->
+  <script>
+    const _data = [
+      ['Himalayan sunrise','Kathmandu, Nepal',27.7172,85.3240,'06:45 AM'],
+      ['Neon Tokyo','Tokyo, Japan',35.6762,139.6503,'08:10 PM'],
+      ['Desert skyline','Dubai, UAE',25.2048,55.2708,'01:15 PM'],
+      ['Eiffel evening','Paris, France',48.8566,2.3522,'10:30 AM'],
+      ['NYC streets','New York, USA',40.7128,-74.0060,'04:50 PM'],
+      ['Sydney harbour','Sydney, Australia',-33.8688,151.2093,'07:20 AM'],
+      ['London fog','London, UK',51.5074,-0.1278,'09:05 AM'],
+      ['Roman holiday','Rome, Italy',41.9028,12.4964,'12:40 PM'],
+      ['Pyramids dawn','Cairo, Egypt',30.0444,31.2357,'05:30 AM'],
+      ['Rio nights','Rio de Janeiro, Brazil',-22.9068,-43.1729,'09:45 PM'],
+      ['Table Mountain','Cape Town, South Africa',-33.9249,18.4241,'03:10 PM'],
+      ['Bangkok temples','Bangkok, Thailand',13.7563,100.5018,'11:25 AM'],
+      ['Bosphorus blue','Istanbul, Turkey',41.0082,28.9784,'02:00 PM'],
+      ['Marina bay','Singapore, Singapore',1.3521,103.8198,'08:55 PM'],
+      ['Red Square','Moscow, Russia',55.7558,37.6173,'01:30 PM'],
+      ['CN Tower','Toronto, Canada',43.6532,-79.3832,'06:15 PM'],
+      ['Gaudí morning','Barcelona, Spain',41.3851,2.1734,'10:10 AM'],
+      ['Marine drive','Mumbai, India',19.0760,72.8777,'07:00 PM'],
+      ['Aurora night','Reykjavik, Iceland',64.1466,-21.9426,'11:50 PM'],
+      ['Bali rice fields','Bali, Indonesia',-8.4095,115.1889,'06:30 AM'],
+    ];
+    const _days = ['Mon','Sun','Sat','Fri','Thu','Wed','Tue'];
+    const photos = _data.map((c,i)=>{
+      let d=9-i, mon='Jun'; if(d<=0){ d=31+d; mon='May'; }
+      return { id:i+1, name:c[0], loc:c[1], lat:c[2], lng:c[3], time:c[4], day:_days[i%7], dmy:String(d).padStart(2,'0')+' '+mon };
+    });
+    // HD images
+    const imgFor = id => `https://picsum.photos/seed/sb${id}/1080/1350`;
+    let active = 0, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1;
+
+    function setView(mode){
+      viewMode = mode;
+      const ids = {horizontal:'viewH', vertical:'viewV', grid:'viewG'};
+      Object.values(ids).forEach(id=>{ const b=document.getElementById(id); if(b){ b.classList.remove('bg-primary-theme','text-white','shadow-glow'); b.classList.add('text-accent-blue/70'); } });
+      const a=document.getElementById(ids[mode]); if(a){ a.classList.add('bg-primary-theme','text-white','shadow-glow'); a.classList.remove('text-accent-blue/70'); }
+      renderCarousel();
+      scrollActiveIntoView('auto');
+    }
+    // center the active card WITHIN the reel container (no page jump)
+    function scrollActiveIntoView(behavior){
+      const cont=document.getElementById('carousel'); if(!cont) return;
+      const card=cont.children[active]; if(!card) return;
+      const cr=cont.getBoundingClientRect(), kr=card.getBoundingClientRect();
+      if(viewMode==='horizontal'){
+        cont.scrollTo({ left: cont.scrollLeft + (kr.left-cr.left) - (cr.width-kr.width)/2, behavior: behavior||'smooth' });
+      } else {
+        cont.scrollTo({ top: cont.scrollTop + (kr.top-cr.top) - (cr.height-kr.height)/2, behavior: behavior||'smooth' });
+      }
+    }
+
+    function setFilter(btn){
+      document.querySelectorAll('[onclick="setFilter(this)"]').forEach(b=>{
+        b.classList.remove('bg-accent-blue','text-white','shadow-soft');
+        b.classList.add('chip','text-accent-blue/80');
+      });
+      btn.classList.remove('chip','text-accent-blue/80');
+      btn.classList.add('bg-accent-blue','text-white','shadow-soft');
+    }
+    function renderTimeline() {
+      document.getElementById('timelineRail').innerHTML = photos.map((p,i)=>`
+        ${i>0?`<span class="mt-3.5 h-1 w-7 shrink-0 self-start overflow-hidden rounded-full bg-accent-grey sm:w-12"><span class="block h-full rounded-full bg-primary-theme" data-seg="${i}" style="width:${i<=active?'100':'0'}%"></span></span>`:''}
+        <button onclick="setActive(${i})" class="flex shrink-0 flex-col items-center gap-1">
+          <span class="grid h-8 w-8 place-items-center rounded-full text-xs font-bold transition ${i<=active?'bg-primary-theme text-white shadow-glow':'border border-accent-grey bg-white text-accent-blue/60'} ${i===active?'scale-110':''}">${p.dmy.split(' ')[0]}</span>
+          <span class="text-[11px] font-medium ${i===active?'text-primary-theme':'text-accent-blue/50'}">${p.day}</span>
+        </button>`).join('');
+      // animate the connecting line while playing
+      if(playing){
+        if(playDir>0){ const s=document.querySelector('[data-seg="'+(active+1)+'"]'); if(s){ s.style.transition='none'; s.style.width='0%'; requestAnimationFrame(()=>requestAnimationFrame(()=>{ s.style.transition='width '+SLIDE_MS+'ms linear'; s.style.width='100%'; })); } }
+        else { const s=document.querySelector('[data-seg="'+active+'"]'); if(s){ s.style.transition='none'; s.style.width='100%'; requestAnimationFrame(()=>requestAnimationFrame(()=>{ s.style.transition='width '+SLIDE_MS+'ms linear'; s.style.width='0%'; })); } }
+      }
+    }
+
+    function renderCarousel() {
+      const el = document.getElementById('carousel');
+      const desktop = window.matchMedia('(min-width:1024px)').matches;
+      const overlay = (p)=>`
+            <img src="${imgFor(p.id)}" class="card-img h-full w-full object-cover" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"></div>
+            <div class="absolute left-3 right-3 top-3 flex items-center justify-between">
+              <span class="glass rounded-full px-2.5 py-1 text-[11px] font-semibold text-accent-blue">${p.time}</span>
+              <div class="flex gap-1.5 opacity-0 transition group-hover:opacity-100">
+                <button onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-pen"></i></button>
+                <button onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-share-nodes"></i></button>
+                <button onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-trash text-red-300"></i></button>
+              </div>
+            </div>
+            <div class="absolute bottom-0 left-0 w-full p-3 text-white">
+              <p class="text-base font-bold leading-tight">${p.name}</p>
+              <div class="mt-1 flex items-center justify-between text-xs text-white/80">
+                <span>${p.dmy} · ${p.day}</span>
+                <span class="flex items-center gap-2"><span><i class="fa fa-heart text-primary-theme"></i> 12</span><span><i class="fa-regular fa-comment"></i> 3</span></span>
+              </div>
+            </div>`;
+      const big = !mapShown; // when map is hidden, show bigger photos
+      if (viewMode === 'horizontal') {
+        // horizontal reel (soft edge fade so partial photos don't look cut)
+        el.className = 'maskx snap-x-m flex gap-3 overflow-x-auto px-1 pb-2 scrollbar-hide';
+        const sz = big ? 'w-[84vw] aspect-[4/5] sm:aspect-auto sm:h-[34rem] sm:w-[24rem]' : 'h-44 w-36 sm:h-56 sm:w-44';
+        el.innerHTML = photos.map((p,i)=>`
+          <div class="snap-c group relative shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-500 ${i===active?'ring-4 ring-primary-theme':'opacity-95 hover:opacity-100'} ${sz}" onclick="openModal(${i})">${overlay(p)}</div>`).join('');
+      } else if (viewMode === 'vertical') {
+        // vertical reel — one photo at a time (TikTok/Reels style)
+        el.className = `masky flex ${big?'h-[72vh]':'h-[48vh]'} flex-col gap-3 overflow-y-auto pr-1 boom-scrollbar snap-y snap-mandatory`;
+        el.innerHTML = photos.map((p,i)=>`
+          <div class="snap-c group relative w-full shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'opacity-95'} ${big?'h-[70vh]':'h-[46vh]'}" onclick="openModal(${i})">${overlay(p)}</div>`).join('');
+      } else {
+        // grid — bigger cells (fewer columns) when map is off
+        el.className = `grid ${big?'max-h-[80vh] grid-cols-1 sm:grid-cols-2':'max-h-[46vh] grid-cols-2 sm:grid-cols-3'} gap-2 overflow-y-auto pr-1 boom-scrollbar sm:gap-3`;
+        el.innerHTML = photos.map((p,i)=>`
+          <div class="group relative aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'hover:-translate-y-0.5'}" onclick="openModal(${i})">${overlay(p)}</div>`).join('');
+      }
+    }
+
+    function setActive(i){ active=Math.max(0,Math.min(photos.length-1,i)); renderTimeline(); renderCarousel();
+      scrollActiveIntoView('smooth');
+      flyToActive(); updateFab(); updateStory();
+      if(playing) startProgress();   // restart the fill for the new slide
+    }
+    function updateFab(){
+      const fn=document.getElementById('fabName'); if(fn) fn.textContent=photos[active].name;
+      const fi=document.getElementById('fabIdx'); if(fi) fi.textContent=(active+1)+' / '+photos.length;
+      const ft=document.getElementById('fabThumb'); if(ft) ft.src=imgFor(photos[active].id);
+    }
+    // progress bar that fills over each slide's duration
+    let SLIDE_MS = 2000;
+    function startTimer(){
+      clearInterval(timer);
+      timer=setInterval(()=>{ let n=active+playDir; if(n<0||n>photos.length-1){ playDir=-playDir; n=active+playDir; } move(playDir); }, SLIDE_MS);
+    }
+    function setSpeed(mult){
+      SLIDE_MS = Math.round(2000/mult);
+      if(playing){ startProgress(); updateStory(); startTimer(); }
+    }
+    function startProgress(){
+      const f=document.getElementById('fabProgressFill'); if(!f) return;
+      f.style.transition='none'; f.style.width='0%';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        f.style.transition=`width ${SLIDE_MS}ms linear`; f.style.width='100%';
+      }));
+    }
+    function stopProgress(){
+      const f=document.getElementById('fabProgressFill'); if(!f) return;
+      f.style.transition='none'; f.style.width='0%';
+    }
+
+    // ---- story-style progress bars (viewer + timeline) ----
+    function renderBars(id, track, fill){
+      const bar=document.getElementById(id); if(!bar) return;
+      bar.innerHTML = photos.map((_,i)=>`<span class="relative h-1 flex-1 overflow-hidden rounded-full ${track}"><span class="block h-full rounded-full ${fill}" data-si="${i}" style="width:${i<active?'100':'0'}%"></span></span>`).join('');
+      if(playing){
+        const f=bar.querySelector('[data-si="'+active+'"]');
+        if(f){ f.style.transition='none'; f.style.width='0%';
+          requestAnimationFrame(()=>requestAnimationFrame(()=>{ f.style.transition='width '+SLIDE_MS+'ms linear'; f.style.width='100%'; })); }
+      }
+    }
+    function updateStory(){
+      renderBars('storyBars','bg-white/30','bg-white');          // in the viewer (dark)
+    }
+
+    // ---- swipe gestures ----
+    let _swx=null;
+    function swStart(e){ _swx = e.touches ? e.touches[0].clientX : e.clientX; }
+    function swEnd(e){
+      if(_swx==null) return;
+      const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+      const d = x - _swx; _swx=null;
+      if(Math.abs(d) > 40){ d < 0 ? move(1) : move(-1); }
+    }
+
+    // ---- play all (Memories) ----
+    function playMemories(){ openModal(0); if(!playing) togglePlay(); }
+    function move(d){ setActive(active+d);
+      if(!document.getElementById('modal').classList.contains('hidden')){
+        document.getElementById('modalImg').src=imgFor(photos[active].id);
+        document.getElementById('modalName').textContent=photos[active].name;
+        document.getElementById('modalDate').textContent=photos[active].dmy;
+      }
+    }
+    function togglePlay(){ playing=!playing;
+      if(playing){
+        // pick direction: at the end → play backward, at the start → forward (ping-pong on replay)
+        if(active>=photos.length-1) playDir=-1;
+        else if(active<=0) playDir=1;
+        startProgress();
+        startTimer();
+      } else {
+        clearInterval(timer); stopProgress();
+      }
+      const name = playing?'pause':'play';
+      const top=document.getElementById('playBtnTop'); if(top) top.innerHTML=`<i class="fa fa-${name}"></i>`;
+      const fab=document.getElementById('fabPlay'); if(fab) fab.innerHTML=`<i class="fa fa-${name} text-xl"></i>`;
+      const mpl=document.getElementById('modalPlay'); if(mpl) mpl.innerHTML=`<i class="fa fa-${name} text-lg"></i>`;
+      updateStory(); renderTimeline();
+    }
+    function openModal(i){ setActive(i);
+      document.getElementById('modalImg').src=imgFor(photos[i].id);
+      document.getElementById('modalName').textContent=photos[i].name;
+      document.getElementById('modalDate').textContent=photos[i].dmy;
+      document.getElementById('modal').classList.remove('hidden');
+      updateStory();
+    }
+    function closeModal(){ document.getElementById('modal').classList.add('hidden'); }
+    function toggleComments(){
+      const pane=document.getElementById('commentPane'), media=document.getElementById('mediaPane'), ch=document.getElementById('commentChevron');
+      const open=pane.classList.contains('sm:hidden')||pane.classList.contains('hidden-sm');
+      // simple toggle of width
+      const isHidden=pane.style.display==='none';
+      if(isHidden){ pane.style.display=''; media.classList.remove('sm:w-full'); media.classList.add('sm:w-[68%]'); ch.className='fa fa-chevron-left'; }
+      else { pane.style.display='none'; media.classList.remove('sm:w-[68%]'); media.classList.add('sm:w-full'); ch.className='fa fa-chevron-right'; }
+    }
+
+    function toggleMap(){
+      const p=document.getElementById('mapPanel');
+      const shown=!p.classList.contains('h-0');
+      mapShown = !shown;
+      p.classList.toggle('h-0',shown); p.classList.toggle('opacity-0',shown); p.classList.toggle('mb-0',shown);
+      p.classList.toggle('h-[28vh]',!shown); p.classList.toggle('sm:h-[34vh]',!shown); p.classList.toggle('mb-4',!shown);
+      // map button active state
+      const b=document.getElementById('mapBtn');
+      if(b){
+        b.classList.toggle('bg-primary-theme',mapShown); b.classList.toggle('text-white',mapShown); b.classList.toggle('shadow-glow',mapShown);
+        b.classList.toggle('chip',!mapShown); b.classList.toggle('text-accent-blue/80',!mapShown);
+        const lbl=document.getElementById('mapBtnLabel'); if(lbl) lbl.textContent = mapShown?'Map on':'Map off';
+        const ic=b.querySelector('i'); if(ic) ic.className = mapShown ? 'fa-solid fa-map-location-dot' : 'fa-solid fa-map';
+      }
+      renderCarousel(); // resize photos (bigger when map is off)
+      if(mapShown && window.sbMap){ setTimeout(()=>{ sbMap.invalidateSize(); flyToActive(); },350); }
+    }
+    // re-render photos when crossing the mobile/desktop breakpoint
+    let _rt; window.addEventListener('resize', ()=>{ clearTimeout(_rt); _rt=setTimeout(renderCarousel,150); });
+
+    /* ============ REAL MAP (Leaflet) ============ */
+    let sbMap, markers = [], routeLine, prevActive = 0, mapLocked = false;
+
+    // bearing (deg from north) between two coords — for the directional arrow
+    function bearing(a, b){
+      const toRad=d=>d*Math.PI/180, toDeg=r=>r*180/Math.PI;
+      const dLon=toRad(b.lng-a.lng);
+      const y=Math.sin(dLon)*Math.cos(toRad(b.lat));
+      const x=Math.cos(toRad(a.lat))*Math.sin(toRad(b.lat)) - Math.sin(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.cos(dLon);
+      return (toDeg(Math.atan2(y,x))+360)%360;
+    }
+    // travel direction for current active photo
+    function travelBearing(i){
+      if(i!==prevActive) return bearing(photos[prevActive], photos[i]); // direction we just moved
+      if(i < photos.length-1) return bearing(photos[i], photos[i+1]);    // else point to next
+      if(i > 0) return bearing(photos[i-1], photos[i]);
+      return 0;
+    }
+
+    const pinIcon = (activeFlag, brg=0) => L.divIcon({
+      className: '',
+      html: activeFlag
+        ? `<div class="sb-arrow"><i class="arw fa fa-location-arrow" style="--brg:${brg-45}deg"></i></div>` // fa-location-arrow points NE(45°) → offset -45 so it aligns to north
+        : `<div class="sb-pin"><i class="fa fa-circle"></i></div>`,
+      iconSize: activeFlag ? [46,46] : [30,30],
+      iconAnchor: activeFlag ? [23,23] : [15,30],
+      popupAnchor: activeFlag ? [0,-26] : [0,-30],
+    });
+
+    const popupHTML = (p) => `<div style="position:relative;width:162px;height:120px;overflow:hidden">
+        <img src="${imgFor(p.id)}" style="width:100%;height:100%;object-fit:cover;display:block"/>
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.8),rgba(0,0,0,0) 60%)"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;padding:6px 9px;color:#fff">
+          <div style="font-weight:700;font-size:12px;line-height:1.25">${p.name}</div>
+          <div style="font-size:10px;opacity:.9">${p.dmy} · ${p.time}</div>
+        </div></div>`;
+
+    // zoom so the single Earth fills the full width (no grey sides)
+    function fitWorld(){
+      if(!sbMap) return;
+      const w = sbMap.getSize().x || 1000;
+      const z = Math.max(1, Math.log2(w/256));
+      sbMap.setView([20, 0], z, { animate:false });
+    }
+
+    function initMap() {
+      sbMap = L.map('map', { zoomControl:true, scrollWheelZoom:false, worldCopyJump:false,
+        zoomSnap:0, minZoom:1, maxBounds:[[-85,-180],[85,180]], maxBoundsViscosity:0.6 }).setView([20,0], 2);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, noWrap: true, bounds:[[-85,-180],[85,180]], attribution: '&copy; OpenStreetMap'
+      }).addTo(sbMap);
+
+      // route line connecting locations in order
+      const route = photos.map(p => [p.lat, p.lng]);
+      routeLine = L.polyline(route, { color:'#f05540', weight:3, opacity:.75, dashArray:'2 9', lineCap:'round' }).addTo(sbMap);
+      fitWorld();
+
+      markers = photos.map((p,i) => {
+        const m = L.marker([p.lat, p.lng], { icon: pinIcon(i===active, travelBearing(i)) }).addTo(sbMap);
+        m.bindPopup(popupHTML(p), { closeButton:false, maxWidth:170, autoPan:false });
+        m.on('click', () => setActive(i));
+        return m;
+      });
+    }
+
+    // fly to active photo's location + highlight + point arrow along travel path
+    function flyToActive() {
+      if(!sbMap) return;
+      const brg = travelBearing(active);
+      // arrow + markers always update (even when locked)
+      markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, brg)));
+      const p = photos[active];
+      // camera only moves when NOT locked
+      if(!mapLocked) sbMap.flyTo([p.lat, p.lng], 5, { duration: 1.1 });
+      markers[active] && markers[active].openPopup();   // autoPan:false → won't move a locked map
+      const lbl = document.getElementById('mapLabel'); if(lbl) lbl.textContent = p.name;
+      prevActive = active;
+    }
+
+    // lock toggle
+    document.getElementById('mapLock').addEventListener('click', () => {
+      mapLocked = !mapLocked;
+      const icon = document.getElementById('mapLockIcon');
+      const btn  = document.getElementById('mapLock');
+      const badge= document.getElementById('mapLockBadge');
+      icon.className = mapLocked ? 'fa fa-lock' : 'fa fa-lock-open';
+      btn.classList.toggle('bg-primary-theme', mapLocked);
+      btn.classList.toggle('text-white', mapLocked);
+      btn.classList.toggle('shadow-glow', mapLocked);
+      btn.title = mapLocked ? 'Unlock map view' : 'Lock map view';
+      badge.classList.toggle('hidden', !mapLocked);
+      badge.classList.toggle('flex', mapLocked);
+    });
+
+    initMap();
+    renderTimeline(); setView('horizontal'); updateFab(); updateStory();
+    // dynamic counts
+    (function(){
+      const cc = new Set(photos.map(p=>p.loc.split(', ').pop())).size;
+      const mc=document.getElementById('momentCount'); if(mc) mc.textContent = photos.length+' moments';
+      const ms=document.getElementById('memoryStats'); if(ms) ms.textContent = photos.length+' moments · '+photos.length+' places · '+cc+' countries';
+    })();
+    // swipe on the modal media pane
+    const _mp=document.getElementById('mediaPane');
+    if(_mp){ _mp.addEventListener('touchstart',swStart,{passive:true}); _mp.addEventListener('touchend',swEnd); }
+    // on load: show the full single Earth (fills width), highlight first pin (no fly-in)
+    setTimeout(()=>{
+      sbMap.invalidateSize();
+      fitWorld();
+      markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, travelBearing(i))));
+      markers[active] && markers[active].openPopup();
+    }, 300);
+    // keep the world filling the width on resize (when not zoomed into a photo)
+    let _wt; window.addEventListener('resize', ()=>{ clearTimeout(_wt); _wt=setTimeout(()=>{ if(sbMap && !playing) { sbMap.invalidateSize(); fitWorld(); } },200); });
+  </script>
+</body>
+</html>

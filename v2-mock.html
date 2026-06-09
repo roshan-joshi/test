@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Photo Timeline — v2 Concept</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script>
+tailwind.config={theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','sans-serif']},colors:{'primary-theme':'#f05540','primary-red':'#dd2f39','accent-blue':'#36454f','accent-light-blue':'#2d688f','light-blue':'#2D688F','grey-light':'#f5f6fa','accent-grey':'#dfe2ed'},borderRadius:{'4xl':'2rem'},boxShadow:{soft:'0 10px 40px -12px rgba(54,69,79,.18)',glow:'0 8px 30px -6px rgba(240,85,64,.45)',card:'0 18px 50px -16px rgba(54,69,79,.28)'}}}};
+</script>
+<style>
+body{background:radial-gradient(1000px 500px at 50% -10%,rgba(240,85,64,.10),transparent 60%),#eef1f6;}
+.glass{background:rgba(255,255,255,.78);backdrop-filter:blur(12px);}
+.glass-dark{background:rgba(20,28,33,.5);backdrop-filter:blur(8px);}
+.grad{background:linear-gradient(95deg,#f05540,#dd2f39);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.phone{width:360px;height:760px;border-radius:2.6rem;}
+.scr{border-radius:2.1rem;}
+.nobar::-webkit-scrollbar{display:none;}
+.tag{font-size:10px;letter-spacing:.12em;}
+</style>
+</head>
+<body class="font-sans text-accent-blue">
+
+<div class="mx-auto max-w-[1280px] px-6 py-10">
+  <div class="mb-8 text-center">
+    <img src="logo.png" class="mx-auto mb-3 h-9" alt="Systemboom"/>
+    <h1 class="text-3xl font-extrabold">Photo Timeline — <span class="grad">v2 Concept</span></h1>
+    <p class="mt-1 text-accent-blue/60">Proposed mobile improvements · design preview (not yet implemented)</p>
+  </div>
+
+  <div class="flex flex-wrap justify-center gap-10">
+
+    <!-- ============ PHONE 1 — HOME v2 ============ -->
+    <div>
+      <p class="mb-3 text-center text-sm font-bold uppercase tracking-wider text-accent-blue/50">1 · Home (tighter + smarter)</p>
+      <div class="phone bg-accent-blue p-2.5 shadow-card">
+        <div class="scr relative h-full w-full overflow-hidden bg-grey-light">
+          <!-- navbar compact -->
+          <div class="glass flex items-center justify-between px-4 py-2.5">
+            <img src="logo.png" class="h-5"/>
+            <div class="flex items-center gap-2"><i class="fa-regular fa-bell text-accent-blue/60"></i><img src="https://i.pravatar.cc/60?img=12" class="h-7 w-7 rounded-full ring-2 ring-primary-theme/60"/></div>
+          </div>
+          <!-- tight header -->
+          <div class="flex items-end justify-between px-4 pt-3">
+            <div><span class="tag font-bold text-accent-light-blue">PHOTO · TIMELINE</span>
+              <h2 class="text-2xl font-extrabold leading-none">June <span class="grad">9</span>, 2026</h2></div>
+            <div class="flex items-center gap-1.5 text-xs"><span>Map</span><span class="relative inline-flex h-5 w-9 items-center rounded-full bg-primary-theme"><span class="ml-auto mr-0.5 h-4 w-4 rounded-full bg-white"></span></span></div>
+          </div>
+          <!-- NEW: slim sticky timeline pill -->
+          <div class="mx-4 mt-3 flex items-center gap-1.5 overflow-hidden rounded-full bg-white p-1 shadow-soft">
+            <span class="rounded-full bg-primary-theme px-3 py-1 text-xs font-bold text-white">09 Mon</span>
+            <span class="px-2.5 py-1 text-xs font-medium text-accent-blue/50">08</span>
+            <span class="px-2.5 py-1 text-xs font-medium text-accent-blue/50">07</span>
+            <span class="px-2.5 py-1 text-xs font-medium text-accent-blue/50">06</span>
+            <span class="px-2.5 py-1 text-xs font-medium text-accent-blue/50">05</span>
+            <span class="ml-auto pr-1 text-accent-blue/30"><i class="fa fa-chevron-right text-[10px]"></i></span>
+          </div>
+          <!-- NEW: filter chips -->
+          <div class="mt-3 flex gap-2 px-4 text-xs">
+            <span class="rounded-full bg-accent-blue px-3 py-1 font-semibold text-white">All</span>
+            <span class="rounded-full bg-white px-3 py-1 font-medium text-accent-blue/70 shadow-soft">Photos</span>
+            <span class="rounded-full bg-white px-3 py-1 font-medium text-accent-blue/70 shadow-soft">Videos</span>
+            <span class="rounded-full bg-white px-3 py-1 font-medium text-accent-blue/70 shadow-soft"><i class="fa fa-star text-primary-theme"></i> Faves</span>
+          </div>
+          <!-- NEW: Memories highlight card -->
+          <div class="mx-4 mt-3 flex items-center gap-3 overflow-hidden rounded-3xl bg-gradient-to-r from-primary-theme to-primary-red p-3 text-white shadow-glow">
+            <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/20"><i class="fa fa-wand-magic-sparkles"></i></div>
+            <div class="min-w-0"><p class="text-sm font-bold leading-tight">Your June journey</p><p class="text-[11px] opacity-90">6 places · 3 countries</p></div>
+            <button class="ml-auto shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-primary-theme"><i class="fa fa-play"></i> Play</button>
+          </div>
+          <!-- map with CORNER info (no covering popup) + cluster -->
+          <div class="relative mx-4 mt-3 h-44 overflow-hidden rounded-3xl shadow-card">
+            <img src="https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width=640&height=360&center=lonlat:30,20&zoom=1" class="h-full w-full object-cover" onerror="this.src='https://picsum.photos/seed/mapbg/640/360'"/>
+            <div class="absolute inset-0 bg-accent-blue/5"></div>
+            <span class="glass-dark absolute left-3 top-3 rounded-lg px-2.5 py-1 text-[11px] font-medium text-white"><i class="fa fa-location-dot text-primary-theme"></i> Kathmandu · 1/6</span>
+            <span class="glass absolute right-3 top-3 rounded-lg px-2 py-1 text-[10px] font-semibold text-accent-blue"><i class="fa fa-layer-group"></i> cluster</span>
+            <i class="fa fa-location-arrow absolute left-1/2 top-1/2 grid h-8 w-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-primary-theme text-white shadow-glow"></i>
+          </div>
+          <!-- skeleton + photo peek -->
+          <p class="mt-3 px-4 text-sm font-bold">Photos</p>
+          <div class="mt-2 flex gap-3 px-4">
+            <div class="h-24 w-20 shrink-0 overflow-hidden rounded-2xl ring-2 ring-primary-theme"><img src="https://picsum.photos/seed/sb1/200/260" class="h-full w-full object-cover"/></div>
+            <div class="h-24 w-20 shrink-0 animate-pulse rounded-2xl bg-accent-grey/70"></div>
+            <div class="h-24 w-20 shrink-0 animate-pulse rounded-2xl bg-accent-grey/50"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PHONE 2 — FEATURED v2 ============ -->
+    <div>
+      <p class="mb-3 text-center text-sm font-bold uppercase tracking-wider text-accent-blue/50">2 · Featured (map off, swipeable)</p>
+      <div class="phone bg-accent-blue p-2.5 shadow-card">
+        <div class="scr relative h-full w-full overflow-hidden bg-grey-light">
+          <div class="glass flex items-center justify-between px-4 py-2.5"><img src="logo.png" class="h-5"/><img src="https://i.pravatar.cc/60?img=12" class="h-7 w-7 rounded-full ring-2 ring-primary-theme/60"/></div>
+          <!-- filter chips -->
+          <div class="mt-3 flex gap-2 px-4 text-xs"><span class="rounded-full bg-accent-blue px-3 py-1 font-semibold text-white">All</span><span class="rounded-full bg-white px-3 py-1 text-accent-blue/70 shadow-soft">Photos</span><span class="rounded-full bg-white px-3 py-1 text-accent-blue/70 shadow-soft"><i class="fa fa-star text-primary-theme"></i> Faves</span></div>
+          <!-- full hero -->
+          <div class="relative mx-4 mt-3 h-[400px] overflow-hidden rounded-4xl shadow-card">
+            <img src="https://picsum.photos/seed/sb3/500/700" class="h-full w-full object-cover"/>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/35"></div>
+            <span class="glass absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold text-accent-blue"><i class="fa fa-clock"></i> 01:15 PM</span>
+            <div class="absolute right-3 top-3 flex gap-1.5"><span class="glass grid h-8 w-8 place-items-center rounded-full text-xs"><i class="fa fa-heart text-primary-theme"></i></span><span class="glass grid h-8 w-8 place-items-center rounded-full text-xs"><i class="fa fa-share-nodes"></i></span></div>
+            <!-- swipe hint -->
+            <div class="glass-dark absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-3 py-1.5 text-[11px] font-medium text-white opacity-90"><i class="fa fa-hand-pointer"></i> swipe ‹ ›</div>
+            <div class="absolute bottom-0 w-full p-5 text-white">
+              <p class="text-2xl font-extrabold">Dubai skyline</p>
+              <p class="mt-1 text-xs text-white/85"><i class="fa fa-calendar-day"></i> 07 Jun · Sat &nbsp; <i class="fa fa-location-dot text-primary-theme"></i> Dubai, UAE</p>
+              <div class="mt-3 flex items-center gap-4 text-sm"><span><i class="fa fa-heart text-primary-theme"></i> 12</span><span><i class="fa-regular fa-comment"></i> 3</span><button class="ml-auto rounded-full bg-primary-theme px-4 py-1.5 text-sm font-semibold shadow-glow">View</button></div>
+            </div>
+          </div>
+          <!-- thumb strip -->
+          <div class="mt-3 flex gap-2 px-4">
+            <img src="https://picsum.photos/seed/sb1/80/80" class="h-14 w-14 rounded-2xl object-cover opacity-60"/>
+            <img src="https://picsum.photos/seed/sb2/80/80" class="h-14 w-14 rounded-2xl object-cover opacity-60"/>
+            <img src="https://picsum.photos/seed/sb3/80/80" class="h-14 w-14 rounded-2xl object-cover ring-4 ring-primary-theme"/>
+            <img src="https://picsum.photos/seed/sb4/80/80" class="h-14 w-14 rounded-2xl object-cover opacity-60"/>
+            <img src="https://picsum.photos/seed/sb5/80/80" class="h-14 w-14 rounded-2xl object-cover opacity-60"/>
+          </div>
+          <!-- floating player -->
+          <div class="glass absolute bottom-3 left-3 right-3 flex items-center gap-2 rounded-full p-1.5 shadow-card">
+            <img src="https://picsum.photos/seed/sb3/60/60" class="h-10 w-10 rounded-xl object-cover"/>
+            <div class="min-w-0"><p class="truncate text-xs font-bold">Dubai skyline</p><p class="text-[10px] text-accent-blue/50">3 / 6</p></div>
+            <div class="ml-auto flex items-center gap-0.5"><i class="fa fa-backward-step px-1.5"></i><span class="grid h-11 w-11 place-items-center rounded-full bg-primary-theme text-white shadow-glow"><i class="fa fa-play"></i></span><i class="fa fa-forward-step px-1.5"></i></div>
+            <div class="absolute -bottom-0.5 left-5 right-5 h-1 overflow-hidden rounded-full bg-accent-grey/50"><div class="h-full w-1/2 rounded-full bg-primary-theme"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PHONE 3 — MODAL v2 (story) ============ -->
+    <div>
+      <p class="mb-3 text-center text-sm font-bold uppercase tracking-wider text-accent-blue/50">3 · Viewer (story + bottom-sheet)</p>
+      <div class="phone bg-accent-blue p-2.5 shadow-card">
+        <div class="scr relative h-full w-full overflow-hidden bg-black">
+          <img src="https://picsum.photos/seed/sb1/500/900" class="h-full w-full object-cover"/>
+          <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80"></div>
+          <!-- NEW: story progress segments -->
+          <div class="absolute left-3 right-3 top-3 flex gap-1">
+            <span class="h-1 flex-1 rounded-full bg-white/90"></span>
+            <span class="h-1 flex-1 rounded-full bg-white/90"></span>
+            <span class="h-1 flex-1 overflow-hidden rounded-full bg-white/30"><span class="block h-full w-1/2 bg-white"></span></span>
+            <span class="h-1 flex-1 rounded-full bg-white/30"></span>
+            <span class="h-1 flex-1 rounded-full bg-white/30"></span>
+            <span class="h-1 flex-1 rounded-full bg-white/30"></span>
+          </div>
+          <!-- top bar -->
+          <div class="absolute left-3 right-3 top-7 flex items-center justify-between text-white">
+            <div class="flex items-center gap-2"><img src="https://i.pravatar.cc/60?img=12" class="h-8 w-8 rounded-full ring-2 ring-white/60"/><div><p class="text-sm font-bold leading-none">Roshan Joshi</p><p class="text-[11px] opacity-80">2h · Kathmandu</p></div></div>
+            <span class="glass grid h-9 w-9 place-items-center rounded-full text-accent-blue"><i class="fa fa-xmark"></i></span>
+          </div>
+          <!-- swipe/pinch hint -->
+          <div class="glass-dark absolute left-1/2 top-1/3 -translate-x-1/2 rounded-full px-3 py-1.5 text-[11px] text-white opacity-90"><i class="fa fa-up-right-and-down-left-from-center"></i> pinch to zoom · swipe ‹ ›</div>
+          <!-- caption -->
+          <div class="absolute bottom-28 left-4 right-4 text-white">
+            <p class="text-xl font-extrabold">Morning hike</p>
+            <p class="text-xs opacity-85">Caught a beautiful sunrise on the trail today 🌄</p>
+            <div class="mt-2 flex items-center gap-4 text-sm"><span><i class="fa fa-heart text-primary-theme"></i> 12</span><span><i class="fa-regular fa-comment"></i> 3</span></div>
+          </div>
+          <!-- bottom sheet handle for comments -->
+          <div class="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-white p-4 shadow-card">
+            <div class="mx-auto mb-2 h-1.5 w-10 rounded-full bg-accent-grey"></div>
+            <div class="flex items-center justify-between"><p class="text-sm font-bold">Comments · 3</p><div class="flex gap-3 text-accent-blue/70"><i class="fa-regular fa-thumbs-up"></i><i class="fa-regular fa-comment"></i><i class="fa-solid fa-share-nodes"></i></div></div>
+            <div class="mt-3 flex items-center gap-2 rounded-full bg-grey-light px-3 py-2"><span class="text-xs text-accent-blue/40">Write a comment…</span><span class="ml-auto grid h-7 w-7 place-items-center rounded-full bg-primary-theme text-white"><i class="fa fa-paper-plane text-[10px]"></i></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- legend -->
+  <div class="mx-auto mt-10 max-w-3xl rounded-3xl bg-white p-5 text-sm shadow-soft">
+    <p class="mb-2 font-bold text-accent-blue">What's new in this concept</p>
+    <div class="grid grid-cols-1 gap-x-8 gap-y-1.5 text-accent-blue/80 sm:grid-cols-2">
+      <p>✦ Slimmer sticky <b>timeline pill</b> (wins back the fold)</p>
+      <p>✦ <b>Filter chips</b>: All / Photos / Videos / Faves</p>
+      <p>✦ <b>"Memories"</b> auto-highlight card + Play all</p>
+      <p>✦ Map info in a <b>corner chip</b> (no covering popup)</p>
+      <p>✦ Map <b>clustering</b> for close pins</p>
+      <p>✦ <b>Swipe</b> gestures on featured + viewer</p>
+      <p>✦ <b>Story progress bars</b> in the photo viewer</p>
+      <p>✦ Comments as a <b>bottom sheet</b> (native feel)</p>
+      <p>✦ <b>Skeleton</b> shimmer while loading</p>
+      <p>✦ Pinch-to-zoom in the viewer</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
