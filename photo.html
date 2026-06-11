@@ -10,6 +10,9 @@
   <!-- Leaflet (real, free map — no API key) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="preconnect" href="https://a.tile.openstreetmap.org" />
+  <link rel="preconnect" href="https://b.tile.openstreetmap.org" />
+  <link rel="preconnect" href="https://c.tile.openstreetmap.org" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="icon" type="image/png" href="logo.png" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -71,8 +74,8 @@
       background: url(logo.png) left center / auto 30px no-repeat; }
     /* ===== immersive photo STAGE (shown when the map is OFF) ===== */
     #photoStage, #stagePlay { display:none; }
-    #stageWrap.stage-on { position:relative; height:74vh; min-height:440px; border-radius:2rem; overflow:hidden;
-      box-shadow:0 18px 50px -16px rgba(54,69,79,.30); }
+    #stageWrap.stage-on { position:relative; height:74vh; min-height:440px; border-radius:2rem; overflow:visible;
+      box-shadow:0 18px 50px -16px rgba(54,69,79,.30); }   /* visible so floating toolbar/ruler tooltips aren't clipped (photo self-clips) */
     #stageWrap.stage-on #photoStage { display:block; }
     #stageWrap.stage-on #toolbar, #stageWrap.stage-on #rulerSec { position:absolute; left:14px; right:14px; z-index:20; margin:0; }
     #stageWrap.stage-on #toolbar { top:16px; flex-wrap:nowrap; }
@@ -90,6 +93,16 @@
     .mode-badge { width:36px; height:36px; display:grid; place-items:center; border-radius:50%;
       background:var(--brand); color:#fff; font-size:15px; border:2px solid #fff;
       box-shadow:0 3px 12px rgba(var(--brand-glow),.6); animation:phpulse 2.4s ease-in-out infinite; }
+    /* ===== life chapters rail (table of contents) ===== */
+    .ch-seg { display:flex; align-items:center; justify-content:center; gap:6px; min-width:0; padding:7px 8px; border-radius:11px;
+      font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; cursor:pointer; transition:all .25s;
+      background:var(--c-bg); color:var(--c-text); opacity:.55; border:1px solid var(--c-line); }
+    .ch-seg .ch-name { overflow:hidden; text-overflow:ellipsis; }
+    .ch-seg:hover { opacity:.9; }
+    .ch-name { display:none; }
+    @media (min-width:640px){ .ch-name { display:inline; } }
+    .ch-seg-active { background:var(--brand); color:#fff; opacity:1; border-color:var(--brand); box-shadow:0 5px 16px rgba(var(--brand-glow),.36); flex:4 !important; }
+    .ch-seg-active .ch-name { display:inline; }
     /* ===== travel records bar ===== */
     .tv-chip { display:inline-flex; align-items:center; gap:8px; white-space:nowrap; flex:0 0 auto;
       padding:7px 14px !important; border-radius:9999px; font-weight:600; color:var(--c-text); font-size:13px; }
@@ -224,6 +237,13 @@
     }
     .card-img { transition: transform .7s cubic-bezier(.2,.7,.2,1); }
     .group:hover .card-img { transform: scale(1.07); }
+    /* video moment indicators */
+    .vid-play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:3; width:46px; height:46px;
+      display:grid; place-items:center; border-radius:50%; color:#fff; font-size:15px; padding-left:3px;
+      background:rgba(217,42,32,.92); box-shadow:0 6px 20px rgba(0,0,0,.4); backdrop-filter:blur(2px); transition:transform .2s; }
+    .group:hover .vid-play { transform:translate(-50%,-50%) scale(1.1); }
+    .vid-dur { position:absolute; bottom:54px; right:10px; z-index:3; display:inline-flex; align-items:center; gap:4px;
+      padding:2px 8px; border-radius:9999px; font-size:10px; font-weight:700; color:#fff; background:rgba(0,0,0,.6); }
     /* map markers */
     .sb-pin { display:grid; place-items:center; width:30px; height:30px; border-radius:50% 50% 50% 0;
       background:#36454f; transform: rotate(-45deg); box-shadow:0 6px 16px rgba(0,0,0,.3); border:2px solid #fff; }
@@ -239,8 +259,25 @@
     @keyframes pinPulse { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-6px);} }
     @keyframes ring { 0%{ transform:scale(.8); opacity:.8;} 100%{ transform:scale(1.6); opacity:0;} }
     .leaflet-popup-content { margin:0; font-family:'Plus Jakarta Sans',sans-serif; }
-    .leaflet-popup-content-wrapper { border-radius:14px; padding:0; overflow:hidden; }
-    .leaflet-container { border-radius: 2rem; font-family:'Plus Jakarta Sans',sans-serif; }
+    .leaflet-popup-content-wrapper { border-radius:16px; padding:0; overflow:hidden; box-shadow:0 14px 40px rgba(0,0,0,.32); }
+    /* tap-to-reveal map photo card */
+    .pp { position:relative; width:148px; height:98px; overflow:hidden; cursor:pointer; }
+    .pp img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .5s; }
+    .pp:hover img { transform:scale(1.06); }
+    .pp::after { content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,.84), rgba(0,0,0,0) 58%); }
+    .pp-body { position:absolute; left:0; right:0; bottom:0; z-index:2; padding:6px 9px; color:#fff; }
+    .pp-title { font-weight:800; font-size:11.5px; line-height:1.15; }
+    .pp-meta { font-size:9px; opacity:.9; margin-top:1px; }
+    .pp-mode { position:absolute; top:6px; left:6px; z-index:2; display:inline-flex; align-items:center; gap:4px;
+      padding:2px 7px; border-radius:9999px; font-size:8.5px; font-weight:700; color:#fff;
+      background:rgba(var(--brand-glow),.85); box-shadow:0 2px 8px rgba(0,0,0,.3); }
+    /* hover card lives in a Leaflet tooltip — strip the default tooltip chrome */
+    .pp-pop .leaflet-popup-content-wrapper { border-radius:14px; }
+    /* the travelling vehicle that glides along the trail */
+    .veh { width:36px; height:36px; display:grid; place-items:center; border-radius:50%; color:#fff; font-size:15px;
+      background:var(--brand); border:2px solid #fff; box-shadow:0 4px 16px rgba(var(--brand-glow),.7); }
+    .leaflet-container { border-radius: 2rem; font-family:'Plus Jakarta Sans',sans-serif; background:#dfe7ec; }
+    html.dark .leaflet-container { background:#0f151b; }
   </style>
 </head>
 
@@ -375,6 +412,15 @@
         <span class="liquid-light tv-chip"><i id="tvHopIcon" class="fa-solid fa-baby tv-ic"></i><span id="tvHop">Born here</span></span>
       </div>
 
+      <!-- LIFE CHAPTERS — the table of contents of a life; tap to jump, current chapter highlights -->
+      <div id="chapterRail" class="fade-up mb-2 flex gap-1.5">
+        <button class="ch-seg" style="flex:6" onclick="setActive(0)" title="Childhood"><i class="fa-solid fa-baby"></i><span class="ch-name">Childhood</span></button>
+        <button class="ch-seg" style="flex:4" onclick="setActive(6)" title="School years"><i class="fa-solid fa-school"></i><span class="ch-name">School</span></button>
+        <button class="ch-seg" style="flex:3" onclick="setActive(10)" title="University"><i class="fa-solid fa-graduation-cap"></i><span class="ch-name">University</span></button>
+        <button class="ch-seg" style="flex:3" onclick="setActive(13)" title="Career"><i class="fa-solid fa-briefcase"></i><span class="ch-name">Career</span></button>
+        <button class="ch-seg" style="flex:4" onclick="setActive(16)" title="Family"><i class="fa-solid fa-heart"></i><span class="ch-name">Family</span></button>
+      </div>
+
     <!-- TIMELINE RULER (scrubber) — drag/scroll to scrub, hold ◀ ▶ to fly through dates; the playhead marks the active photo -->
     <section id="rulerSec" class="fade-up mb-3">
       <div class="liquid-light rl-bar rounded-[26px] px-2 py-2.5 sm:px-3">
@@ -396,7 +442,7 @@
     </div><!-- /stageWrap -->
 
     <!-- (C) MAP PANEL (real Leaflet map) -->
-    <section id="mapPanel" class="fade-up relative mb-4 h-[28vh] w-full overflow-hidden rounded-4xl shadow-card transition-all duration-500 sm:h-[34vh]">
+    <section id="mapPanel" class="fade-up relative mb-4 h-[40vh] w-full overflow-hidden rounded-4xl shadow-card transition-all duration-500 sm:h-[42vh]">
       <div id="map" class="h-full w-full"></div>
       <div class="glass-dark pointer-events-none absolute left-4 top-4 z-[500] rounded-xl px-3 py-1.5 text-xs font-medium text-white">
         <i class="fa-solid fa-location-dot text-primary-theme"></i> <span id="mapLabel">Morning hike</span>
@@ -680,6 +726,8 @@
       'The newest, tiniest love of our lives.'
     ];
     const BORN = _dates[0][0];
+    // a few moments are home-movies (videos) — index → clip length
+    const _vid = {2:'0:38', 9:'1:12', 14:'2:05', 17:'3:24'};
     // moments dated AFTER today can't appear (and can't be uploaded) — only what has already happened
     const TODAY = new Date();
     const photos = _data.map((c,i)=>{
@@ -687,14 +735,14 @@
       return { id:i+1, name:c[0], loc:c[1], lat:c[2], lng:c[3], time:c[4], kw:_kw[i], desc:_desc[i],
         y, mo, d, day:_wd[new Date(y,mo,d).getDay()], age:y-BORN,
         dmy:`${String(d).padStart(2,'0')} ${_mo[mo]}`, monShort:_mo[mo], monFull:_moF[mo], year:y,
-        type:'photo', fav:(i%4===0) };
+        type:_vid[i]?'video':'photo', dur:_vid[i]||null, fav:(i%4===0) };
     }).filter(p => new Date(p.y, p.mo, p.d) <= TODAY)   // never show the future
       .sort((a,b)=> new Date(a.y,a.mo,a.d) - new Date(b.y,b.mo,b.d)); // keep oldest → newest
     // themed images by keyword; picsum is the fallback (see onerror handlers) if a photo fails to load
     const _kwById = {}; photos.forEach(p=> _kwById[p.id]=p.kw);
-    const imgFor = id => `https://loremflickr.com/640/800/${_kwById[id]}?lock=${id}`;
-    const imgHD  = id => imgFor(id);   // reuse the (cached) themed image → instant hero/modal, no slow 2nd fetch
-    const imgAlt = id => `https://picsum.photos/seed/life${id}/900/1100`;   // fallback if the themed image fails
+    const imgFor = id => `img/life${id}.jpg`;   // self-hosted themed images (fast, offline, no external dependency)
+    const imgHD  = id => imgFor(id);
+    const imgAlt = id => `https://picsum.photos/seed/life${id}/900/1100`;   // fallback if a local file is missing
 
     // ---- travel maths: how far this life has roamed ----
     function haversineKm(a,b){
@@ -720,8 +768,9 @@
     function matchesFilter(p){
       if(searchQuery && !((p.name+' '+p.loc).toLowerCase().includes(searchQuery))) return false;
       if(currentFilter==='videos') return p.type==='video';
+      if(currentFilter==='photos') return p.type!=='video';
       if(currentFilter==='faves')  return !!p.fav;
-      return true; // all / photos
+      return true; // all
     }
     // ---- helpers so the ruler / autoplay / keyboard only move through the *visible* (filtered) set ----
     function visibleIdx(){ const r=[]; photos.forEach((p,i)=>{ if(matchesFilter(p)) r.push(i); }); return r; }
@@ -862,13 +911,20 @@
       },110);
     }
     // immersive hero photo (shown when the map is off)
-    // swap an image with a soft crossfade (preload the cached source, then fade in)
+    // swap an image with a soft crossfade — with a failsafe so the image is NEVER left invisible
+    // (real browsers run the .5s fade; if the transition is throttled, the timeout forces full opacity)
     function fadeSwap(img, src){
-      if(!img) return; img.style.opacity='0';
+      if(!img) return;
+      const apply=()=>{
+        img.style.opacity='0'; void img.offsetWidth; img.src=src; img.style.opacity='1';
+        clearTimeout(img._fs);
+        img._fs=setTimeout(()=>{ img.style.transition='none'; img.style.opacity='1'; void img.offsetWidth; img.style.transition=''; }, 650);
+      };
       const pre=new Image();
-      pre.onload=()=>{ img.src=src; requestAnimationFrame(()=>{ img.style.opacity='1'; }); };
+      pre.onload=apply;
       pre.onerror=()=>{ img.src=src; img.style.opacity='1'; };
       pre.src=src;
+      if(pre.complete) apply();   // cached → apply immediately
     }
     function updateStage(){
       const p=photos[active];
@@ -894,6 +950,12 @@
         if(hopIc) hopIc.className=`fa-solid ${m.icon} tv-ic`;
       }
     }
+    // life chapters — which photos belong to each era (indices into the sorted photos array)
+    const CHAPTERS=[{a:0,b:5},{a:6,b:9},{a:10,b:12},{a:13,b:15},{a:16,b:19}];
+    function updateChapters(){
+      const segs=document.querySelectorAll('#chapterRail .ch-seg');
+      CHAPTERS.forEach((c,ci)=>{ if(segs[ci]) segs[ci].classList.toggle('ch-seg-active', active>=c.a && active<=c.b); });
+    }
     function updateHeaderDate(){
       const p=photos[active], el=document.getElementById('hdrDate');
       if(el) el.innerHTML = `${p.monFull} <span class="grad-text">${p.d}</span>, ${p.year}`;
@@ -908,6 +970,7 @@
       const overlay = (p)=>`
             <img src="${imgFor(p.id)}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='${imgAlt(p.id)}'" class="card-img h-full w-full object-cover" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"></div>
+            ${p.type==='video'?`<span class="vid-play"><i class="fa-solid fa-play"></i></span><span class="vid-dur"><i class="fa-solid fa-video"></i> ${p.dur}</span>`:''}
             <div class="absolute left-3 right-3 top-3 flex items-center justify-between">
               <span class="glass rounded-full px-2.5 py-1 text-[11px] font-semibold text-accent-blue">${p.time}</span>
               <div class="flex gap-1.5 opacity-0 transition group-hover:opacity-100">
@@ -963,7 +1026,7 @@
       // ruler: highlight + scroll to playhead (unless the ruler initiated)
       renderTimelineActive();
       if(src!=='ruler'){ lockRuler(); scrollRulerToActive('smooth'); }
-      flyToActive(); updateFab(); updateStory(); updateHeaderDate(); updateNavButtons(); updateStage(); updateTravel();
+      flyToActive(); updateFab(); updateStory(); updateHeaderDate(); updateNavButtons(); updateStage(); updateTravel(); updateChapters();
       if(playing) startProgress();   // restart the fill for the new slide
     }
     // ◀ ▶ ruler jump buttons: click = step one date; press-and-hold = fly fast (accelerating)
@@ -1119,7 +1182,7 @@
       const shown=!p.classList.contains('h-0');
       mapShown = !shown;
       p.classList.toggle('h-0',shown); p.classList.toggle('opacity-0',shown); p.classList.toggle('mb-0',shown);
-      p.classList.toggle('h-[28vh]',!shown); p.classList.toggle('sm:h-[34vh]',!shown); p.classList.toggle('mb-4',!shown);
+      p.classList.toggle('h-[40vh]',!shown); p.classList.toggle('sm:h-[42vh]',!shown); p.classList.toggle('mb-4',!shown);
       // map button active state
       const b=document.getElementById('mapBtn');
       if(b){
@@ -1132,6 +1195,7 @@
       const sw=document.getElementById('stageWrap'); if(sw) sw.classList.toggle('stage-on', !mapShown);
       const ps=document.getElementById('photosSec'); if(ps) ps.classList.toggle('hidden', !mapShown);
       const tb=document.getElementById('travelBar'); if(tb) tb.classList.toggle('hidden', !mapShown);
+      const cr=document.getElementById('chapterRail'); if(cr) cr.classList.toggle('hidden', !mapShown);
       const stp=document.getElementById('stagePlay'); if(stp) stp.innerHTML=`<i class="fa fa-${playing?'pause':'play'}"></i>`;
       updateStage();
       renderCarousel(); // (reel is hidden in stage mode, but keep it in sync for when the map returns)
@@ -1142,23 +1206,32 @@
     let _rt; window.addEventListener('resize', ()=>{ lockRuler(); clearTimeout(_rt); _rt=setTimeout(()=>{ renderCarousel(); lockRuler(); scrollRulerToActive('auto'); },150); });
 
     /* ============ REAL MAP (Leaflet) ============ */
-    let sbMap, markers = [], pastLine, futureLine, modeMarker, prevActive = 0, mapLocked = false;
+    let sbMap, markers = [], pastLine, futureLine, prevActive = 0, mapLocked = false;
     // progressive trail: bright path already travelled (→ active), faint path still to come,
     // plus a travel-mode badge on the latest hop (plane / train / car / on foot)
     function updateJourney(){
       const coords = photos.map(p=>[p.lat,p.lng]);
       if(pastLine)   pastLine.setLatLngs(coords.slice(0, active+1));
       if(futureLine) futureLine.setLatLngs(coords.slice(active));
-      if(modeMarker){
-        if(active>0){
-          const a=photos[active-1], b=photos[active];
-          const m=travelMode(_hopKm[active]);
-          // sit the badge on the incoming path near the arrival point so it stays in view when zoomed
-          modeMarker.setLatLng([a.lat+0.82*(b.lat-a.lat), a.lng+0.82*(b.lng-a.lng)]);
-          modeMarker.setIcon(L.divIcon({className:'',html:`<div class="mode-badge"><i class="fa-solid ${m.icon}"></i></div>`,iconSize:[36,36],iconAnchor:[18,18]}));
-          modeMarker.setOpacity(1);
-        } else { modeMarker.setOpacity(0); }   // birth — no hop yet
-      }
+      // (the travel mode now rides the active marker itself — the head of the trail)
+    }
+    // animate a vehicle (plane / car / train…) gliding along the line to the destination
+    let vehicle, _vehRAF, _mapReady=false;
+    function animateVehicle(from, to){
+      if(!sbMap || from===to || from==null) return;
+      const a=photos[from], b=photos[to];
+      const hop=haversineKm(a,b); if(hop<8) return;           // negligible move — skip
+      const tm=travelMode(hop);
+      if(!vehicle){ vehicle=L.marker([a.lat,a.lng], {interactive:false, zIndexOffset:600, opacity:0}).addTo(sbMap); }
+      vehicle.setIcon(L.divIcon({className:'', html:`<div class="veh"><i class="fa-solid ${tm.icon}"></i></div>`, iconSize:[36,36], iconAnchor:[18,18]}));
+      vehicle.setLatLng([a.lat,a.lng]); vehicle.setOpacity(1);
+      if(_vehRAF) cancelAnimationFrame(_vehRAF);
+      const dur=1100, t0=performance.now(), ease=t=> t<.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+      (function step(now){
+        const p=Math.min(1,(now-t0)/dur), e=ease(p);
+        vehicle.setLatLng([a.lat+(b.lat-a.lat)*e, a.lng+(b.lng-a.lng)*e]);
+        if(p<1){ _vehRAF=requestAnimationFrame(step); } else { vehicle.setOpacity(0); }
+      })(t0);
     }
 
     // bearing (deg from north) between two coords — for the directional arrow
@@ -1177,23 +1250,29 @@
       return 0;
     }
 
-    const pinIcon = (activeFlag, brg=0) => L.divIcon({
+    // active marker = the head of the trail, showing HOW you arrived (plane / train / car / on foot)
+    const modeIconFor = i => i>0 ? travelMode(_hopKm[i]).icon : 'fa-baby';
+    const pinIcon = (activeFlag, modeIcon='fa-location-dot') => L.divIcon({
       className: '',
       html: activeFlag
-        ? `<div class="sb-arrow"><i class="arw fa fa-location-arrow" style="--brg:${brg-45}deg"></i></div>` // fa-location-arrow points NE(45°) → offset -45 so it aligns to north
+        ? `<div class="sb-arrow"><i class="arw fa-solid ${modeIcon}"></i></div>`
         : `<div class="sb-dot"></div>`,
       iconSize: activeFlag ? [46,46] : [13,13],
       iconAnchor: activeFlag ? [23,23] : [7,7],
-      popupAnchor: activeFlag ? [0,-26] : [0,-8],
+      popupAnchor: activeFlag ? [0,-28] : [0,-8],
     });
 
-    const popupHTML = (p) => `<div style="position:relative;width:162px;height:120px;overflow:hidden">
-        <img src="${imgFor(p.id)}" style="width:100%;height:100%;object-fit:cover;display:block"/>
-        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.8),rgba(0,0,0,0) 60%)"></div>
-        <div style="position:absolute;left:0;right:0;bottom:0;padding:6px 9px;color:#fff">
-          <div style="font-weight:700;font-size:12px;line-height:1.25">${p.name}</div>
-          <div style="font-size:10px;opacity:.9">${p.dmy} · ${p.time}</div>
+    // small preview card shown on hover (or tap) — photo + how you travelled here
+    const cardHTML = (p,i) => {
+      const tm = i>0 ? travelMode(haversineKm(photos[i-1],p)) : {icon:'fa-baby',label:'born here'};
+      return `<div class="pp">
+        <img src="${imgFor(p.id)}" onerror="this.onerror=null;this.src='${imgAlt(p.id)}'"/>
+        <span class="pp-mode"><i class="fa-solid ${tm.icon}"></i> ${tm.label}</span>
+        <div class="pp-body">
+          <div class="pp-title">${p.name}</div>
+          <div class="pp-meta">${p.dmy} ${p.year} · ${p.time}</div>
         </div></div>`;
+    };
 
     // zoom so the single Earth fills the full width (no grey sides)
     function fitWorld(){
@@ -1212,15 +1291,17 @@
 
       // faint "yet to come" path + a bright "travelled so far" trail that grows as you advance
       const route = photos.map(p => [p.lat, p.lng]);
-      futureLine = L.polyline(route, { color:'#e0241c', weight:1.5, opacity:.18, dashArray:'1 9', lineCap:'round' }).addTo(sbMap);
-      pastLine   = L.polyline([],    { color:'#e0241c', weight:3.5, opacity:.92, lineCap:'round', lineJoin:'round' }).addTo(sbMap);
-      modeMarker = L.marker([0,0], { icon:L.divIcon({className:'',html:''}), interactive:false, opacity:0, zIndexOffset:400 }).addTo(sbMap);
+      futureLine = L.polyline(route, { color:'#d92a20', weight:1.5, opacity:.18, dashArray:'1 9', lineCap:'round' }).addTo(sbMap);
+      pastLine   = L.polyline([],    { color:'#d92a20', weight:3.5, opacity:.92, lineCap:'round', lineJoin:'round' }).addTo(sbMap);
       fitWorld();
 
       markers = photos.map((p,i) => {
-        const m = L.marker([p.lat, p.lng], { icon: pinIcon(i===active, travelBearing(i)) }).addTo(sbMap);
-        m.bindPopup(popupHTML(p), { closeButton:false, maxWidth:170, autoPan:false });
-        m.on('click', () => setActive(i));
+        const m = L.marker([p.lat, p.lng], { icon: pinIcon(i===active, modeIconFor(i)) }).addTo(sbMap);
+        // auto-panning popup so the card is NEVER clipped by the (short) map; hover shows it, tap selects + shows
+        m.bindPopup(cardHTML(p,i), { closeButton:false, className:'pp-pop', maxWidth:164, autoPan:true, autoPanPadding:[14,24], keepInView:true });
+        m.on('mouseover', () => m.openPopup());
+        m.on('mouseout',  () => m.closePopup());
+        m.on('click', () => { setActive(i); m.openPopup(); });
         return m;
       });
     }
@@ -1228,14 +1309,15 @@
     // fly to active photo's location + highlight + point arrow along travel path
     function flyToActive() {
       if(!sbMap) return;
-      const brg = travelBearing(active);
-      // arrow + markers always update (even when locked)
-      markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, brg)));
+      sbMap.closePopup();   // clear any open preview card while moving
+      // a vehicle glides along the line to the new place (the "journey" feel) — only on real moves
+      if(_mapReady) animateVehicle(prevActive, active);
+      // active marker shows the travel mode (how you arrived); others are dots
+      markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, modeIconFor(i))));
       updateJourney();
       const p = photos[active];
       // camera only moves when NOT locked
       if(!mapLocked) sbMap.flyTo([p.lat, p.lng], 5, { duration: 1.1 });
-      markers[active] && markers[active].openPopup();   // autoPan:false → won't move a locked map
       const lbl = document.getElementById('mapLabel'); if(lbl) lbl.textContent = p.name;
       prevActive = active;
     }
@@ -1333,10 +1415,10 @@
     setTimeout(()=>{
       sbMap.invalidateSize();
       fitWorld();
-      markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, travelBearing(i))));
+      markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, modeIconFor(i))));
       updateJourney(); updateTravel();
-      markers[active] && markers[active].openPopup();
       scrollRulerToActive('auto'); scrollActiveIntoView('auto');
+      _mapReady = true;   // from now on, moves animate the travelling vehicle
     }, 300);
     // one-time hint that the ruler is draggable
     const _hint=document.getElementById('rlHint');
