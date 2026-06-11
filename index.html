@@ -85,6 +85,50 @@
       opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; z-index: 9999; box-shadow: 0 6px 16px rgba(0,0,0,.25); }
     .tip:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
     html.dark .tip::after { background:#e7ebf2; color:#1a2026; }
+    /* ===== Time ruler / scrubber — matches the page theme (liquid-light glass + brand coral) ===== */
+    .rl-bar { position:relative; display:flex; align-items:center; gap:8px; }
+    /* soft brand-coral halo behind the centre so "now" reads warm, in both themes */
+    .rl-bar::after { content:''; position:absolute; left:50%; top:0; bottom:0; width:96px; transform:translateX(-50%); z-index:0; pointer-events:none;
+      background:radial-gradient(closest-side, rgba(240,85,64,.10), transparent 76%); }
+    .rl-wrap { position:relative; flex:1 1 auto; min-width:0; z-index:1; }
+    .rl-track { display:flex; align-items:flex-end; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 11%, #000 89%, transparent); mask-image: linear-gradient(to right, transparent, #000 11%, #000 89%, transparent); }
+    .rl-track::-webkit-scrollbar { display:none; }
+    .rl-tick { position:relative; flex:0 0 54px; height:58px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:4px; cursor:pointer; background:none; padding-bottom:2px; }
+    .rl-line { width:2px; height:10px; background:var(--c-line); border-radius:2px; transition:height .25s, background .25s, width .25s, box-shadow .25s; }
+    .rl-major { height:16px; background:var(--c-a2); opacity:.5; }
+    .rl-day { font-size:11px; font-weight:700; color:var(--c-text); opacity:.42; transition:all .25s; }
+    .rl-mon { position:absolute; top:1px; font-size:10px; font-weight:800; letter-spacing:.04em; color:var(--c-a2); white-space:nowrap; }
+    .rl-tick.active .rl-line { background:#f05540; height:24px; width:3px; box-shadow:0 0 10px 1px rgba(240,85,64,.55); }
+    .rl-tick.active .rl-day { color:#f05540; opacity:1; transform:scale(1.3); }
+    .rl-spacer { flex:0 0 50%; }
+    /* central playhead: brand-coral beam with a diamond marker on top */
+    .playhead { position:absolute; left:50%; top:4px; bottom:4px; width:2px; transform:translateX(-50%); z-index:4; pointer-events:none;
+      background:linear-gradient(180deg, rgba(240,85,64,0), #f05540 22%, #dd2f39 78%, rgba(221,47,57,0));
+      box-shadow:0 0 12px 1px rgba(240,85,64,.40); border-radius:2px; }
+    .ph-star { position:absolute; top:-5px; left:50%; width:12px; height:12px; transform:translate(-50%,0) rotate(45deg);
+      background:linear-gradient(135deg,#ff7a5f,#f05540); border-radius:3px; box-shadow:0 0 12px 1px rgba(240,85,64,.55); animation:phpulse 2.2s ease-in-out infinite; z-index:1; }
+    @keyframes phpulse { 0%,100%{ box-shadow:0 0 10px 1px rgba(240,85,64,.45) } 50%{ box-shadow:0 0 16px 3px rgba(240,85,64,.7) } }
+    /* during autoplay this brighter beam fills top→bottom = time until the next photo */
+    .ph-fill { position:absolute; left:50%; top:0; width:4px; height:0%; transform:translateX(-50%); border-radius:3px;
+      background:linear-gradient(180deg,#fff,#ffb199); box-shadow:0 0 10px 2px rgba(255,255,255,.65); }
+    /* grab cursor so desktop mouse users know the ruler is draggable */
+    .rl-track { cursor:grab; }
+    .rl-track.dragging { cursor:grabbing; }
+    /* side jump buttons (◀ past / ▶ future) — themed chip that fills coral on hover */
+    .rl-nav { flex:0 0 auto; z-index:2; width:38px; height:38px; display:grid; place-items:center; border-radius:50%; cursor:pointer;
+      color:var(--c-a2); font-size:13px; background:var(--c-bg); border:1px solid var(--c-line);
+      box-shadow:0 2px 8px rgba(54,69,79,.10); transition:transform .14s, background .2s, color .2s, box-shadow .2s, border-color .2s; }
+    .rl-nav:hover:not(:disabled) { background:#f05540; color:#fff; border-color:#f05540; box-shadow:0 6px 18px rgba(240,85,64,.40); }
+    .rl-nav:active:not(:disabled) { transform:scale(.86); }
+    .rl-nav:disabled { opacity:.35; cursor:default; box-shadow:none; }
+    html.dark .rl-nav { box-shadow:0 2px 8px rgba(0,0,0,.4); }
+    @media (min-width:640px){ .rl-nav{ width:42px; height:42px; font-size:15px; } }
+    /* the nav buttons sit at the panel edges → anchor their tooltips inward so they stay on-screen */
+    #rlPrev::after { left:0; transform:translateX(0) translateY(-4px); }
+    #rlPrev:hover::after { transform:translateX(0) translateY(0); }
+    #rlNext::after { left:auto; right:0; transform:translateX(0) translateY(-4px); }
+    #rlNext:hover::after { transform:translateX(0) translateY(0); }
     /* soft edge fades so partially-scrolled photos don't look hard-cut */
     .maskx { -webkit-mask-image: linear-gradient(to right, transparent, #000 26px, #000 calc(100% - 26px), transparent); mask-image: linear-gradient(to right, transparent, #000 26px, #000 calc(100% - 26px), transparent); }
     .masky { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 18px, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
@@ -180,7 +224,7 @@
         <span class="chip inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-light-blue">
           <i class="fa-regular fa-image"></i> Photo · Timeline
         </span>
-        <h1 class="mt-3 text-3xl font-extrabold tracking-tight text-accent-blue sm:text-4xl">
+        <h1 id="hdrDate" class="mt-3 text-3xl font-extrabold tracking-tight text-accent-blue sm:text-4xl">
           June <span class="grad-text">9</span>, 2026
         </h1>
         <p class="mt-1 text-sm text-accent-blue/60">Relive your moments from this day.</p>
@@ -233,9 +277,16 @@
       </div>
     </div>
 
-    <!-- TIMELINE (short, above the map) — connecting progress line + red circles -->
-    <section class="fade-up liquid-light mb-3 rounded-3xl px-4 py-2.5">
-      <div id="timelineRail" class="flex items-start overflow-x-auto scrollbar-hide"></div>
+    <!-- TIMELINE RULER (scrubber) — drag/scroll to scrub, hold ◀ ▶ to fly through dates; the playhead marks the active photo -->
+    <section class="fade-up mb-3">
+      <div class="liquid-light rl-bar rounded-[26px] px-2 py-2.5 sm:px-3">
+        <button id="rlPrev" class="rl-nav tip" data-tip="Earlier — hold to rewind" aria-label="Go to an earlier date"><i class="fa fa-chevron-left"></i></button>
+        <div class="rl-wrap">
+          <div id="timelineRail" class="rl-track"></div>
+          <div class="playhead"><span class="ph-fill" id="phFill"></span><span class="ph-star"></span></div>
+        </div>
+        <button id="rlNext" class="rl-nav tip" data-tip="Later — hold to fast-forward" aria-label="Go to a later date"><i class="fa fa-chevron-right"></i></button>
+      </div>
     </section>
 
     <!-- (C) MAP PANEL (real Leaflet map) -->
@@ -480,15 +531,26 @@
       ['Aurora night','Reykjavik, Iceland',64.1466,-21.9426,'11:50 PM'],
       ['Bali rice fields','Bali, Indonesia',-8.4095,115.1889,'06:30 AM'],
     ];
-    const _days = ['Mon','Sun','Sat','Fri','Thu','Wed','Tue'];
+    // real chronological dates (oldest → newest) spanning months & a year boundary
+    const _dates = [
+      [2025,9,5],[2025,9,23],[2025,10,8],[2025,10,27],[2025,11,11],[2025,11,29],
+      [2026,0,9],[2026,0,24],[2026,1,7],[2026,1,21],[2026,2,6],[2026,2,22],
+      [2026,3,4],[2026,3,19],[2026,4,3],[2026,4,17],[2026,4,30],[2026,5,2],[2026,5,6],[2026,5,9]
+    ];
+    const _wd  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const _mo  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const _moF = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const photos = _data.map((c,i)=>{
-      let d=9-i, mon='Jun'; if(d<=0){ d=31+d; mon='May'; }
-      return { id:i+1, name:c[0], loc:c[1], lat:c[2], lng:c[3], time:c[4], day:_days[i%7], dmy:String(d).padStart(2,'0')+' '+mon, type:'photo', fav:(i%4===0) };
+      const [y,mo,d] = _dates[i];
+      return { id:i+1, name:c[0], loc:c[1], lat:c[2], lng:c[3], time:c[4],
+        y, mo, d, day:_wd[new Date(y,mo,d).getDay()],
+        dmy:`${String(d).padStart(2,'0')} ${_mo[mo]}`, monShort:_mo[mo], monFull:_moF[mo], year:y,
+        type:'photo', fav:(i%4===0) };
     });
     // smaller images for cards/thumbnails (fast); HD only for the full viewer
     const imgFor = id => `https://picsum.photos/seed/sb${id}/600/750`;
     const imgHD  = id => `https://picsum.photos/seed/sb${id}/1080/1350`;
-    let active = 0, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1, currentFilter = 'all', searchQuery = '';
+    let active = photos.length-1, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1, currentFilter = 'all', searchQuery = '';
 
     function matchesFilter(p){
       if(searchQuery && !((p.name+' '+p.loc).toLowerCase().includes(searchQuery))) return false;
@@ -496,7 +558,21 @@
       if(currentFilter==='faves')  return !!p.fav;
       return true; // all / photos
     }
-    function searchPhotos(q){ searchQuery=(q||'').trim().toLowerCase(); renderCarousel(); }
+    // ---- helpers so the ruler / autoplay / keyboard only move through the *visible* (filtered) set ----
+    function visibleIdx(){ const r=[]; photos.forEach((p,i)=>{ if(matchesFilter(p)) r.push(i); }); return r; }
+    function nextVisible(from, dir){
+      const vis=visibleIdx(); if(!vis.length) return -1;
+      if(dir>0){ for(const i of vis) if(i>from) return i; return -1; }
+      for(let k=vis.length-1;k>=0;k--) if(vis[k]<from) return vis[k];
+      return -1;
+    }
+    function clampVisible(i){
+      const vis=visibleIdx(); if(!vis.length || vis.includes(i)) return i;
+      let best=vis[0], bd=1e9; for(const v of vis){ const d=Math.abs(v-i); if(d<bd){ bd=d; best=v; } } return best;
+    }
+    // when the filtered set changes, rebuild the ruler and keep the active photo valid + centred
+    function reflowFilter(){ renderCarousel(); renderRuler(); setActive(clampVisible(active)); }
+    function searchPhotos(q){ searchQuery=(q||'').trim().toLowerCase(); reflowFilter(); }
 
     function setView(mode){
       viewMode = mode;
@@ -518,11 +594,17 @@
       }
     }
     // ---- swipe/scroll a reel → sync the active photo (player, timeline, map) ----
-    let _scrollSyncT, _syncing=false;
+    // Per-element locks: when setActive() programmatically scrolls an element, we
+    // briefly ignore THAT element's scroll events so the auto-scroll can't bounce
+    // back and hijack the active photo. The element the user is actively dragging
+    // stays unlocked, so scrubbing keeps updating continuously.
+    let _scrollSyncT, _reelLock=false, _rulerLock=false, _reelLT, _rulerLT;
+    function lockReel(){ _reelLock=true; clearTimeout(_reelLT); _reelLT=setTimeout(()=>{_reelLock=false;},450); }
+    function lockRuler(){ _rulerLock=true; clearTimeout(_rulerLT); _rulerLT=setTimeout(()=>{_rulerLock=false;},450); }
     function onReelScroll(){
       clearTimeout(_scrollSyncT);
       _scrollSyncT=setTimeout(()=>{
-        if(_syncing||playing) return;
+        if(_reelLock||playing) return;
         const cont=document.getElementById('carousel');
         const cr=cont.getBoundingClientRect(), cx=cr.left+cr.width/2, cy=cr.top+cr.height/2;
         let best=-1, bestD=1e9;
@@ -532,13 +614,7 @@
           const d=(viewMode==='horizontal')?Math.abs((r.left+r.width/2)-cx):Math.abs((r.top+r.height/2)-cy);
           if(d<bestD){ bestD=d; best=i; }
         });
-        if(best>=0 && best!==active){
-          _syncing=true;
-          active=best;
-          [...cont.children].forEach((c,j)=>{ c.classList.toggle('ring-4', j===best); c.classList.toggle('ring-primary-theme', j===best); });
-          renderTimeline(); flyToActive(); updateFab(); updateStory();
-          setTimeout(()=>{ _syncing=false; }, 60);
-        }
+        if(best>=0 && best!==active){ setActive(best,'reel'); }
       },130);
     }
 
@@ -550,7 +626,7 @@
       });
       btn.classList.remove('chip','text-accent-blue/80');
       btn.classList.add('bg-primary-theme','text-white','shadow-glow');
-      renderCarousel();
+      reflowFilter();
     }
     // ---- day / night theme ----
     function toggleTheme(){
@@ -565,18 +641,55 @@
         window._tile.bringToBack();
       }
     }
-    function renderTimeline() {
-      document.getElementById('timelineRail').innerHTML = photos.map((p,i)=>`
-        ${i>0?`<span class="mt-3.5 h-1 w-7 shrink-0 self-start overflow-hidden rounded-full bg-accent-grey sm:w-12"><span class="block h-full rounded-full bg-primary-theme" data-seg="${i}" style="width:${i<=active?'100':'0'}%"></span></span>`:''}
-        <button onclick="setActive(${i})" class="flex shrink-0 flex-col items-center gap-1">
-          <span class="grid h-8 w-8 place-items-center rounded-full text-xs font-bold transition ${i<=active?'bg-primary-theme text-white shadow-glow':'border border-accent-grey bg-white text-accent-blue/60 dark:bg-white/5'} ${i===active?'scale-110':''}">${p.dmy.split(' ')[0]}</span>
-          <span class="text-[11px] font-medium ${i===active?'text-primary-theme':'text-accent-blue/50'}">${p.day}</span>
-        </button>`).join('');
-      // animate the connecting line while playing
-      if(playing){
-        if(playDir>0){ const s=document.querySelector('[data-seg="'+(active+1)+'"]'); if(s){ s.style.transition='none'; s.style.width='0%'; requestAnimationFrame(()=>requestAnimationFrame(()=>{ s.style.transition='width '+SLIDE_MS+'ms linear'; s.style.width='100%'; })); } }
-        else { const s=document.querySelector('[data-seg="'+active+'"]'); if(s){ s.style.transition='none'; s.style.width='100%'; requestAnimationFrame(()=>requestAnimationFrame(()=>{ s.style.transition='width '+SLIDE_MS+'ms linear'; s.style.width='0%'; })); } }
-      }
+    // ---- TIMELINE RULER ----
+    function renderRuler(){
+      const rail=document.getElementById('timelineRail');
+      let last='';
+      const vis = photos.map((p,i)=>({p,i})).filter(o=>matchesFilter(o.p));
+      rail.innerHTML = `<div class="rl-spacer"></div>` + vis.map(({p,i})=>{
+        const my=p.monShort+p.year, major=(my!==last); last=my;
+        return `<button data-rt="${i}" onclick="setActive(${i})" aria-label="${p.dmy} ${p.year}" class="rl-tick ${i===active?'active':''}">
+          ${major?`<span class="rl-mon">${p.monShort} '${String(p.year).slice(2)}</span>`:''}
+          <span class="rl-line ${major?'rl-major':''}"></span>
+          <span class="rl-day">${String(p.d).padStart(2,'0')}</span>
+        </button>`;
+      }).join('') + `<div class="rl-spacer"></div>`;
+    }
+    function renderTimelineActive(){
+      document.querySelectorAll('.rl-tick').forEach(t=>t.classList.toggle('active', +t.dataset.rt===active));
+    }
+    // Center the active tick under the playhead. CSS scroll-snap is intentionally
+    // OFF so native smooth scrolling glides cleanly (snap would cancel it).
+    function scrollRulerToActive(behavior, idx){
+      const rail=document.getElementById('timelineRail');
+      const which=(idx==null?active:idx);
+      const tick=rail && rail.querySelector('.rl-tick[data-rt="'+which+'"]'); if(!tick) return;
+      const rr=rail.getBoundingClientRect(), tr=tick.getBoundingClientRect();
+      const target=Math.round(rail.scrollLeft + (tr.left-rr.left) - (rr.width-tr.width)/2);
+      rail.scrollTo({ left: target, behavior: behavior==='auto'?'auto':'smooth' });
+    }
+    let _rulerT;
+    function onRulerScroll(){
+      clearTimeout(_rulerT);
+      _rulerT=setTimeout(()=>{
+        if(_rulerLock||playing) return;
+        const rail=document.getElementById('timelineRail');
+        const rr=rail.getBoundingClientRect(), cx=rr.left+rr.width/2;
+        let best=-1, bestD=1e9;
+        rail.querySelectorAll('.rl-tick').forEach(t=>{
+          const r=t.getBoundingClientRect(); const d=Math.abs((r.left+r.width/2)-cx);
+          if(d<bestD){ bestD=d; best=+t.dataset.rt; }
+        });
+        if(best>=0){
+          if(best!==active) setActive(best,'ruler');
+          // user let go → glide the nearest tick exactly under the playhead
+          lockRuler(); scrollRulerToActive('smooth', best);
+        }
+      },110);
+    }
+    function updateHeaderDate(){
+      const p=photos[active], el=document.getElementById('hdrDate');
+      if(el) el.innerHTML = `${p.monFull} <span class="grad-text">${p.d}</span>, ${p.year}`;
     }
 
     function renderCarousel() {
@@ -630,11 +743,41 @@
       }
     }
 
-    function setActive(i){ active=Math.max(0,Math.min(photos.length-1,i)); renderTimeline(); renderCarousel();
-      scrollActiveIntoView('smooth');
-      flyToActive(); updateFab(); updateStory();
+    function setActive(i, src){
+      active=Math.max(0,Math.min(photos.length-1,i));
+      // reel: move the active ring + scroll into view (unless the reel initiated)
+      const cont=document.getElementById('carousel');
+      if(cont) [...cont.children].forEach((c,j)=>{ c.classList.toggle('ring-4', j===active); c.classList.toggle('ring-primary-theme', j===active); });
+      if(src!=='reel'){ lockReel(); scrollActiveIntoView('smooth'); }
+      // ruler: highlight + scroll to playhead (unless the ruler initiated)
+      renderTimelineActive();
+      if(src!=='ruler'){ lockRuler(); scrollRulerToActive('smooth'); }
+      flyToActive(); updateFab(); updateStory(); updateHeaderDate(); updateNavButtons();
       if(playing) startProgress();   // restart the fill for the new slide
     }
+    // ◀ ▶ ruler jump buttons: click = step one date; press-and-hold = fly fast (accelerating)
+    function updateNavButtons(){
+      const p=document.getElementById('rlPrev'), n=document.getElementById('rlNext');
+      if(p) p.disabled = nextVisible(active,-1)<0;
+      if(n) n.disabled = nextVisible(active,1)<0;
+    }
+    let _holdTO=null, _holdIV=null;
+    function stepActive(dir){
+      const ni=nextVisible(active,dir); if(ni<0) return false;
+      if(playing) togglePlay();        // manual scrubbing pauses autoplay
+      setActive(ni); return true;
+    }
+    function startHold(dir){
+      if(!stepActive(dir)) return;     // first immediate step
+      stopHold();
+      let delay=170;                   // accelerate: each repeat gets a little faster
+      _holdTO=setTimeout(function tick(){
+        if(!stepActive(dir)){ stopHold(); return; }
+        delay=Math.max(55, delay-14);
+        _holdIV=setTimeout(tick, delay);
+      }, 380);
+    }
+    function stopHold(){ clearTimeout(_holdTO); clearTimeout(_holdIV); _holdIV=null; _holdTO=null; }
     function updateFab(){
       const fn=document.getElementById('fabName'); if(fn) fn.textContent=photos[active].name;
       const fi=document.getElementById('fabIdx'); if(fi) fi.textContent=(active+1)+' / '+photos.length;
@@ -644,22 +787,30 @@
     let SLIDE_MS = 2000;
     function startTimer(){
       clearInterval(timer);
-      timer=setInterval(()=>{ let n=active+playDir; if(n<0||n>photos.length-1){ playDir=-playDir; n=active+playDir; } move(playDir); }, SLIDE_MS);
+      timer=setInterval(()=>{
+        let n=nextVisible(active, playDir);          // advance within the visible (filtered) set
+        if(n<0){ playDir=-playDir; n=nextVisible(active, playDir); }   // bounce at the visible ends
+        if(n>=0) move2(n);
+      }, SLIDE_MS);
     }
     function setSpeed(mult){
       SLIDE_MS = Math.round(2000/mult);
       if(playing){ startProgress(); updateStory(); startTimer(); }
     }
+    // animate one element's width/height from 0→100% over the slide duration
+    // (reflow + timeout so it animates even where requestAnimationFrame is throttled)
+    function animFill(el, prop){
+      if(!el) return; el.style.transition='none'; el.style[prop]='0%';
+      void el.offsetWidth;   // force the 0% start to register
+      setTimeout(()=>{ el.style.transition=`${prop} ${SLIDE_MS}ms linear`; el.style[prop]='100%'; }, 20);
+    }
     function startProgress(){
-      const f=document.getElementById('fabProgressFill'); if(!f) return;
-      f.style.transition='none'; f.style.width='0%';
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        f.style.transition=`width ${SLIDE_MS}ms linear`; f.style.width='100%';
-      }));
+      animFill(document.getElementById('fabProgressFill'),'width');   // inline player bar
+      animFill(document.getElementById('phFill'),'height');           // playhead beam doubles as a progress bar
     }
     function stopProgress(){
-      const f=document.getElementById('fabProgressFill'); if(!f) return;
-      f.style.transition='none'; f.style.width='0%';
+      const f=document.getElementById('fabProgressFill'); if(f){ f.style.transition='none'; f.style.width='0%'; }
+      const ph=document.getElementById('phFill'); if(ph){ ph.style.transition='none'; ph.style.height='0%'; }
     }
 
     // ---- story-style progress bars (viewer + timeline) ----
@@ -688,18 +839,21 @@
 
     // ---- play all (Memories) ----
     function playMemories(){ openModal(0); if(!playing) togglePlay(); }
-    function move(d){ setActive(active+d);
+    // go to a specific index + keep the open modal in sync
+    function move2(n){ setActive(n);
       if(!document.getElementById('modal').classList.contains('hidden')){
         document.getElementById('modalImg').src=imgHD(photos[active].id);
         document.getElementById('modalName').textContent=photos[active].name;
         document.getElementById('modalDate').textContent=photos[active].dmy;
       }
     }
+    // step one *visible* photo in a direction (used by swipe / prev-next)
+    function move(d){ const ni=nextVisible(active,d); if(ni>=0) move2(ni); }
     function togglePlay(){ playing=!playing;
       if(playing){
-        // pick direction: at the end → play backward, at the start → forward (ping-pong on replay)
-        if(active>=photos.length-1) playDir=-1;
-        else if(active<=0) playDir=1;
+        // pick direction within the visible set: at the last → backward, at the first → forward (ping-pong)
+        if(nextVisible(active,1)<0) playDir=-1;
+        else if(nextVisible(active,-1)<0) playDir=1;
         startProgress();
         startTimer();
       } else {
@@ -709,7 +863,7 @@
       const top=document.getElementById('playBtnTop'); if(top) top.innerHTML=`<i class="fa fa-${name}"></i>`;
       const fab=document.getElementById('fabPlay'); if(fab) fab.innerHTML=`<i class="fa fa-${name} text-xl"></i>`;
       const mpl=document.getElementById('modalPlay'); if(mpl) mpl.innerHTML=`<i class="fa fa-${name} text-lg"></i>`;
-      updateStory(); renderTimeline();
+      updateStory(); renderTimelineActive();
     }
     function openModal(i){ setActive(i);
       document.getElementById('modalImg').src=imgHD(photos[i].id);
@@ -843,7 +997,7 @@
     });
 
     initMap();
-    renderTimeline(); setView('horizontal'); updateFab(); updateStory();
+    renderRuler(); setView('horizontal'); updateFab(); updateStory(); updateHeaderDate();
     // dynamic counts
     (function(){
       const cc = new Set(photos.map(p=>p.loc.split(', ').pop())).size;
@@ -856,12 +1010,66 @@
     // swipe/scroll a reel updates the active photo
     const _car=document.getElementById('carousel');
     if(_car){ _car.addEventListener('scroll', onReelScroll, {passive:true}); }
-    // on load: show the full single Earth (fills width), highlight first pin (no fly-in)
+    // scrub the timeline ruler → updates the active photo
+    const _rail=document.getElementById('timelineRail');
+    if(_rail){
+      _rail.addEventListener('scroll', onRulerScroll, {passive:true});
+      // mouse-wheel over the ruler scrubs it horizontally
+      _rail.addEventListener('wheel', e=>{
+        const amt = Math.abs(e.deltaX)>Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        if(!amt) return;
+        e.preventDefault();
+        if(playing) togglePlay();
+        _rail.scrollLeft += amt;
+        onRulerScroll();                 // explicit (programmatic scroll doesn't always emit a 'scroll' event)
+      }, {passive:false});
+      // click-drag to grab and scrub (desktop mouse)
+      let _drag=null, _suppressClick=false;
+      _rail.addEventListener('pointerdown', e=>{
+        if(e.button!==0) return;
+        _drag={x:e.clientX, sl:_rail.scrollLeft, moved:false};
+        try{ _rail.setPointerCapture(e.pointerId); }catch(_){}
+      });
+      _rail.addEventListener('pointermove', e=>{
+        if(!_drag) return;
+        const dx=e.clientX-_drag.x;
+        if(!_drag.moved && Math.abs(dx)>3){ _drag.moved=true; _rail.classList.add('dragging'); if(playing) togglePlay(); }
+        if(_drag.moved){ _rail.scrollLeft=_drag.sl-dx; onRulerScroll(); }
+      });
+      const _endDrag=()=>{ if(_drag&&_drag.moved){ _suppressClick=true; setTimeout(()=>{_suppressClick=false;},60); } _drag=null; _rail.classList.remove('dragging'); };
+      _rail.addEventListener('pointerup', _endDrag);
+      _rail.addEventListener('pointercancel', _endDrag);
+      // a real drag shouldn't also "click" the tick under the cursor
+      _rail.addEventListener('click', e=>{ if(_suppressClick){ e.preventDefault(); e.stopPropagation(); } }, true);
+    }
+    // keyboard: ← / → scrub dates, Space play/pause, Home/End jump to first/last
+    document.addEventListener('keydown', e=>{
+      const t=e.target, tag=(t.tagName||'').toLowerCase();
+      if(tag==='input'||tag==='textarea'||tag==='select'||t.isContentEditable) return;
+      if(e.metaKey||e.ctrlKey||e.altKey) return;
+      const vis=visibleIdx();
+      if(e.key==='ArrowLeft'){ e.preventDefault(); stepActive(-1); }
+      else if(e.key==='ArrowRight'){ e.preventDefault(); stepActive(1); }
+      else if(e.key===' '||e.key==='Spacebar'){ e.preventDefault(); togglePlay(); }
+      else if(e.key==='Home'){ e.preventDefault(); if(vis.length){ if(playing) togglePlay(); setActive(vis[0]); } }
+      else if(e.key==='End'){ e.preventDefault(); if(vis.length){ if(playing) togglePlay(); setActive(vis[vis.length-1]); } }
+    });
+    // ◀ ▶ jump buttons: tap to step, hold to fly through dates
+    [['rlPrev',-1],['rlNext',1]].forEach(([id,dir])=>{
+      const b=document.getElementById(id); if(!b) return;
+      b.addEventListener('pointerdown', e=>{ e.preventDefault(); startHold(dir); });
+      ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev, stopHold));
+      b.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); stepActive(dir); } });
+    });
+    window.addEventListener('pointerup', stopHold);
+    updateNavButtons();
+    // on load: show the full single Earth + center the ruler & reel on the active (newest) photo
     setTimeout(()=>{
       sbMap.invalidateSize();
       fitWorld();
       markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, travelBearing(i))));
       markers[active] && markers[active].openPopup();
+      scrollRulerToActive('auto'); scrollActiveIntoView('auto');
     }, 300);
     // keep the world filling the width on resize (when not zoomed into a photo)
     let _wt; window.addEventListener('resize', ()=>{ clearTimeout(_wt); _wt=setTimeout(()=>{ if(sbMap && !playing) { sbMap.invalidateSize(); fitWorld(); } },200); });
