@@ -16,6 +16,7 @@
 
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
@@ -52,6 +53,7 @@
     html.dark .glass { background: rgba(28,36,46,.55); }
     html.dark #modal .bg-white { background:#151b23 !important; }
     html.dark #modal .bg-grey-light { background:#0e141b !important; }
+    #modal { color: var(--c-text); }  /* un-classed modal text follows the theme (fixes dark-mode contrast) */
     .ftr { background:#1c2530; }
     html.dark .ftr { background:#0a0f14; }
     .scrollbar-hide::-webkit-scrollbar { display:none; }
@@ -138,7 +140,7 @@
       <div class="hidden items-center gap-1 text-sm font-medium lg:flex">
         <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-white/70 hover:text-primary-theme">Home</a>
         <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-white/70 hover:text-primary-theme">Circle of Life</a>
-        <a href="#" class="rounded-full bg-white px-3 py-1.5 font-semibold text-primary-theme shadow-soft">Photo</a>
+        <a href="#" class="rounded-full bg-white px-3 py-1.5 font-semibold text-primary-theme shadow-soft dark:bg-white/10">Photo</a>
         <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-white/70 hover:text-primary-theme">Friends</a>
       </div>
 
@@ -477,11 +479,18 @@
     const _days = ['Mon','Sun','Sat','Fri','Thu','Wed','Tue'];
     const photos = _data.map((c,i)=>{
       let d=9-i, mon='Jun'; if(d<=0){ d=31+d; mon='May'; }
-      return { id:i+1, name:c[0], loc:c[1], lat:c[2], lng:c[3], time:c[4], day:_days[i%7], dmy:String(d).padStart(2,'0')+' '+mon };
+      return { id:i+1, name:c[0], loc:c[1], lat:c[2], lng:c[3], time:c[4], day:_days[i%7], dmy:String(d).padStart(2,'0')+' '+mon, type:'photo', fav:(i%4===0) };
     });
-    // HD images
-    const imgFor = id => `https://picsum.photos/seed/sb${id}/1080/1350`;
-    let active = 0, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1;
+    // smaller images for cards/thumbnails (fast); HD only for the full viewer
+    const imgFor = id => `https://picsum.photos/seed/sb${id}/600/750`;
+    const imgHD  = id => `https://picsum.photos/seed/sb${id}/1080/1350`;
+    let active = 0, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1, currentFilter = 'all';
+
+    function matchesFilter(p){
+      if(currentFilter==='videos') return p.type==='video';
+      if(currentFilter==='faves')  return !!p.fav;
+      return true; // all / photos
+    }
 
     function setView(mode){
       viewMode = mode;
@@ -504,12 +513,14 @@
     }
 
     function setFilter(btn){
+      currentFilter = btn.textContent.trim().toLowerCase();   // all / photos / videos / faves
       document.querySelectorAll('[onclick="setFilter(this)"]').forEach(b=>{
         b.classList.remove('bg-primary-theme','text-white','shadow-glow');
         b.classList.add('chip','text-accent-blue/80');
       });
       btn.classList.remove('chip','text-accent-blue/80');
       btn.classList.add('bg-primary-theme','text-white','shadow-glow');
+      renderCarousel();
     }
     // ---- day / night theme ----
     function toggleTheme(){
@@ -528,7 +539,7 @@
       document.getElementById('timelineRail').innerHTML = photos.map((p,i)=>`
         ${i>0?`<span class="mt-3.5 h-1 w-7 shrink-0 self-start overflow-hidden rounded-full bg-accent-grey sm:w-12"><span class="block h-full rounded-full bg-primary-theme" data-seg="${i}" style="width:${i<=active?'100':'0'}%"></span></span>`:''}
         <button onclick="setActive(${i})" class="flex shrink-0 flex-col items-center gap-1">
-          <span class="grid h-8 w-8 place-items-center rounded-full text-xs font-bold transition ${i<=active?'bg-primary-theme text-white shadow-glow':'border border-accent-grey bg-white text-accent-blue/60'} ${i===active?'scale-110':''}">${p.dmy.split(' ')[0]}</span>
+          <span class="grid h-8 w-8 place-items-center rounded-full text-xs font-bold transition ${i<=active?'bg-primary-theme text-white shadow-glow':'border border-accent-grey bg-white text-accent-blue/60 dark:bg-white/5'} ${i===active?'scale-110':''}">${p.dmy.split(' ')[0]}</span>
           <span class="text-[11px] font-medium ${i===active?'text-primary-theme':'text-accent-blue/50'}">${p.day}</span>
         </button>`).join('');
       // animate the connecting line while playing
@@ -542,40 +553,50 @@
       const el = document.getElementById('carousel');
       const desktop = window.matchMedia('(min-width:1024px)').matches;
       const overlay = (p)=>`
-            <img src="${imgFor(p.id)}" class="card-img h-full w-full object-cover" />
+            <img src="${imgFor(p.id)}" alt="${p.name}" loading="lazy" class="card-img h-full w-full object-cover" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"></div>
             <div class="absolute left-3 right-3 top-3 flex items-center justify-between">
               <span class="glass rounded-full px-2.5 py-1 text-[11px] font-semibold text-accent-blue">${p.time}</span>
               <div class="flex gap-1.5 opacity-0 transition group-hover:opacity-100">
-                <button onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-pen"></i></button>
-                <button onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-share-nodes"></i></button>
-                <button onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-trash text-red-300"></i></button>
+                <button aria-label="Edit" onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-pen"></i></button>
+                <button aria-label="Share" onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-share-nodes"></i></button>
+                <button aria-label="Delete" onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-trash text-red-300"></i></button>
               </div>
             </div>
             <div class="absolute bottom-0 left-0 w-full p-3 text-white">
-              <p class="text-base font-bold leading-tight">${p.name}</p>
+              <p class="text-base font-bold leading-tight">${p.name}${p.fav?' <i class=\"fa fa-star text-primary-theme text-[11px]\"></i>':''}</p>
               <div class="mt-1 flex items-center justify-between text-xs text-white/80">
                 <span>${p.dmy} · ${p.day}</span>
                 <span class="flex items-center gap-2"><span><i class="fa fa-heart text-primary-theme"></i> 12</span><span><i class="fa-regular fa-comment"></i> 3</span></span>
               </div>
             </div>`;
+      const a11y = i=>`role="button" tabindex="0" aria-label="${photos[i].name}" onclick="openModal(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openModal(${i});}"`;
+      const hid = p=>matchesFilter(p)?'':'hidden';
       const big = !mapShown; // when map is hidden, show bigger photos
+
+      // empty state when the active filter matches nothing
+      if(!photos.some(matchesFilter)){
+        el.className = 'liquid-light flex items-center justify-center gap-2 rounded-3xl py-12 text-sm font-medium text-accent-blue/60';
+        el.innerHTML = `<i class="fa-regular fa-circle-xmark"></i> No ${currentFilter} on this day.`;
+        return;
+      }
+
       if (viewMode === 'horizontal') {
         // horizontal reel (soft edge fade so partial photos don't look cut)
         el.className = 'maskx snap-x-m flex gap-3 overflow-x-auto px-1 pb-2 scrollbar-hide';
         const sz = big ? 'w-[84vw] aspect-[4/5] sm:aspect-auto sm:h-[34rem] sm:w-[24rem]' : 'h-44 w-36 sm:h-56 sm:w-44';
         el.innerHTML = photos.map((p,i)=>`
-          <div class="snap-c group relative shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-500 ${i===active?'ring-4 ring-primary-theme':'opacity-95 hover:opacity-100'} ${sz}" onclick="openModal(${i})">${overlay(p)}</div>`).join('');
+          <div ${a11y(i)} class="${hid(p)} snap-c group relative shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-500 ${i===active?'ring-4 ring-primary-theme':'opacity-95 hover:opacity-100'} ${sz}">${overlay(p)}</div>`).join('');
       } else if (viewMode === 'vertical') {
         // vertical reel — one photo at a time (TikTok/Reels style)
         el.className = `masky flex ${big?'h-[72vh]':'h-[48vh]'} flex-col gap-3 overflow-y-auto pr-1 boom-scrollbar snap-y snap-mandatory`;
         el.innerHTML = photos.map((p,i)=>`
-          <div class="snap-c group relative w-full shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'opacity-95'} ${big?'h-[70vh]':'h-[46vh]'}" onclick="openModal(${i})">${overlay(p)}</div>`).join('');
+          <div ${a11y(i)} class="${hid(p)} snap-c group relative w-full shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'opacity-95'} ${big?'h-[70vh]':'h-[46vh]'}">${overlay(p)}</div>`).join('');
       } else {
         // grid — bigger cells (fewer columns) when map is off
         el.className = `grid ${big?'max-h-[80vh] grid-cols-1 sm:grid-cols-2':'max-h-[46vh] grid-cols-2 sm:grid-cols-3'} gap-2 overflow-y-auto pr-1 boom-scrollbar sm:gap-3`;
         el.innerHTML = photos.map((p,i)=>`
-          <div class="group relative aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'hover:-translate-y-0.5'}" onclick="openModal(${i})">${overlay(p)}</div>`).join('');
+          <div ${a11y(i)} class="${hid(p)} group relative aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'hover:-translate-y-0.5'}">${overlay(p)}</div>`).join('');
       }
     }
 
@@ -639,7 +660,7 @@
     function playMemories(){ openModal(0); if(!playing) togglePlay(); }
     function move(d){ setActive(active+d);
       if(!document.getElementById('modal').classList.contains('hidden')){
-        document.getElementById('modalImg').src=imgFor(photos[active].id);
+        document.getElementById('modalImg').src=imgHD(photos[active].id);
         document.getElementById('modalName').textContent=photos[active].name;
         document.getElementById('modalDate').textContent=photos[active].dmy;
       }
@@ -661,7 +682,7 @@
       updateStory(); renderTimeline();
     }
     function openModal(i){ setActive(i);
-      document.getElementById('modalImg').src=imgFor(photos[i].id);
+      document.getElementById('modalImg').src=imgHD(photos[i].id);
       document.getElementById('modalName').textContent=photos[i].name;
       document.getElementById('modalDate').textContent=photos[i].dmy;
       document.getElementById('modal').classList.remove('hidden');

@@ -16,7 +16,6 @@
 
   <script>
     tailwind.config = {
-      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
@@ -53,7 +52,6 @@
     html.dark .glass { background: rgba(28,36,46,.55); }
     html.dark #modal .bg-white { background:#151b23 !important; }
     html.dark #modal .bg-grey-light { background:#0e141b !important; }
-    #modal { color: var(--c-text); }  /* un-classed modal text follows the theme (fixes dark-mode contrast) */
     .ftr { background:#1c2530; }
     html.dark .ftr { background:#0a0f14; }
     .scrollbar-hide::-webkit-scrollbar { display:none; }
@@ -100,7 +98,7 @@
     .group:hover .card-img { transform: scale(1.07); }
     /* map markers */
     .sb-pin { display:grid; place-items:center; width:30px; height:30px; border-radius:50% 50% 50% 0;
-      background:#36454f; transform: rotate(-45deg); box-shadow:0 6px 16px rgba(0,0,0,.3); border:2px solid #fff; }
+      background:rgba(54,69,79,.92); transform: rotate(-45deg); box-shadow:0 6px 16px rgba(0,0,0,.22); border:2px solid #fff; }
     .sb-pin i { transform: rotate(45deg); color:#fff; font-size:11px; }
     /* active = directional arrow disc */
     .sb-arrow { position:relative; display:grid; place-items:center; width:46px; height:46px; border-radius:50%;
@@ -111,7 +109,13 @@
     @keyframes ring { 0%{ transform:scale(.8); opacity:.8;} 100%{ transform:scale(1.6); opacity:0;} }
     .leaflet-popup-content { margin:0; font-family:'Plus Jakarta Sans',sans-serif; }
     .leaflet-popup-content-wrapper { border-radius:14px; padding:0; overflow:hidden; }
-    .leaflet-container { border-radius: 2rem; font-family:'Plus Jakarta Sans',sans-serif; }
+    .leaflet-container { border-radius: 2rem; font-family:'Plus Jakarta Sans',sans-serif; background:#b9dce7; }
+    html.dark .leaflet-container { background:#111827; }
+    .map-hub { background:rgba(240,85,64,.92); color:#fff; border:2px solid rgba(255,255,255,.9); border-radius:999px;
+      padding:5px 9px; font-size:11px; font-weight:800; box-shadow:0 10px 26px rgba(240,85,64,.28); backdrop-filter:blur(10px); }
+    @media (max-width: 639px) {
+      #playerWrap { bottom: max(.75rem, env(safe-area-inset-bottom)); }
+    }
   </style>
 </head>
 
@@ -140,7 +144,7 @@
       <div class="hidden items-center gap-1 text-sm font-medium lg:flex">
         <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-white/70 hover:text-primary-theme">Home</a>
         <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-white/70 hover:text-primary-theme">Circle of Life</a>
-        <a href="#" class="rounded-full bg-white px-3 py-1.5 font-semibold text-primary-theme shadow-soft dark:bg-white/10">Photo</a>
+        <a href="#" class="rounded-full bg-white px-3 py-1.5 font-semibold text-primary-theme shadow-soft">Photo</a>
         <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-white/70 hover:text-primary-theme">Friends</a>
       </div>
 
@@ -168,15 +172,15 @@
   </nav>
 
   <!-- ===================== PAGE ===================== -->
-  <main class="mx-auto max-w-7xl px-4 pb-6 pt-6 sm:px-6 sm:pb-8">
+  <main class="mx-auto max-w-7xl px-4 pb-28 pt-6 sm:px-6 sm:pb-8">
 
     <!-- (A) HEADER -->
-    <header class="fade-up mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <header class="fade-up mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <span class="chip inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-light-blue">
           <i class="fa-regular fa-image"></i> Photo · Timeline
         </span>
-        <h1 class="mt-3 text-3xl font-extrabold tracking-tight text-accent-blue sm:text-4xl">
+        <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-accent-blue sm:mt-3 sm:text-4xl">
           June <span class="grad-text">9</span>, 2026
         </h1>
         <p class="mt-1 text-sm text-accent-blue/60">Relive your moments from this day.</p>
@@ -184,16 +188,16 @@
     </header>
 
     <!-- (B2) FILTER CHIPS -->
-    <div class="fade-up mb-6 flex gap-2 overflow-x-auto pb-1 text-sm scrollbar-hide">
-      <button onclick="setFilter(this)" class="shrink-0 rounded-full bg-primary-theme px-4 py-1.5 font-semibold text-white shadow-glow">All</button>
-      <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme">Photos</button>
-      <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme">Videos</button>
-      <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme"><i class="fa fa-star text-primary-theme"></i> Faves</button>
+    <div class="fade-up mb-4 flex gap-2 overflow-x-auto pb-1 text-sm scrollbar-hide sm:mb-6">
+      <button data-filter="all" onclick="setFilter(this)" class="shrink-0 rounded-full bg-primary-theme px-4 py-1.5 font-semibold text-white shadow-glow">All</button>
+      <button data-filter="photo" onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme">Photos</button>
+      <button data-filter="video" onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme">Videos</button>
+      <button data-filter="fave" onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme"><i class="fa fa-star text-primary-theme"></i> Faves</button>
     </div>
 
     <!-- (B3) MEMORIES HIGHLIGHT CARD -->
-    <div class="fade-up mb-6 flex items-center gap-3 overflow-hidden rounded-3xl bg-gradient-to-r from-primary-theme to-primary-red p-4 text-white shadow-glow">
-      <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/20 text-xl"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+    <div class="fade-up mb-4 flex items-center gap-3 overflow-hidden rounded-3xl bg-gradient-to-r from-primary-theme to-primary-red p-3.5 text-white shadow-glow sm:mb-6 sm:p-4">
+      <div class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/20 text-lg sm:h-12 sm:w-12 sm:text-xl"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
       <div class="min-w-0">
         <p class="text-base font-bold leading-tight">Your June journey</p>
         <p id="memoryStats" class="text-xs text-white/85">6 moments · 6 places · 6 countries</p>
@@ -259,7 +263,7 @@
       <div id="carousel"></div>
 
       <!-- PLAYER (inline, right below the photos) -->
-      <div class="mt-4 flex justify-center">
+      <div id="playerWrap" class="fixed inset-x-4 z-40 mt-0 flex justify-center sm:static sm:inset-auto sm:z-auto sm:mt-4">
         <div class="liquid relative flex w-full max-w-md items-center justify-between gap-2 rounded-full p-2 pr-2.5">
           <div class="flex min-w-0 items-center gap-2.5">
             <img id="fabThumb" class="h-12 w-12 shrink-0 rounded-2xl object-cover ring-2 ring-white/30" alt="" />
@@ -479,17 +483,16 @@
     const _days = ['Mon','Sun','Sat','Fri','Thu','Wed','Tue'];
     const photos = _data.map((c,i)=>{
       let d=9-i, mon='Jun'; if(d<=0){ d=31+d; mon='May'; }
-      return { id:i+1, name:c[0], loc:c[1], lat:c[2], lng:c[3], time:c[4], day:_days[i%7], dmy:String(d).padStart(2,'0')+' '+mon, type:'photo', fav:(i%4===0) };
+      return { id:i+1, idx:i, name:c[0], loc:c[1], lat:c[2], lng:c[3], time:c[4], day:_days[i%7], dmy:String(d).padStart(2,'0')+' '+mon,
+        mediaType: i % 5 === 1 ? 'video' : 'photo', fave: [0,3,8,13,18].includes(i) };
     });
-    // smaller images for cards/thumbnails (fast); HD only for the full viewer
-    const imgFor = id => `https://picsum.photos/seed/sb${id}/600/750`;
-    const imgHD  = id => `https://picsum.photos/seed/sb${id}/1080/1350`;
+    // HD images
+    const imgFor = id => `https://picsum.photos/seed/sb${id}/1080/1350`;
     let active = 0, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1, currentFilter = 'all';
-
-    function matchesFilter(p){
-      if(currentFilter==='videos') return p.type==='video';
-      if(currentFilter==='faves')  return !!p.fav;
-      return true; // all / photos
+    function visiblePhotos(){
+      if(currentFilter === 'all') return photos;
+      if(currentFilter === 'fave') return photos.filter(p => p.fave);
+      return photos.filter(p => p.mediaType === currentFilter);
     }
 
     function setView(mode){
@@ -503,7 +506,7 @@
     // center the active card WITHIN the reel container (no page jump)
     function scrollActiveIntoView(behavior){
       const cont=document.getElementById('carousel'); if(!cont) return;
-      const card=cont.children[active]; if(!card) return;
+      const card=cont.querySelector(`[data-photo-id="${photos[active].id}"]`) || cont.children[0]; if(!card) return;
       const cr=cont.getBoundingClientRect(), kr=card.getBoundingClientRect();
       if(viewMode==='horizontal'){
         cont.scrollTo({ left: cont.scrollLeft + (kr.left-cr.left) - (cr.width-kr.width)/2, behavior: behavior||'smooth' });
@@ -513,33 +516,52 @@
     }
 
     function setFilter(btn){
-      currentFilter = btn.textContent.trim().toLowerCase();   // all / photos / videos / faves
+      currentFilter = btn.dataset.filter || 'all';
+      const visible = visiblePhotos();
+      if(visible.length && !visible.some(p => p.idx === active)) active = visible[0].idx;
       document.querySelectorAll('[onclick="setFilter(this)"]').forEach(b=>{
         b.classList.remove('bg-primary-theme','text-white','shadow-glow');
         b.classList.add('chip','text-accent-blue/80');
       });
       btn.classList.remove('chip','text-accent-blue/80');
       btn.classList.add('bg-primary-theme','text-white','shadow-glow');
+      renderTimeline();
       renderCarousel();
+      scrollActiveIntoView('auto');
+      updateFab();
+      updateMarkerVisibility();
+      flyToActive();
     }
     // ---- day / night theme ----
-    function toggleTheme(){
-      const dark = document.documentElement.classList.toggle('dark');
+    const LIGHT_TILE = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+    const DARK_TILE = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    const TILE_OPTIONS = {
+      subdomains: 'abcd',
+      maxZoom: 19,
+      noWrap: true,
+      bounds: [[-85,-180],[85,180]],
+      detectRetina: true,
+      updateWhenIdle: false,
+      attribution: '&copy; OpenStreetMap &copy; CARTO'
+    };
+
+    function applyTheme(dark, persist=true){
+      document.documentElement.classList.toggle('dark', dark);
       const ic = document.getElementById('themeIcon');
       if(ic) ic.className = dark ? 'fa-solid fa-sun' : 'fa-regular fa-moon';
+      if(persist){ try { localStorage.setItem('sb-theme', dark ? 'dark' : 'light'); } catch(e){} }
       if(sbMap){
         if(window._tile) sbMap.removeLayer(window._tile);
-        const url = dark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
-                         : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-        window._tile = L.tileLayer(url, { subdomains:'abcd', maxZoom:19, noWrap:true, bounds:[[-85,-180],[85,180]], attribution:'&copy; OpenStreetMap, &copy; CARTO' }).addTo(sbMap);
+        window._tile = L.tileLayer(dark ? DARK_TILE : LIGHT_TILE, TILE_OPTIONS).addTo(sbMap);
         window._tile.bringToBack();
       }
     }
+    function toggleTheme(){ applyTheme(!document.documentElement.classList.contains('dark')); }
     function renderTimeline() {
       document.getElementById('timelineRail').innerHTML = photos.map((p,i)=>`
         ${i>0?`<span class="mt-3.5 h-1 w-7 shrink-0 self-start overflow-hidden rounded-full bg-accent-grey sm:w-12"><span class="block h-full rounded-full bg-primary-theme" data-seg="${i}" style="width:${i<=active?'100':'0'}%"></span></span>`:''}
         <button onclick="setActive(${i})" class="flex shrink-0 flex-col items-center gap-1">
-          <span class="grid h-8 w-8 place-items-center rounded-full text-xs font-bold transition ${i<=active?'bg-primary-theme text-white shadow-glow':'border border-accent-grey bg-white text-accent-blue/60 dark:bg-white/5'} ${i===active?'scale-110':''}">${p.dmy.split(' ')[0]}</span>
+          <span class="grid h-8 w-8 place-items-center rounded-full text-xs font-bold transition ${i<=active?'bg-primary-theme text-white shadow-glow':'border border-accent-grey bg-white text-accent-blue/60'} ${i===active?'scale-110':''}">${p.dmy.split(' ')[0]}</span>
           <span class="text-[11px] font-medium ${i===active?'text-primary-theme':'text-accent-blue/50'}">${p.day}</span>
         </button>`).join('');
       // animate the connecting line while playing
@@ -553,50 +575,47 @@
       const el = document.getElementById('carousel');
       const desktop = window.matchMedia('(min-width:1024px)').matches;
       const overlay = (p)=>`
-            <img src="${imgFor(p.id)}" alt="${p.name}" loading="lazy" class="card-img h-full w-full object-cover" />
+            <img src="${imgFor(p.id)}" class="card-img h-full w-full object-cover" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"></div>
             <div class="absolute left-3 right-3 top-3 flex items-center justify-between">
               <span class="glass rounded-full px-2.5 py-1 text-[11px] font-semibold text-accent-blue">${p.time}</span>
+              <span class="glass rounded-full px-2.5 py-1 text-[11px] font-semibold text-accent-blue">${p.mediaType==='video' ? '<i class="fa-solid fa-video text-primary-theme"></i>' : (p.fave ? '<i class="fa-solid fa-star text-primary-theme"></i>' : '<i class="fa-regular fa-image"></i>')}</span>
               <div class="flex gap-1.5 opacity-0 transition group-hover:opacity-100">
-                <button aria-label="Edit" onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-pen"></i></button>
-                <button aria-label="Share" onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-share-nodes"></i></button>
-                <button aria-label="Delete" onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-trash text-red-300"></i></button>
+                <button onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-pen"></i></button>
+                <button onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-share-nodes"></i></button>
+                <button onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-trash text-red-300"></i></button>
               </div>
             </div>
             <div class="absolute bottom-0 left-0 w-full p-3 text-white">
-              <p class="text-base font-bold leading-tight">${p.name}${p.fav?' <i class=\"fa fa-star text-primary-theme text-[11px]\"></i>':''}</p>
+              <p class="text-base font-bold leading-tight">${p.name}</p>
               <div class="mt-1 flex items-center justify-between text-xs text-white/80">
                 <span>${p.dmy} · ${p.day}</span>
                 <span class="flex items-center gap-2"><span><i class="fa fa-heart text-primary-theme"></i> 12</span><span><i class="fa-regular fa-comment"></i> 3</span></span>
               </div>
             </div>`;
-      const a11y = i=>`role="button" tabindex="0" aria-label="${photos[i].name}" onclick="openModal(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openModal(${i});}"`;
-      const hid = p=>matchesFilter(p)?'':'hidden';
       const big = !mapShown; // when map is hidden, show bigger photos
-
-      // empty state when the active filter matches nothing
-      if(!photos.some(matchesFilter)){
-        el.className = 'liquid-light flex items-center justify-center gap-2 rounded-3xl py-12 text-sm font-medium text-accent-blue/60';
-        el.innerHTML = `<i class="fa-regular fa-circle-xmark"></i> No ${currentFilter} on this day.`;
+      const shown = visiblePhotos();
+      if(!shown.length){
+        el.className = 'liquid-light rounded-3xl p-8 text-center text-sm text-accent-blue/70';
+        el.innerHTML = `<i class="fa-regular fa-image mb-2 text-2xl text-primary-theme"></i><p class="font-semibold">No moments in this view</p><p class="mt-1 text-xs">Try All or another filter.</p>`;
         return;
       }
-
       if (viewMode === 'horizontal') {
         // horizontal reel (soft edge fade so partial photos don't look cut)
-        el.className = 'maskx snap-x-m flex gap-3 overflow-x-auto px-1 pb-2 scrollbar-hide';
+        el.className = 'maskx snap-x-m flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide scroll-px-8 sm:px-5';
         const sz = big ? 'w-[84vw] aspect-[4/5] sm:aspect-auto sm:h-[34rem] sm:w-[24rem]' : 'h-44 w-36 sm:h-56 sm:w-44';
-        el.innerHTML = photos.map((p,i)=>`
-          <div ${a11y(i)} class="${hid(p)} snap-c group relative shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-500 ${i===active?'ring-4 ring-primary-theme':'opacity-95 hover:opacity-100'} ${sz}">${overlay(p)}</div>`).join('');
+        el.innerHTML = shown.map((p)=>`
+          <div data-photo-id="${p.id}" class="snap-c group relative shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-500 ${p.idx===active?'ring-4 ring-primary-theme':'opacity-95 hover:opacity-100'} ${sz}" onclick="openModal(${p.idx})">${overlay(p)}</div>`).join('');
       } else if (viewMode === 'vertical') {
         // vertical reel — one photo at a time (TikTok/Reels style)
         el.className = `masky flex ${big?'h-[72vh]':'h-[48vh]'} flex-col gap-3 overflow-y-auto pr-1 boom-scrollbar snap-y snap-mandatory`;
-        el.innerHTML = photos.map((p,i)=>`
-          <div ${a11y(i)} class="${hid(p)} snap-c group relative w-full shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'opacity-95'} ${big?'h-[70vh]':'h-[46vh]'}">${overlay(p)}</div>`).join('');
+        el.innerHTML = shown.map((p)=>`
+          <div data-photo-id="${p.id}" class="snap-c group relative w-full shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-300 ${p.idx===active?'ring-4 ring-primary-theme':'opacity-95'} ${big?'h-[70vh]':'h-[46vh]'}" onclick="openModal(${p.idx})">${overlay(p)}</div>`).join('');
       } else {
         // grid — bigger cells (fewer columns) when map is off
         el.className = `grid ${big?'max-h-[80vh] grid-cols-1 sm:grid-cols-2':'max-h-[46vh] grid-cols-2 sm:grid-cols-3'} gap-2 overflow-y-auto pr-1 boom-scrollbar sm:gap-3`;
-        el.innerHTML = photos.map((p,i)=>`
-          <div ${a11y(i)} class="${hid(p)} group relative aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'hover:-translate-y-0.5'}">${overlay(p)}</div>`).join('');
+        el.innerHTML = shown.map((p)=>`
+          <div data-photo-id="${p.id}" class="group relative aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl shadow-card transition duration-300 ${p.idx===active?'ring-4 ring-primary-theme':'hover:-translate-y-0.5'}" onclick="openModal(${p.idx})">${overlay(p)}</div>`).join('');
       }
     }
 
@@ -607,14 +626,23 @@
     }
     function updateFab(){
       const fn=document.getElementById('fabName'); if(fn) fn.textContent=photos[active].name;
-      const fi=document.getElementById('fabIdx'); if(fi) fi.textContent=(active+1)+' / '+photos.length;
+      const visible = visiblePhotos();
+      const pos = Math.max(0, visible.findIndex(p => p.idx === active));
+      const fi=document.getElementById('fabIdx'); if(fi) fi.textContent=(pos+1)+' / '+visible.length;
       const ft=document.getElementById('fabThumb'); if(ft) ft.src=imgFor(photos[active].id);
     }
     // progress bar that fills over each slide's duration
     let SLIDE_MS = 2000;
     function startTimer(){
       clearInterval(timer);
-      timer=setInterval(()=>{ let n=active+playDir; if(n<0||n>photos.length-1){ playDir=-playDir; n=active+playDir; } move(playDir); }, SLIDE_MS);
+      timer=setInterval(()=>{
+        const visible = visiblePhotos();
+        if(visible.length < 2) return;
+        const at = Math.max(0, visible.findIndex(p => p.idx === active));
+        let next = at + playDir;
+        if(next < 0 || next > visible.length-1){ playDir = -playDir; next = at + playDir; }
+        setActive(visible[next].idx);
+      }, SLIDE_MS);
     }
     function setSpeed(mult){
       SLIDE_MS = Math.round(2000/mult);
@@ -657,10 +685,14 @@
     }
 
     // ---- play all (Memories) ----
-    function playMemories(){ openModal(0); if(!playing) togglePlay(); }
-    function move(d){ setActive(active+d);
+    function playMemories(){ const first = visiblePhotos()[0] || photos[0]; openModal(first.idx); if(!playing) togglePlay(); }
+    function move(d){
+      const visible = visiblePhotos();
+      const at = Math.max(0, visible.findIndex(p => p.idx === active));
+      const next = visible[Math.max(0, Math.min(visible.length-1, at+d))] || photos[active+d] || photos[active];
+      setActive(next.idx);
       if(!document.getElementById('modal').classList.contains('hidden')){
-        document.getElementById('modalImg').src=imgHD(photos[active].id);
+        document.getElementById('modalImg').src=imgFor(photos[active].id);
         document.getElementById('modalName').textContent=photos[active].name;
         document.getElementById('modalDate').textContent=photos[active].dmy;
       }
@@ -668,8 +700,10 @@
     function togglePlay(){ playing=!playing;
       if(playing){
         // pick direction: at the end → play backward, at the start → forward (ping-pong on replay)
-        if(active>=photos.length-1) playDir=-1;
-        else if(active<=0) playDir=1;
+        const visible = visiblePhotos();
+        const at = Math.max(0, visible.findIndex(p => p.idx === active));
+        if(at>=visible.length-1) playDir=-1;
+        else if(at<=0) playDir=1;
         startProgress();
         startTimer();
       } else {
@@ -682,7 +716,7 @@
       updateStory(); renderTimeline();
     }
     function openModal(i){ setActive(i);
-      document.getElementById('modalImg').src=imgHD(photos[i].id);
+      document.getElementById('modalImg').src=imgFor(photos[i].id);
       document.getElementById('modalName').textContent=photos[i].name;
       document.getElementById('modalDate').textContent=photos[i].dmy;
       document.getElementById('modal').classList.remove('hidden');
@@ -719,7 +753,7 @@
     let _rt; window.addEventListener('resize', ()=>{ clearTimeout(_rt); _rt=setTimeout(renderCarousel,150); });
 
     /* ============ REAL MAP (Leaflet) ============ */
-    let sbMap, markers = [], routeLine, prevActive = 0, mapLocked = false;
+    let sbMap, markers = [], hubMarkers = [], routeLine, prevActive = 0, mapLocked = false;
 
     // bearing (deg from north) between two coords — for the directional arrow
     function bearing(a, b){
@@ -747,9 +781,9 @@
       popupAnchor: activeFlag ? [0,-26] : [0,-30],
     });
 
-    const popupHTML = (p) => `<div style="position:relative;width:162px;height:120px;overflow:hidden">
-        <img src="${imgFor(p.id)}" style="width:100%;height:100%;object-fit:cover;display:block"/>
-        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.8),rgba(0,0,0,0) 60%)"></div>
+    const popupHTML = (p) => `<div style="position:relative;width:148px;height:112px;overflow:hidden;background:#101820">
+        <img src="${imgFor(p.id)}" style="width:100%;height:100%;object-fit:contain;display:block"/>
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.82),rgba(0,0,0,0) 62%)"></div>
         <div style="position:absolute;left:0;right:0;bottom:0;padding:6px 9px;color:#fff">
           <div style="font-weight:700;font-size:12px;line-height:1.25">${p.name}</div>
           <div style="font-size:10px;opacity:.9">${p.dmy} · ${p.time}</div>
@@ -766,14 +800,23 @@
     function initMap() {
       sbMap = L.map('map', { zoomControl:true, scrollWheelZoom:false, worldCopyJump:false,
         zoomSnap:0, minZoom:1, maxBounds:[[-85,-180],[85,180]], maxBoundsViscosity:0.6 }).setView([20,0], 2);
-      window._tile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19, noWrap: true, bounds:[[-85,-180],[85,180]], attribution: '&copy; OpenStreetMap'
-      }).addTo(sbMap);
+      window._tile = L.tileLayer(document.documentElement.classList.contains('dark') ? DARK_TILE : LIGHT_TILE, TILE_OPTIONS).addTo(sbMap);
 
       // route line connecting locations in order
       const route = photos.map(p => [p.lat, p.lng]);
-      routeLine = L.polyline(route, { color:'#f05540', weight:3, opacity:.75, dashArray:'2 9', lineCap:'round' }).addTo(sbMap);
+      routeLine = L.polyline(route, { color:'#f05540', weight:2, opacity:.38, dashArray:'1 12', lineCap:'round' }).addTo(sbMap);
       fitWorld();
+
+      // lightweight regional badges: gives the 20 pins structure without a heavy cluster plugin
+      [
+        ['Europe', 8, 49, 14],
+        ['Asia', 7, 24, 92],
+        ['Americas', 3, 22, -82],
+        ['Africa', 2, -7, 22],
+      ].forEach(([name,count,lat,lng])=>{
+        const icon=L.divIcon({ className:'', html:`<div class="map-hub">${count} ${name}</div>`, iconSize:[70,26], iconAnchor:[35,13] });
+        hubMarkers.push(L.marker([lat,lng], { icon, interactive:false, opacity:.92 }).addTo(sbMap));
+      });
 
       markers = photos.map((p,i) => {
         const m = L.marker([p.lat, p.lng], { icon: pinIcon(i===active, travelBearing(i)) }).addTo(sbMap);
@@ -781,6 +824,14 @@
         m.on('click', () => setActive(i));
         return m;
       });
+      updateMarkerVisibility();
+    }
+
+    function updateMarkerVisibility(){
+      if(!markers.length) return;
+      const visible = new Set(visiblePhotos().map(p => p.idx));
+      markers.forEach((m,i) => m.setOpacity(visible.has(i) || i === active ? 1 : 0.24));
+      if(routeLine) routeLine.setStyle({ opacity: currentFilter === 'all' ? .38 : .22 });
     }
 
     // fly to active photo's location + highlight + point arrow along travel path
@@ -789,6 +840,7 @@
       const brg = travelBearing(active);
       // arrow + markers always update (even when locked)
       markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, brg)));
+      updateMarkerVisibility();
       const p = photos[active];
       // camera only moves when NOT locked
       if(!mapLocked) sbMap.flyTo([p.lat, p.lng], 5, { duration: 1.1 });
@@ -812,7 +864,10 @@
       badge.classList.toggle('flex', mapLocked);
     });
 
+    const savedTheme = (()=>{ try { return localStorage.getItem('sb-theme'); } catch(e){ return null; } })();
+    if(savedTheme === 'dark') document.documentElement.classList.add('dark');
     initMap();
+    applyTheme(document.documentElement.classList.contains('dark'), false);
     renderTimeline(); setView('horizontal'); updateFab(); updateStory();
     // dynamic counts
     (function(){
