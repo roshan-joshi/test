@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="icon" type="image/png" href="logo.png" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
@@ -21,8 +22,8 @@
         extend: {
           fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
           colors: {
-            'primary-theme': '#f05540',
-            'primary-red': '#dd2f39',
+            'primary-theme': 'var(--brand)',
+            'primary-red': 'var(--brand-2)',
             'accent-blue': 'var(--c-text)',
             'accent-light-blue': 'var(--c-a2)',
             'light-blue': '#2D688F',
@@ -31,7 +32,7 @@
           },
           boxShadow: {
             soft: '0 10px 40px -12px rgba(54,69,79,0.18)',
-            glow: '0 8px 30px -6px rgba(240,85,64,0.45)',
+            glow: '0 8px 30px -6px rgba(var(--brand-glow),0.45)',
             card: '0 18px 50px -16px rgba(54,69,79,0.28)',
           },
           borderRadius: { '4xl': '2rem' },
@@ -41,10 +42,14 @@
   </script>
 
   <style>
-    :root { --c-bg:#f5f6fa; --c-text:#36454f; --c-line:#dfe2ed; --c-a2:#2d688f; }
+    :root {
+      --c-bg:#f5f6fa; --c-text:#36454f; --c-line:#dfe2ed; --c-a2:#2d688f;
+      /* === SystemBoom brand red (single source of truth — tweak here) === */
+      --brand:#D92A20; --brand-2:#AE1C14; --brand-lt:#F87A63; --brand-glow:217,42,32;
+    }
     html.dark { --c-bg:#0e1318; --c-text:#e7ebf2; --c-line:#2a323c; --c-a2:#86b3d6; color-scheme:dark; }
     body { transition: background .4s, color .4s; background:
-      radial-gradient(1200px 500px at 100% -10%, rgba(240,85,64,0.10), transparent 60%),
+      radial-gradient(1200px 500px at 100% -10%, rgba(var(--brand-glow),0.06), transparent 60%),
       radial-gradient(900px 500px at -10% 10%, rgba(45,104,143,0.12), transparent 55%),
       var(--c-bg); }
     /* dark surfaces */
@@ -57,6 +62,54 @@
     .ftr { background:#1c2530; }
     html.dark .ftr { background:#0a0f14; }
     .scrollbar-hide::-webkit-scrollbar { display:none; }
+    /* small red plaque behind the logo — brand anchor on a light bar (the white 3D logo reads on red) */
+    .logo-plaque { background: linear-gradient(160deg, var(--brand) 0%, var(--brand-2) 130%);
+      border-radius: 14px; padding: 7px 11px; box-shadow: 0 5px 16px rgba(var(--brand-glow),.34), inset 0 1px 0 rgba(255,255,255,.25); }
+    @media (min-width:640px){ .logo-plaque{ padding:7px 13px; } }
+    /* mobile: show ONLY the 3D bomb mascot (left slice of logo.png; no wordmark) */
+    .logo-bomb { display:block; height:30px; width:21px;   /* bomb = left 169px of the 1219px logo */
+      background: url(logo.png) left center / auto 30px no-repeat; }
+    /* ===== immersive photo STAGE (shown when the map is OFF) ===== */
+    #photoStage, #stagePlay { display:none; }
+    #stageWrap.stage-on { position:relative; height:74vh; min-height:440px; border-radius:2rem; overflow:hidden;
+      box-shadow:0 18px 50px -16px rgba(54,69,79,.30); }
+    #stageWrap.stage-on #photoStage { display:block; }
+    #stageWrap.stage-on #toolbar, #stageWrap.stage-on #rulerSec { position:absolute; left:14px; right:14px; z-index:20; margin:0; }
+    #stageWrap.stage-on #toolbar { top:16px; flex-wrap:nowrap; }
+    #stageWrap.stage-on #rulerSec { top:70px; }
+    #stageScrim { background:linear-gradient(180deg, rgba(0,0,0,.58) 0%, rgba(0,0,0,.14) 22%, rgba(0,0,0,0) 48%, rgba(0,0,0,.10) 70%, rgba(0,0,0,.66) 100%); }
+    #stagePlay { position:absolute; bottom:20px; right:20px; z-index:25;
+      height:64px; width:64px; place-items:center; border-radius:9999px; color:#fff; font-size:22px; cursor:pointer;
+      background:var(--brand); box-shadow:0 10px 30px rgba(var(--brand-glow),.55), inset 0 1px 0 rgba(255,255,255,.25);
+      transition:transform .15s, filter .2s; }
+    #stageWrap.stage-on #stagePlay { display:grid; }
+    #stagePlay:hover { filter:brightness(1.08); }
+    #stagePlay:active { transform:scale(.9); }
+    #stageImg { cursor:pointer; }
+    /* ===== travel mode badge on the map ===== */
+    .mode-badge { width:36px; height:36px; display:grid; place-items:center; border-radius:50%;
+      background:var(--brand); color:#fff; font-size:15px; border:2px solid #fff;
+      box-shadow:0 3px 12px rgba(var(--brand-glow),.6); animation:phpulse 2.4s ease-in-out infinite; }
+    /* ===== travel records bar ===== */
+    .tv-chip { display:inline-flex; align-items:center; gap:8px; white-space:nowrap; flex:0 0 auto;
+      padding:7px 14px !important; border-radius:9999px; font-weight:600; color:var(--c-text); font-size:13px; }
+    .tv-ic { color:var(--brand); }
+    .tv-sub { opacity:.55; font-weight:500; }
+    #tvTotal { color:var(--brand); font-weight:800; }
+    /* ===== Ken Burns drift on the immersive hero ===== */
+    @keyframes kenburns { from{ transform:scale(1.001) } to{ transform:scale(1.09) translate(-1.5%,-1%) } }
+    #stageWrap.stage-on #stageImg { animation:kenburns 14s ease-out alternate infinite; }
+    /* ===== image loading shimmer (skeleton) ===== */
+    @keyframes shimmer { 0%{ background-position:-180% 0 } 100%{ background-position:180% 0 } }
+    .card-img, #stageImg, #modalImg { background:linear-gradient(100deg,#e7eaf1 28%,#f4f6fa 50%,#e7eaf1 72%); background-size:220% 100%; animation:shimmer 1.5s ease-in-out infinite; }
+    #stageImg, #modalImg { transition:opacity .5s ease; }   /* crossfade between moments */
+    html.dark .card-img, html.dark #stageImg, html.dark #modalImg { background-image:linear-gradient(100deg,#1a222c 28%,#222c38 50%,#1a222c 72%); }
+    /* ===== one-time ruler hint ===== */
+    .rl-hint { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) scale(.96); z-index:30; white-space:nowrap;
+      background:rgba(54,69,79,.94); color:#fff; font-size:12px; font-weight:700; padding:7px 14px; border-radius:9999px;
+      box-shadow:0 8px 22px rgba(0,0,0,.3); opacity:0; transition:opacity .5s, transform .5s; pointer-events:none; }
+    .rl-hint.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+    @media (prefers-reduced-motion: reduce){ .mode-badge, #stageWrap.stage-on #stageImg, .card-img, #stageImg, #modalImg { animation:none !important; } }
     .scrollbar-hide { -ms-overflow-style:none; scrollbar-width:none; }
     .boom-scrollbar::-webkit-scrollbar { width:6px; }
     .boom-scrollbar::-webkit-scrollbar-thumb { background:#cfd5e0; border-radius:9999px; }
@@ -89,7 +142,7 @@
     .rl-bar { position:relative; display:flex; align-items:center; gap:8px; }
     /* soft brand-coral halo behind the centre so "now" reads warm, in both themes */
     .rl-bar::after { content:''; position:absolute; left:50%; top:0; bottom:0; width:96px; transform:translateX(-50%); z-index:0; pointer-events:none;
-      background:radial-gradient(closest-side, rgba(240,85,64,.10), transparent 76%); }
+      background:radial-gradient(closest-side, rgba(var(--brand-glow),.10), transparent 76%); }
     .rl-wrap { position:relative; flex:1 1 auto; min-width:0; z-index:1; }
     .rl-track { display:flex; align-items:flex-end; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
       -webkit-mask-image: linear-gradient(to right, transparent, #000 11%, #000 89%, transparent); mask-image: linear-gradient(to right, transparent, #000 11%, #000 89%, transparent); }
@@ -97,24 +150,38 @@
     .rl-tick { position:relative; flex:0 0 54px; height:58px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:4px; cursor:pointer; background:none; padding-bottom:2px; }
     .rl-line { width:2px; height:10px; background:var(--c-line); border-radius:2px; transition:height .25s, background .25s, width .25s, box-shadow .25s; }
     .rl-major { height:16px; background:var(--c-a2); opacity:.5; }
-    .rl-day { font-size:11px; font-weight:700; color:var(--c-text); opacity:.42; transition:all .25s; }
-    .rl-mon { position:absolute; top:1px; font-size:10px; font-weight:800; letter-spacing:.04em; color:var(--c-a2); white-space:nowrap; transition:color .2s; }
-    .rl-tick:hover .rl-mon, .rl-tick:hover .rl-day { color:#f05540; }   /* hover hint: labels are tappable to jump */
-    .rl-mon-yr { font-weight:900; font-size:10.5px; }                  /* year-boundary label shows the full year */
-    .rl-ydiv { position:absolute; left:-1px; top:8px; bottom:9px; border-left:1px dashed var(--c-a2); opacity:.45; }
-    .rl-tick.active .rl-line { background:#f05540; height:24px; width:3px; box-shadow:0 0 10px 1px rgba(240,85,64,.55); }
-    .rl-tick.active .rl-day { color:#f05540; opacity:1; transform:scale(1.3); }
-    .rl-spacer { flex:0 0 50%; }
+    /* clean YEAR-only scale (the precise day/month lives on the playhead pill + header) */
+    .rl-yr { font-size:11px; font-weight:700; color:var(--c-text); opacity:.42; transition:all .25s; letter-spacing:.01em; }
+    .rl-tick:hover .rl-yr { color:var(--brand); opacity:.85; }   /* hover hint: tap a year to jump there */
+    .rl-ydiv { position:absolute; left:-1px; top:8px; bottom:9px; border-left:1px dashed var(--c-a2); opacity:.4; }
+    /* decade chapters: alternating band tint + a stronger solid divider at decade boundaries */
+    .rl-tick.rl-band { background:rgba(45,104,143,.07); }
+    html.dark .rl-tick.rl-band { background:rgba(255,255,255,.05); }
+    .rl-ydiv-dec { top:4px; bottom:5px; border-left:2px solid var(--c-a2); opacity:.5; }
+    .rl-tick.active .rl-line { background:var(--brand); height:24px; width:3px; box-shadow:0 0 10px 1px rgba(var(--brand-glow),.55); }
+    .rl-tick.active .rl-yr { color:var(--brand); opacity:1; transform:scale(1.18); font-weight:800; }
+    /* narrative bookends fill the empty ends */
+    .rl-spacer { flex:0 0 50%; display:flex; align-items:center; overflow:hidden; }
+    .rl-cap-l { justify-content:flex-end; padding-right:8px; }
+    .rl-cap-r { justify-content:flex-start; padding-left:8px; gap:14px; }
+    .rl-cap { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--c-a2); opacity:.82; white-space:nowrap; }
+    .rl-cap i { color:var(--brand); }
+    .rl-future { font-size:10px; font-style:italic; color:var(--c-text); opacity:.32; white-space:nowrap; }
+    /* date pill riding the playhead = the focused day + month */
+    .rl-pill { position:absolute; left:50%; top:-2px; transform:translateX(-50%); z-index:7; white-space:nowrap;
+      background:var(--brand); color:#fff; font-size:10.5px; font-weight:800; letter-spacing:.02em; padding:3px 10px; border-radius:9999px;
+      box-shadow:0 4px 12px rgba(var(--brand-glow),.5); pointer-events:none; }
+    .rl-pill::after { content:''; position:absolute; left:50%; bottom:-4px; transform:translateX(-50%); border-left:4px solid transparent; border-right:4px solid transparent; border-top:5px solid var(--brand); }
     /* central playhead: brand-coral beam with a diamond marker on top */
     .playhead { position:absolute; left:50%; top:4px; bottom:4px; width:2px; transform:translateX(-50%); z-index:4; pointer-events:none;
-      background:linear-gradient(180deg, rgba(240,85,64,0), #f05540 22%, #dd2f39 78%, rgba(221,47,57,0));
-      box-shadow:0 0 12px 1px rgba(240,85,64,.40); border-radius:2px; }
+      background:linear-gradient(180deg, rgba(var(--brand-glow),0), var(--brand) 22%, var(--brand-2) 78%, rgba(221,47,57,0));
+      box-shadow:0 0 12px 1px rgba(var(--brand-glow),.40); border-radius:2px; }
     .ph-star { position:absolute; top:-5px; left:50%; width:12px; height:12px; transform:translate(-50%,0) rotate(45deg);
-      background:linear-gradient(135deg,#ff7a5f,#f05540); border-radius:3px; box-shadow:0 0 12px 1px rgba(240,85,64,.55); animation:phpulse 2.2s ease-in-out infinite; z-index:1; }
-    @keyframes phpulse { 0%,100%{ box-shadow:0 0 10px 1px rgba(240,85,64,.45) } 50%{ box-shadow:0 0 16px 3px rgba(240,85,64,.7) } }
+      background:linear-gradient(135deg,var(--brand-lt),var(--brand)); border-radius:3px; box-shadow:0 0 12px 1px rgba(var(--brand-glow),.55); animation:phpulse 2.2s ease-in-out infinite; z-index:1; }
+    @keyframes phpulse { 0%,100%{ box-shadow:0 0 10px 1px rgba(var(--brand-glow),.45) } 50%{ box-shadow:0 0 16px 3px rgba(var(--brand-glow),.7) } }
     /* during autoplay this brighter beam fills top→bottom = time until the next photo */
     .ph-fill { position:absolute; left:50%; top:0; width:4px; height:0%; transform:translateX(-50%); border-radius:3px;
-      background:linear-gradient(180deg,#fff,#ffb199); box-shadow:0 0 10px 2px rgba(255,255,255,.65); }
+      background:linear-gradient(180deg,#fff,var(--brand-lt)); box-shadow:0 0 10px 2px rgba(255,255,255,.65); }
     /* grab cursor so desktop mouse users know the ruler is draggable */
     .rl-track { cursor:grab; }
     .rl-track.dragging { cursor:grabbing; }
@@ -122,7 +189,7 @@
     .rl-nav { flex:0 0 auto; z-index:2; width:38px; height:38px; display:grid; place-items:center; border-radius:50%; cursor:pointer;
       color:var(--c-a2); font-size:13px; background:var(--c-bg); border:1px solid var(--c-line);
       box-shadow:0 2px 8px rgba(54,69,79,.10); transition:transform .14s, background .2s, color .2s, box-shadow .2s, border-color .2s; }
-    .rl-nav:hover:not(:disabled) { background:#f05540; color:#fff; border-color:#f05540; box-shadow:0 6px 18px rgba(240,85,64,.40); }
+    .rl-nav:hover:not(:disabled) { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 6px 18px rgba(var(--brand-glow),.40); }
     .rl-nav:active:not(:disabled) { transform:scale(.86); }
     .rl-nav:disabled { opacity:.35; cursor:default; box-shadow:none; }
     html.dark .rl-nav { box-shadow:0 2px 8px rgba(0,0,0,.4); }
@@ -130,18 +197,23 @@
     /* the nav buttons sit at the panel edges → anchor their tooltips inward so they stay on-screen */
     #rlPrev::after { left:0; transform:translateX(0) translateY(-4px); }
     #rlPrev:hover::after { transform:translateX(0) translateY(0); }
-    #rlNext::after { left:auto; right:0; transform:translateX(0) translateY(-4px); }
-    #rlNext:hover::after { transform:translateX(0) translateY(0); }
+    #rlNext::after, #rlLatest::after { left:auto; right:0; transform:translateX(0) translateY(-4px); }
+    #rlNext:hover::after, #rlLatest:hover::after { transform:translateX(0) translateY(0); }
+    /* favorite marker dot on the ruler tick */
+    .rl-fav { position:absolute; top:24px; left:50%; transform:translateX(-50%); width:5px; height:5px; border-radius:50%;
+      background:linear-gradient(135deg,var(--brand-lt),var(--brand)); box-shadow:0 0 6px 1px rgba(var(--brand-glow),.55); }
+    .rl-tick.active .rl-fav { box-shadow:0 0 9px 2px rgba(var(--brand-glow),.9); }
     /* soft edge fades so partially-scrolled photos don't look hard-cut */
     .maskx { -webkit-mask-image: linear-gradient(to right, transparent, #000 26px, #000 calc(100% - 26px), transparent); mask-image: linear-gradient(to right, transparent, #000 26px, #000 calc(100% - 26px), transparent); }
     .masky { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 18px, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
     /* circular progress ring around the active date number (story-style) */
     @property --p { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
     .ring { width: 42px; height: 42px; border-radius: 50%; padding: 3px; display: grid; place-items: center;
-      background: conic-gradient(#f05540 var(--p), #e2e6ee 0deg); transition: transform .25s; }
+      background: conic-gradient(var(--brand) var(--p), #e2e6ee 0deg); transition: transform .25s; }
     .snap-x-m { scroll-snap-type: x mandatory; }
     .snap-c { scroll-snap-align: center; }
-    .grad-text { background: linear-gradient(95deg,#f05540,#dd2f39); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .grad-text { background: linear-gradient(95deg,var(--brand),var(--brand-2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
     .fade-up { animation: fadeUp .6s cubic-bezier(.2,.7,.2,1) both; }
     @keyframes fadeUp { from { opacity:0; transform: translateY(14px);} to {opacity:1; transform:none;} }
     /* respect users who prefer reduced motion: drop entrance/pulse/looping animations */
@@ -161,9 +233,9 @@
     html.dark .sb-dot { background:#cfd6de; border-color:rgba(0,0,0,.5); }
     /* active = directional arrow disc */
     .sb-arrow { position:relative; display:grid; place-items:center; width:46px; height:46px; border-radius:50%;
-      background:#f05540; border:3px solid #fff; box-shadow:0 8px 22px rgba(240,85,64,.55); animation: pinPulse 1.4s infinite; }
+      background:var(--brand); border:3px solid #fff; box-shadow:0 8px 22px rgba(var(--brand-glow),.55); animation: pinPulse 1.4s infinite; }
     .sb-arrow .arw { color:#fff; font-size:20px; transition: transform .5s cubic-bezier(.2,.7,.2,1); transform: rotate(var(--brg,0deg)); }
-    .sb-arrow::after { content:''; position:absolute; inset:-6px; border-radius:50%; border:2px solid rgba(240,85,64,.45); animation: ring 1.6s infinite; }
+    .sb-arrow::after { content:''; position:absolute; inset:-6px; border-radius:50%; border:2px solid rgba(var(--brand-glow),.45); animation: ring 1.6s infinite; }
     @keyframes pinPulse { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-6px);} }
     @keyframes ring { 0%{ transform:scale(.8); opacity:.8;} 100%{ transform:scale(1.6); opacity:0;} }
     .leaflet-popup-content { margin:0; font-family:'Plus Jakarta Sans',sans-serif; }
@@ -174,31 +246,27 @@
 
 <body class="font-sans text-accent-blue antialiased">
 
-  <!-- ===================== NAVBAR (v2) ===================== -->
-  <nav class="liquid-light sticky top-0 z-50">
-    <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2.5 sm:px-6 sm:gap-4">
-      <!-- logo -->
-      <a href="#" class="flex shrink-0 select-none items-center" aria-label="Systemboom home">
-        <span class="grid h-11 w-11 place-items-center overflow-hidden rounded-2xl chip shadow-soft md:hidden">
-          <span class="block h-9 w-[26px] overflow-hidden">
-            <img src="logo.png" class="h-9 w-auto max-w-none object-left" alt="Systemboom" />
-          </span>
-        </span>
-        <img src="logo.png" class="hidden h-8 w-auto md:block" alt="Systemboom" />
+  <!-- ===================== NAVBAR (brand red) ===================== -->
+  <nav class="liquid-light relative sticky top-0 z-50">
+    <div class="relative mx-auto flex max-w-7xl items-center gap-3 px-4 py-2.5 sm:px-6 sm:gap-4">
+      <!-- 3D logo on a small red plaque (brand anchor, not a full-red bar) -->
+      <a href="#" class="logo-plaque flex shrink-0 select-none items-center" aria-label="Systemboom home">
+        <span class="logo-bomb sm:hidden" role="img" aria-label="Systemboom"></span>          <!-- mobile: bomb mark -->
+        <img src="logo.png" class="hidden h-7 w-auto sm:block" alt="Systemboom" />              <!-- desktop: full logo -->
       </a>
 
       <!-- search (desktop) -->
       <label class="chip hidden max-w-md flex-1 items-center gap-2.5 rounded-full px-4 py-2 text-sm md:flex">
         <i class="fa-solid fa-magnifying-glass text-accent-blue/45"></i>
-        <input oninput="searchPhotos(this.value)" class="w-full bg-transparent outline-none placeholder:text-accent-blue/40" placeholder="Search photos, people, places…" />
+        <input oninput="searchPhotos(this.value)" class="w-full bg-transparent text-accent-blue outline-none placeholder:text-accent-blue/40" placeholder="Search photos, people, places…" />
       </label>
 
       <!-- nav links (desktop) -->
       <div class="hidden items-center gap-1 text-sm font-medium lg:flex">
-        <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-white/70 hover:text-primary-theme">Home</a>
-        <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-white/70 hover:text-primary-theme">Circle of Life</a>
+        <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-grey-light hover:text-primary-theme">Home</a>
+        <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-grey-light hover:text-primary-theme">Circle of Life</a>
         <a href="#" class="rounded-full bg-white px-3 py-1.5 font-semibold text-primary-theme shadow-soft dark:bg-white/10">Photo</a>
-        <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-white/70 hover:text-primary-theme">Friends</a>
+        <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-grey-light hover:text-primary-theme">Friends</a>
       </div>
 
       <!-- right actions -->
@@ -206,18 +274,18 @@
         <button class="hidden items-center gap-2 rounded-full bg-primary-theme px-4 py-2 text-sm font-semibold text-white shadow-glow transition hover:brightness-110 active:scale-95 md:flex">
           <i class="fa-solid fa-plus"></i> Upload
         </button>
-        <button aria-label="Messages" class="hidden h-10 w-10 place-items-center rounded-full text-accent-blue/60 transition hover:bg-white hover:text-primary-theme md:grid">
+        <button aria-label="Messages" class="hidden h-10 w-10 place-items-center rounded-full text-accent-blue/60 transition hover:bg-grey-light hover:text-primary-theme md:grid">
           <i class="fa-regular fa-comment-dots"></i>
         </button>
-        <button id="themeBtn" onclick="toggleTheme()" aria-label="Day / night mode" class="grid h-10 w-10 place-items-center rounded-full text-accent-blue/60 transition hover:bg-white hover:text-primary-theme">
+        <button id="themeBtn" onclick="toggleTheme()" aria-label="Day / night mode" class="grid h-10 w-10 place-items-center rounded-full text-accent-blue/60 transition hover:bg-grey-light hover:text-primary-theme">
           <i id="themeIcon" class="fa-regular fa-moon"></i>
         </button>
-        <button aria-label="Notifications" class="relative grid h-10 w-10 place-items-center rounded-full text-accent-blue/60 transition hover:bg-white hover:text-primary-theme">
+        <button aria-label="Notifications" class="relative grid h-10 w-10 place-items-center rounded-full text-accent-blue/60 transition hover:bg-grey-light hover:text-primary-theme">
           <i class="fa-regular fa-bell"></i>
           <span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary-theme ring-2 ring-white"></span>
         </button>
         <button class="flex items-center gap-1.5">
-          <img class="h-9 w-9 rounded-full object-cover ring-2 ring-primary-theme/70" src="https://i.pravatar.cc/80?img=12" alt="me" />
+          <img class="h-9 w-9 rounded-full object-cover ring-2 ring-primary-theme/40" src="https://i.pravatar.cc/80?img=12" alt="me" />
           <i class="fa-solid fa-chevron-down hidden text-xs text-accent-blue/50 md:block"></i>
         </button>
       </div>
@@ -248,20 +316,34 @@
       <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme"><i class="fa fa-star text-primary-theme"></i> Faves</button>
     </div>
 
-    <!-- (B3) MEMORIES HIGHLIGHT CARD -->
-    <div class="fade-up mb-6 flex items-center gap-3 overflow-hidden rounded-3xl bg-gradient-to-r from-primary-theme to-primary-red p-4 text-white shadow-glow">
-      <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/20 text-xl"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+    <!-- (B3) MEMORIES HIGHLIGHT CARD — glass, content-forward; red only on the icon + Play -->
+    <div class="fade-up liquid-light mb-6 flex items-center gap-3 overflow-hidden rounded-3xl p-4">
+      <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary-theme to-primary-red text-xl text-white shadow-glow"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
       <div class="min-w-0">
-        <p class="text-base font-bold leading-tight">Your June journey</p>
-        <p id="memoryStats" class="text-xs text-white/85">6 moments · 6 places · 6 countries</p>
+        <p class="text-base font-bold leading-tight text-accent-blue">Your life journey</p>
+        <p id="memoryStats" class="text-xs text-accent-blue/60">a lifetime of moments</p>
       </div>
-      <button onclick="playMemories()" class="ml-auto shrink-0 rounded-full bg-white px-4 py-2 text-sm font-bold text-primary-theme shadow transition hover:brightness-95 active:scale-95">
+      <button onclick="playMemories()" class="ml-auto shrink-0 rounded-full bg-primary-theme px-4 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-95">
         <i class="fa fa-play"></i> Play all
       </button>
     </div>
 
-    <!-- (B4) UNIFIED TOOLBAR (above the map) -->
-    <div class="fade-up mb-3 flex flex-wrap items-center justify-between gap-2">
+    <!-- (B4) STAGE WRAP — toolbar + ruler. When the map is OFF this turns into a big hero photo
+         with the toolbar + ruler floating over the top and a floating play/pause at the bottom. -->
+    <div id="stageWrap" class="relative">
+
+      <!-- hero photo (only visible when the map is off) -->
+      <div id="photoStage" class="absolute inset-0 z-0 overflow-hidden rounded-4xl">
+        <img id="stageImg" class="h-full w-full object-cover" alt="" onclick="openModal(active)" onerror="this.onerror=null;this.src='https://picsum.photos/seed/life'+(this.dataset.id||1)+'/1080/1350'" />
+        <div id="stageScrim" class="pointer-events-none absolute inset-0"></div>
+        <div class="pointer-events-none absolute bottom-6 left-6 right-[96px] z-10 text-white">
+          <p id="stageName" class="text-2xl font-extrabold drop-shadow-[0_2px_8px_rgba(0,0,0,.6)]"></p>
+          <p id="stageMeta" class="mt-0.5 text-sm font-medium text-white/85 drop-shadow-[0_1px_4px_rgba(0,0,0,.6)]"></p>
+        </div>
+      </div>
+
+      <!-- UNIFIED TOOLBAR -->
+      <div id="toolbar" class="fade-up mb-3 flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <!-- map enable / disable -->
         <button id="mapBtn" onclick="toggleMap()" data-tip="Show / hide map" class="tip flex items-center gap-2 rounded-full bg-primary-theme px-3.5 py-2 text-sm font-semibold text-white shadow-glow transition active:scale-95">
@@ -286,17 +368,32 @@
       </div>
     </div>
 
+      <!-- TRAVEL RECORDS — distance roamed + how the latest move happened -->
+      <div id="travelBar" class="fade-up mb-3 flex flex-wrap items-center gap-2 text-sm">
+        <span class="liquid-light tv-chip" data-tip="Distance roamed so far" title="Distance roamed so far"><i class="fa-solid fa-earth-asia tv-ic"></i><b id="tvTotal">0 km</b><span class="tv-sub">roamed</span></span>
+        <span class="liquid-light tv-chip"><i class="fa-solid fa-cake-candles tv-ic"></i><span id="tvAge">Newborn</span></span>
+        <span class="liquid-light tv-chip"><i id="tvHopIcon" class="fa-solid fa-baby tv-ic"></i><span id="tvHop">Born here</span></span>
+      </div>
+
     <!-- TIMELINE RULER (scrubber) — drag/scroll to scrub, hold ◀ ▶ to fly through dates; the playhead marks the active photo -->
-    <section class="fade-up mb-3">
+    <section id="rulerSec" class="fade-up mb-3">
       <div class="liquid-light rl-bar rounded-[26px] px-2 py-2.5 sm:px-3">
+        <div class="rl-hint" id="rlHint">✦ Drag the ruler to travel through time</div>
         <button id="rlPrev" class="rl-nav tip" data-tip="Earlier — hold to rewind" aria-label="Go to an earlier date"><i class="fa fa-chevron-left"></i></button>
         <div class="rl-wrap">
           <div id="timelineRail" class="rl-track"></div>
-          <div class="playhead"><span class="ph-fill" id="phFill"></span><span class="ph-star"></span></div>
+          <div class="playhead"><span class="ph-fill" id="phFill"></span></div>
+          <div class="rl-pill" id="rlPill">09 Jun</div>
         </div>
         <button id="rlNext" class="rl-nav tip" data-tip="Later — hold to fast-forward" aria-label="Go to a later date"><i class="fa fa-chevron-right"></i></button>
+        <button id="rlLatest" class="rl-nav tip" data-tip="Jump to latest" aria-label="Jump to the most recent photo"><i class="fa fa-angles-right"></i></button>
       </div>
+      <div id="srLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
     </section>
+
+      <!-- floating play/pause (only when the map is off) -->
+      <button id="stagePlay" onclick="togglePlay()" aria-label="Play / pause"><i class="fa fa-play"></i></button>
+    </div><!-- /stageWrap -->
 
     <!-- (C) MAP PANEL (real Leaflet map) -->
     <section id="mapPanel" class="fade-up relative mb-4 h-[28vh] w-full overflow-hidden rounded-4xl shadow-card transition-all duration-500 sm:h-[34vh]">
@@ -315,7 +412,7 @@
     </section>
 
     <!-- (D) PHOTOS -->
-    <section>
+    <section id="photosSec">
       <div class="mb-3 hidden sm:block">
         <h2 class="text-lg font-bold text-accent-blue">Photos</h2>
       </div>
@@ -326,7 +423,7 @@
       <div class="mt-4 flex justify-center">
         <div class="liquid relative flex w-full max-w-md items-center justify-between gap-2 rounded-full p-2 pr-2.5">
           <div class="flex min-w-0 items-center gap-2.5">
-            <img id="fabThumb" class="h-12 w-12 shrink-0 rounded-2xl object-cover ring-2 ring-white/30" alt="" />
+            <img id="fabThumb" class="h-12 w-12 shrink-0 rounded-2xl object-cover ring-2 ring-white/30" alt="" onerror="this.onerror=null;this.src='https://picsum.photos/seed/life'+(photos[active]?photos[active].id:1)+'/600/750'" />
             <div class="min-w-0 leading-tight">
               <p id="fabName" class="truncate text-sm font-bold text-white">Kathmandu trek</p>
               <p id="fabIdx" class="text-xs font-medium text-white/60">1 / 6</p>
@@ -353,7 +450,7 @@
 
       <!-- LEFT media -->
       <div id="mediaPane" class="relative h-[45%] w-full overflow-hidden bg-black sm:h-full sm:w-[68%]">
-        <img id="modalImg" class="h-full w-full object-cover" src="" alt="" />
+        <img id="modalImg" class="h-full w-full object-cover" src="" alt="" onerror="this.onerror=null;this.src='https://picsum.photos/seed/life'+(photos[active]?photos[active].id:1)+'/1080/1350'" />
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20"></div>
         <!-- story progress bars -->
         <div id="storyBars" class="absolute left-3 right-16 top-3 z-20 flex gap-1"></div>
@@ -361,7 +458,7 @@
         <!-- caption -->
         <div class="absolute bottom-24 left-0 w-full px-6 text-center text-white sm:bottom-28">
           <p id="modalDate" class="text-3xl font-extrabold uppercase tracking-wide drop-shadow sm:text-5xl">09 Jun</p>
-          <p class="text-lg font-semibold opacity-90 sm:text-2xl">2026</p>
+          <p id="modalYear" class="text-lg font-semibold opacity-90 sm:text-2xl">2026</p>
           <p id="modalName" class="mt-1 text-base font-medium opacity-90 sm:text-lg">Morning hike</p>
         </div>
 
@@ -388,10 +485,10 @@
               <div>
                 <h3 class="font-bold leading-tight">Roshan Joshi</h3>
                 <div class="flex items-center gap-2 text-xs text-accent-blue/50">
-                  <span>2 hours ago</span>
+                  <span id="modalAgo">2 hours ago</span>
                   <i class="fas fa-globe-americas" title="Public"></i>
                 </div>
-                <p class="mt-0.5 text-xs text-accent-blue/50"><i class="fa fa-location-dot mr-1"></i>Kathmandu, Nepal</p>
+                <p id="modalLoc" class="mt-0.5 text-xs text-accent-blue/50"><i class="fa fa-location-dot mr-1"></i>Kathmandu, Nepal</p>
               </div>
             </div>
             <button class="grid h-8 w-8 place-items-center rounded-full text-accent-blue/40 hover:bg-grey-light"><i class="fa fa-ellipsis"></i></button>
@@ -399,8 +496,9 @@
 
           <!-- title/desc -->
           <div class="mt-4">
-            <h2 class="text-lg font-bold text-accent-light-blue">Morning hike</h2>
-            <p class="mt-1 text-sm text-accent-blue/80">Caught a beautiful sunrise on the trail today. 🌄</p>
+            <h2 id="modalTitle" class="text-lg font-bold text-accent-light-blue">Morning hike</h2>
+            <p id="modalAge" class="mt-0.5 text-xs font-semibold text-primary-theme"></p>
+            <p id="modalDesc" class="mt-1.5 text-sm text-accent-blue/80">Caught a beautiful sunrise on the trail today. 🌄</p>
           </div>
 
           <!-- counters -->
@@ -427,14 +525,14 @@
               <img class="h-8 w-8 rounded-full object-cover" src="https://i.pravatar.cc/60?img=32" />
               <div class="rounded-2xl rounded-tl-sm bg-grey-light px-3 py-2">
                 <p class="text-xs font-bold">Alice Sharma</p>
-                <p class="text-sm">Stunning view! 😍</p>
+                <p class="text-sm">Such a beautiful memory 💛</p>
               </div>
             </div>
             <div class="flex gap-2">
               <img class="h-8 w-8 rounded-full object-cover" src="https://i.pravatar.cc/60?img=45" />
               <div class="rounded-2xl rounded-tl-sm bg-grey-light px-3 py-2">
                 <p class="text-xs font-bold">Bob Thapa</p>
-                <p class="text-sm">Where is this? 🏔️</p>
+                <p class="text-sm">Time really does fly 🥹</p>
               </div>
             </div>
           </div>
@@ -518,47 +616,103 @@
 
   <!-- ===================== SCRIPT ===================== -->
   <script>
+    // A life in moments — childhood → adulthood (name, place, lat, lng, time of day)
     const _data = [
-      ['Himalayan sunrise','Kathmandu, Nepal',27.7172,85.3240,'06:45 AM'],
-      ['Neon Tokyo','Tokyo, Japan',35.6762,139.6503,'08:10 PM'],
-      ['Desert skyline','Dubai, UAE',25.2048,55.2708,'01:15 PM'],
-      ['Eiffel evening','Paris, France',48.8566,2.3522,'10:30 AM'],
-      ['NYC streets','New York, USA',40.7128,-74.0060,'04:50 PM'],
-      ['Sydney harbour','Sydney, Australia',-33.8688,151.2093,'07:20 AM'],
-      ['London fog','London, UK',51.5074,-0.1278,'09:05 AM'],
-      ['Roman holiday','Rome, Italy',41.9028,12.4964,'12:40 PM'],
-      ['Pyramids dawn','Cairo, Egypt',30.0444,31.2357,'05:30 AM'],
-      ['Rio nights','Rio de Janeiro, Brazil',-22.9068,-43.1729,'09:45 PM'],
-      ['Table Mountain','Cape Town, South Africa',-33.9249,18.4241,'03:10 PM'],
-      ['Bangkok temples','Bangkok, Thailand',13.7563,100.5018,'11:25 AM'],
-      ['Bosphorus blue','Istanbul, Turkey',41.0082,28.9784,'02:00 PM'],
-      ['Marina bay','Singapore, Singapore',1.3521,103.8198,'08:55 PM'],
-      ['Red Square','Moscow, Russia',55.7558,37.6173,'01:30 PM'],
-      ['CN Tower','Toronto, Canada',43.6532,-79.3832,'06:15 PM'],
-      ['Gaudí morning','Barcelona, Spain',41.3851,2.1734,'10:10 AM'],
-      ['Marine drive','Mumbai, India',19.0760,72.8777,'07:00 PM'],
-      ['Aurora night','Reykjavik, Iceland',64.1466,-21.9426,'11:50 PM'],
-      ['Bali rice fields','Bali, Indonesia',-8.4095,115.1889,'06:30 AM'],
+      ['The day I was born','Pokhara, Nepal',28.2096,83.9856,'05:20 AM'],
+      ['My first birthday','Pokhara, Nepal',28.2096,83.9856,'11:00 AM'],
+      ['First wobbly steps','Pokhara, Nepal',28.2096,83.9856,'04:30 PM'],
+      ['First day of school','Kathmandu, Nepal',27.7172,85.3240,'08:00 AM'],
+      ['Summer at grandma\'s','Chitwan, Nepal',27.5291,84.3542,'06:45 PM'],
+      ['Learning to ride a bike','Kathmandu, Nepal',27.7172,85.3240,'05:10 PM'],
+      ['The school football team','Kathmandu, Nepal',27.7050,85.3140,'03:30 PM'],
+      ['Family road trip','Mustang, Nepal',28.9985,83.8473,'09:15 AM'],
+      ['School graduation','Kathmandu, Nepal',27.7172,85.3240,'10:00 AM'],
+      ['New Year with friends','Kathmandu, Nepal',27.7000,85.3330,'08:40 PM'],
+      ['Off to university','Pune, India',18.5204,73.8567,'07:50 AM'],
+      ['Backpacking across Europe','Rome, Italy',41.9028,12.4964,'01:20 PM'],
+      ['Graduation day','Pune, India',18.5204,73.8567,'11:30 AM'],
+      ['My very first job','Bengaluru, India',12.9716,77.5946,'09:00 AM'],
+      ['Everest Base Camp trek','Khumbu, Nepal',27.9881,86.9250,'06:30 AM'],
+      ['My first apartment','Bengaluru, India',12.9716,77.5946,'06:00 PM'],
+      ['The proposal','Pokhara, Nepal',28.2096,83.9856,'05:45 PM'],
+      ['Our wedding day','Kathmandu, Nepal',27.7172,85.3240,'04:00 PM'],
+      ['Our first home','Lalitpur, Nepal',27.6588,85.3247,'12:30 PM'],
+      ['Welcoming our daughter','Kathmandu, Nepal',27.7172,85.3240,'02:10 AM'],
     ];
-    // real chronological dates (oldest → newest) spanning months & a year boundary
+    // dates the moments happened — oldest → newest, every one on/before today (no future)
     const _dates = [
-      [2025,9,5],[2025,9,23],[2025,10,8],[2025,10,27],[2025,11,11],[2025,11,29],
-      [2026,0,9],[2026,0,24],[2026,1,7],[2026,1,21],[2026,2,6],[2026,2,22],
-      [2026,3,4],[2026,3,19],[2026,4,3],[2026,4,17],[2026,4,30],[2026,5,2],[2026,5,6],[2026,5,9]
+      [1990,7,7],[1991,7,7],[1993,2,15],[1995,3,1],[1997,6,20],[1999,4,10],
+      [2001,10,3],[2003,9,18],[2006,5,30],[2008,11,31],[2010,7,14],[2013,6,25],
+      [2014,4,20],[2015,8,12],[2017,3,8],[2019,1,18],[2021,8,9],[2022,9,17],
+      [2024,5,5],[2026,2,21]
     ];
     const _wd  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     const _mo  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const _moF = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    // image keywords per life stage → real themed photos (LoremFlickr, deterministic via lock)
+    const _kw = ['baby,newborn','baby,birthday,cake','toddler,baby','child,school,backpack',
+      'child,countryside,village','child,bicycle','kids,soccer,team','family,roadtrip,car',
+      'graduation,school,students','friends,party,celebration','student,university,campus',
+      'backpacker,europe,travel','graduation,gown,university','office,work,desk',
+      'himalaya,trekking,mountain','apartment,interior,room','couple,proposal,ring',
+      'wedding,bride,couple','house,home,keys','newborn,baby,family'];
+    // warm, first-person caption for each moment (used in the viewer + hero)
+    const _desc = [
+      'Where it all began — 5:20 in the morning, and the whole world changed.',
+      'One whole year! Cake everywhere, mostly on my face.',
+      'Three wobbly steps into a lifetime of adventures.',
+      'New uniform, big backpack, even bigger nerves.',
+      'Endless summers, mango trees, and grandma\'s stories.',
+      'The day the training wheels finally came off.',
+      'Muddy knees, team colours, and friends for life.',
+      'Windows down, mountains ahead, the whole family squeezed in.',
+      'End of one chapter — and the start of everything.',
+      'Counting down to midnight with the people who mattered.',
+      'First time away from home — terrified and thrilled.',
+      'A backpack, a rail pass, and a whole continent to discover.',
+      'Cap, gown, and a head completely full of dreams.',
+      'First desk, first paycheck, first real morning alarm.',
+      'Higher than I had ever been — in every sense.',
+      'My name on the lease. Small place, big feeling.',
+      'On one knee by the lake, heart pounding. She said yes.',
+      'The best day of all, surrounded by everyone we love.',
+      'Keys in hand — a place that is finally, truly ours.',
+      'The newest, tiniest love of our lives.'
+    ];
+    const BORN = _dates[0][0];
+    // moments dated AFTER today can't appear (and can't be uploaded) — only what has already happened
+    const TODAY = new Date();
     const photos = _data.map((c,i)=>{
       const [y,mo,d] = _dates[i];
-      return { id:i+1, name:c[0], loc:c[1], lat:c[2], lng:c[3], time:c[4],
-        y, mo, d, day:_wd[new Date(y,mo,d).getDay()],
+      return { id:i+1, name:c[0], loc:c[1], lat:c[2], lng:c[3], time:c[4], kw:_kw[i], desc:_desc[i],
+        y, mo, d, day:_wd[new Date(y,mo,d).getDay()], age:y-BORN,
         dmy:`${String(d).padStart(2,'0')} ${_mo[mo]}`, monShort:_mo[mo], monFull:_moF[mo], year:y,
         type:'photo', fav:(i%4===0) };
-    });
-    // smaller images for cards/thumbnails (fast); HD only for the full viewer
-    const imgFor = id => `https://picsum.photos/seed/sb${id}/600/750`;
-    const imgHD  = id => `https://picsum.photos/seed/sb${id}/1080/1350`;
+    }).filter(p => new Date(p.y, p.mo, p.d) <= TODAY)   // never show the future
+      .sort((a,b)=> new Date(a.y,a.mo,a.d) - new Date(b.y,b.mo,b.d)); // keep oldest → newest
+    // themed images by keyword; picsum is the fallback (see onerror handlers) if a photo fails to load
+    const _kwById = {}; photos.forEach(p=> _kwById[p.id]=p.kw);
+    const imgFor = id => `https://loremflickr.com/640/800/${_kwById[id]}?lock=${id}`;
+    const imgHD  = id => imgFor(id);   // reuse the (cached) themed image → instant hero/modal, no slow 2nd fetch
+    const imgAlt = id => `https://picsum.photos/seed/life${id}/900/1100`;   // fallback if the themed image fails
+
+    // ---- travel maths: how far this life has roamed ----
+    function haversineKm(a,b){
+      const R=6371, toRad=x=>x*Math.PI/180;
+      const dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng);
+      const h=Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
+      return 2*R*Math.asin(Math.sqrt(h));
+    }
+    const _hopKm = photos.map((p,i)=> i===0 ? 0 : haversineKm(photos[i-1], p));     // distance of each hop
+    const _cumKm = _hopKm.map((__,i)=> _hopKm.slice(0,i+1).reduce((a,b)=>a+b,0));    // total up to each moment
+    function travelMode(km){
+      if(km<=0)   return {icon:'fa-baby',            label:'born here'};
+      if(km<12)   return {icon:'fa-person-walking',  label:'on foot'};
+      if(km<350)  return {icon:'fa-car-side',        label:'by road'};
+      if(km<1200) return {icon:'fa-train',           label:'by train'};
+      return            {icon:'fa-plane-up',        label:'by air'};
+    }
+    const km = n => Math.round(n).toLocaleString();
     let active = photos.length-1, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1, currentFilter = 'all', searchQuery = '';
     // honor the OS "reduce motion" setting → skip the smooth glide, jump instantly
     const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -656,19 +810,24 @@
     // ---- TIMELINE RULER ----
     function renderRuler(){
       const rail=document.getElementById('timelineRail');
-      let lastMon='', lastYear=null;
+      let lastYear=null, lastDec=null;
       const vis = photos.map((p,i)=>({p,i})).filter(o=>matchesFilter(o.p));
-      rail.innerHTML = `<div class="rl-spacer"></div>` + vis.map(({p,i})=>{
-        const monKey=p.monShort+p.year, newMon=(monKey!==lastMon); lastMon=monKey;
-        const newYear=(lastYear!==null && p.year!==lastYear), firstEver=(lastYear===null); lastYear=p.year;
-        const showYear = newYear || firstEver;            // full year shown at the first tick + each year boundary
-        return `<button data-rt="${i}" onclick="setActive(${i})" aria-label="${p.dmy} ${p.year}" title="Jump to ${p.monFull} ${p.d}, ${p.year}" class="rl-tick ${i===active?'active':''}">
-          ${newYear?`<span class="rl-ydiv"></span>`:''}
-          ${newMon?`<span class="rl-mon ${showYear?'rl-mon-yr':''}">${p.monShort}${showYear?` ${p.year}`:''}</span>`:''}
-          <span class="rl-line ${newMon?'rl-major':''}"></span>
-          <span class="rl-day">${String(p.d).padStart(2,'0')}</span>
+      const ticks = vis.map(({p,i})=>{
+        const newYear=(p.year!==lastYear), firstEver=(lastYear===null); const showYear=newYear||firstEver; lastYear=p.year;
+        const dec=Math.floor(p.year/10), newDec=(lastDec!==null && dec!==lastDec); lastDec=dec;
+        const band = (dec%2===1) ? ' rl-band' : '';       // alternating decade chapters (1990s / 2010s tinted)
+        return `<button data-rt="${i}" onclick="setActive(${i})" aria-label="${p.dmy} ${p.year}" title="${p.monFull} ${p.d}, ${p.year}" class="rl-tick${band} ${i===active?'active':''}">
+          ${(newDec||firstEver)?`<span class="rl-ydiv rl-ydiv-dec"></span>`:''}
+          ${p.fav?`<span class="rl-fav"></span>`:''}
+          <span class="rl-line ${showYear?'rl-major':''}"></span>
+          ${showYear?`<span class="rl-yr">${p.year}</span>`:''}
         </button>`;
-      }).join('') + `<div class="rl-spacer"></div>`;
+      }).join('');
+      // narrative bookends so the ends never look empty
+      const birth = vis.length ? vis[0].p.year : '';
+      const leftCap  = `<div class="rl-spacer rl-cap-l"><span class="rl-cap"><i class="fa-solid fa-seedling"></i> The beginning · ${birth}</span></div>`;
+      const rightCap = `<div class="rl-spacer rl-cap-r"><span class="rl-cap"><i class="fa-regular fa-clock"></i> Today · ${TODAY.getDate()} ${_mo[TODAY.getMonth()]} ${TODAY.getFullYear()}</span><span class="rl-future">the rest is unwritten…</span></div>`;
+      rail.innerHTML = leftCap + ticks + rightCap;
     }
     function renderTimelineActive(){
       document.querySelectorAll('.rl-tick').forEach(t=>t.classList.toggle('active', +t.dataset.rt===active));
@@ -702,16 +861,52 @@
         }
       },110);
     }
+    // immersive hero photo (shown when the map is off)
+    // swap an image with a soft crossfade (preload the cached source, then fade in)
+    function fadeSwap(img, src){
+      if(!img) return; img.style.opacity='0';
+      const pre=new Image();
+      pre.onload=()=>{ img.src=src; requestAnimationFrame(()=>{ img.style.opacity='1'; }); };
+      pre.onerror=()=>{ img.src=src; img.style.opacity='1'; };
+      pre.src=src;
+    }
+    function updateStage(){
+      const p=photos[active];
+      const img=document.getElementById('stageImg');
+      if(img && img.dataset.id!==String(p.id)){ img.dataset.id=String(p.id); fadeSwap(img, imgHD(p.id)); }
+      const nm=document.getElementById('stageName');
+      if(nm) nm.innerHTML = `${p.name}${p.fav?' <i class="fa fa-star text-base" style="color:var(--brand)"></i>':''}`;
+      const mt=document.getElementById('stageMeta');
+      if(mt) mt.textContent = `${p.dmy}, ${p.year} · ${p.day} · ${p.time} · ${p.loc}`;
+    }
+    // travel records bar: total distance roamed + how the latest hop happened + age
+    function updateTravel(){
+      const total=document.getElementById('tvTotal'); if(total) total.textContent = km(_cumKm[active])+' km';
+      const ageEl=document.getElementById('tvAge'); if(ageEl) ageEl.textContent = photos[active].age<=0?'Newborn':('Age '+photos[active].age);
+      const hop=document.getElementById('tvHop'), hopIc=document.getElementById('tvHopIcon');
+      if(active===0){
+        if(hop) hop.textContent='Born in '+photos[0].loc.split(',')[0];
+        if(hopIc) hopIc.className='fa-solid fa-baby tv-ic';
+      } else {
+        const m=travelMode(_hopKm[active]);
+        const from=photos[active-1].loc.split(',')[0], to=photos[active].loc.split(',')[0];
+        if(hop) hop.innerHTML = `${from} → <b>${to}</b> · ${km(_hopKm[active])} km <span class="tv-sub">${m.label}</span>`;
+        if(hopIc) hopIc.className=`fa-solid ${m.icon} tv-ic`;
+      }
+    }
     function updateHeaderDate(){
       const p=photos[active], el=document.getElementById('hdrDate');
       if(el) el.innerHTML = `${p.monFull} <span class="grad-text">${p.d}</span>, ${p.year}`;
+      const pill=document.getElementById('rlPill'); if(pill) pill.textContent = `${p.d} ${p.monShort}`;
+      const live=document.getElementById('srLive');   // announce to screen readers
+      if(live) live.textContent = `${p.name} — ${p.monFull} ${p.d}, ${p.year}, ${p.loc}`;
     }
 
     function renderCarousel() {
       const el = document.getElementById('carousel');
       const desktop = window.matchMedia('(min-width:1024px)').matches;
       const overlay = (p)=>`
-            <img src="${imgFor(p.id)}" alt="${p.name}" loading="lazy" class="card-img h-full w-full object-cover" />
+            <img src="${imgFor(p.id)}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='${imgAlt(p.id)}'" class="card-img h-full w-full object-cover" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"></div>
             <div class="absolute left-3 right-3 top-3 flex items-center justify-between">
               <span class="glass rounded-full px-2.5 py-1 text-[11px] font-semibold text-accent-blue">${p.time}</span>
@@ -732,10 +927,11 @@
       const hid = p=>matchesFilter(p)?'':'hidden';
       const big = !mapShown; // when map is hidden, show bigger photos
 
-      // empty state when the active filter matches nothing
+      // empty state when the active filter / search matches nothing
       if(!photos.some(matchesFilter)){
+        const msg = searchQuery ? `No results for “${searchQuery}”.` : `No ${currentFilter} in your timeline yet.`;
         el.className = 'liquid-light flex items-center justify-center gap-2 rounded-3xl py-12 text-sm font-medium text-accent-blue/60';
-        el.innerHTML = `<i class="fa-regular fa-circle-xmark"></i> No ${currentFilter} on this day.`;
+        el.innerHTML = `<i class="fa-regular fa-circle-xmark"></i> ${msg}`;
         return;
       }
 
@@ -767,14 +963,21 @@
       // ruler: highlight + scroll to playhead (unless the ruler initiated)
       renderTimelineActive();
       if(src!=='ruler'){ lockRuler(); scrollRulerToActive('smooth'); }
-      flyToActive(); updateFab(); updateStory(); updateHeaderDate(); updateNavButtons();
+      flyToActive(); updateFab(); updateStory(); updateHeaderDate(); updateNavButtons(); updateStage(); updateTravel();
       if(playing) startProgress();   // restart the fill for the new slide
     }
     // ◀ ▶ ruler jump buttons: click = step one date; press-and-hold = fly fast (accelerating)
     function updateNavButtons(){
-      const p=document.getElementById('rlPrev'), n=document.getElementById('rlNext');
-      if(p) p.disabled = nextVisible(active,-1)<0;
-      if(n) n.disabled = nextVisible(active,1)<0;
+      const p=document.getElementById('rlPrev'), n=document.getElementById('rlNext'), l=document.getElementById('rlLatest');
+      const hasPrev=nextVisible(active,-1)>=0, hasNext=nextVisible(active,1)>=0;
+      if(p) p.disabled = !hasPrev;
+      if(n) n.disabled = !hasNext;
+      if(l) l.disabled = !hasNext;   // already at the latest visible photo → nothing newer to jump to
+    }
+    function jumpLatest(){
+      const vis=visibleIdx(); if(!vis.length) return;
+      if(playing) togglePlay();
+      setActive(vis[vis.length-1]);
     }
     let _holdTO=null, _holdIV=null;
     function stepActive(dir){
@@ -854,13 +1057,28 @@
 
     // ---- play all (Memories) ----
     function playMemories(){ openModal(0); if(!playing) togglePlay(); }
+    // "X years ago" relative to today (months/days for recent)
+    function agoText(p){
+      const years=(TODAY - new Date(p.y,p.mo,p.d))/(365.25*24*3600*1000);
+      if(years>=1){ const y=Math.floor(years); return y+' year'+(y>1?'s':'')+' ago'; }
+      const m=Math.floor(years*12); if(m>=1) return m+' month'+(m>1?'s':'')+' ago';
+      const d=Math.floor(years*365.25); return d<=1?'just now':d+' days ago';
+    }
+    function ageLabel(p){ return p.age<=0 ? 'The very beginning' : 'Age '+p.age; }
+    // fill the detail viewer from the active photo (fixes the old hard-coded content)
+    function fillModal(){
+      const p=photos[active];
+      const im=document.getElementById('modalImg'); if(im && im.dataset.id!==String(p.id)){ im.dataset.id=String(p.id); fadeSwap(im, imgHD(p.id)); }
+      const set=(id,t)=>{ const e=document.getElementById(id); if(e) e.textContent=t; };
+      set('modalDate',p.dmy); set('modalYear',p.year); set('modalName',p.name);
+      set('modalTitle',p.name); set('modalDesc',p.desc);
+      set('modalAge', ageLabel(p)+' · '+agoText(p));
+      set('modalAgo', agoText(p));
+      const loc=document.getElementById('modalLoc'); if(loc) loc.innerHTML=`<i class="fa fa-location-dot mr-1"></i>${p.loc}`;
+    }
     // go to a specific index + keep the open modal in sync
     function move2(n){ setActive(n);
-      if(!document.getElementById('modal').classList.contains('hidden')){
-        document.getElementById('modalImg').src=imgHD(photos[active].id);
-        document.getElementById('modalName').textContent=photos[active].name;
-        document.getElementById('modalDate').textContent=photos[active].dmy;
-      }
+      if(!document.getElementById('modal').classList.contains('hidden')) fillModal();
     }
     // step one *visible* photo in a direction (used by swipe / prev-next)
     function move(d){ const ni=nextVisible(active,d); if(ni>=0) move2(ni); }
@@ -878,12 +1096,11 @@
       const top=document.getElementById('playBtnTop'); if(top) top.innerHTML=`<i class="fa fa-${name}"></i>`;
       const fab=document.getElementById('fabPlay'); if(fab) fab.innerHTML=`<i class="fa fa-${name} text-xl"></i>`;
       const mpl=document.getElementById('modalPlay'); if(mpl) mpl.innerHTML=`<i class="fa fa-${name} text-lg"></i>`;
+      const stp=document.getElementById('stagePlay'); if(stp) stp.innerHTML=`<i class="fa fa-${name}"></i>`;
       updateStory(); renderTimelineActive();
     }
     function openModal(i){ setActive(i);
-      document.getElementById('modalImg').src=imgHD(photos[i].id);
-      document.getElementById('modalName').textContent=photos[i].name;
-      document.getElementById('modalDate').textContent=photos[i].dmy;
+      fillModal();
       document.getElementById('modal').classList.remove('hidden');
       updateStory();
     }
@@ -911,14 +1128,38 @@
         const lbl=document.getElementById('mapBtnLabel'); if(lbl) lbl.textContent = mapShown?'Map on':'Map off';
         const ic=b.querySelector('i'); if(ic) ic.className = mapShown ? 'fa-solid fa-map-location-dot' : 'fa-solid fa-map';
       }
-      renderCarousel(); // resize photos (bigger when map is off)
+      // map OFF → immersive hero stage: float toolbar + ruler over a big photo, hide the reel
+      const sw=document.getElementById('stageWrap'); if(sw) sw.classList.toggle('stage-on', !mapShown);
+      const ps=document.getElementById('photosSec'); if(ps) ps.classList.toggle('hidden', !mapShown);
+      const tb=document.getElementById('travelBar'); if(tb) tb.classList.toggle('hidden', !mapShown);
+      const stp=document.getElementById('stagePlay'); if(stp) stp.innerHTML=`<i class="fa fa-${playing?'pause':'play'}"></i>`;
+      updateStage();
+      renderCarousel(); // (reel is hidden in stage mode, but keep it in sync for when the map returns)
       if(mapShown && window.sbMap){ setTimeout(()=>{ sbMap.invalidateSize(); flyToActive(); },350); }
     }
-    // re-render photos when crossing the mobile/desktop breakpoint
-    let _rt; window.addEventListener('resize', ()=>{ clearTimeout(_rt); _rt=setTimeout(renderCarousel,150); });
+    // re-render photos when crossing the mobile/desktop breakpoint;
+    // lock + re-center the ruler so a resize reflow doesn't drift the active photo
+    let _rt; window.addEventListener('resize', ()=>{ lockRuler(); clearTimeout(_rt); _rt=setTimeout(()=>{ renderCarousel(); lockRuler(); scrollRulerToActive('auto'); },150); });
 
     /* ============ REAL MAP (Leaflet) ============ */
-    let sbMap, markers = [], routeLine, prevActive = 0, mapLocked = false;
+    let sbMap, markers = [], pastLine, futureLine, modeMarker, prevActive = 0, mapLocked = false;
+    // progressive trail: bright path already travelled (→ active), faint path still to come,
+    // plus a travel-mode badge on the latest hop (plane / train / car / on foot)
+    function updateJourney(){
+      const coords = photos.map(p=>[p.lat,p.lng]);
+      if(pastLine)   pastLine.setLatLngs(coords.slice(0, active+1));
+      if(futureLine) futureLine.setLatLngs(coords.slice(active));
+      if(modeMarker){
+        if(active>0){
+          const a=photos[active-1], b=photos[active];
+          const m=travelMode(_hopKm[active]);
+          // sit the badge on the incoming path near the arrival point so it stays in view when zoomed
+          modeMarker.setLatLng([a.lat+0.82*(b.lat-a.lat), a.lng+0.82*(b.lng-a.lng)]);
+          modeMarker.setIcon(L.divIcon({className:'',html:`<div class="mode-badge"><i class="fa-solid ${m.icon}"></i></div>`,iconSize:[36,36],iconAnchor:[18,18]}));
+          modeMarker.setOpacity(1);
+        } else { modeMarker.setOpacity(0); }   // birth — no hop yet
+      }
+    }
 
     // bearing (deg from north) between two coords — for the directional arrow
     function bearing(a, b){
@@ -969,9 +1210,11 @@
         maxZoom: 19, noWrap: true, bounds:[[-85,-180],[85,180]], attribution: '&copy; OpenStreetMap'
       }).addTo(sbMap);
 
-      // route line connecting locations in order
+      // faint "yet to come" path + a bright "travelled so far" trail that grows as you advance
       const route = photos.map(p => [p.lat, p.lng]);
-      routeLine = L.polyline(route, { color:'#f05540', weight:3, opacity:.75, dashArray:'2 9', lineCap:'round' }).addTo(sbMap);
+      futureLine = L.polyline(route, { color:'#e0241c', weight:1.5, opacity:.18, dashArray:'1 9', lineCap:'round' }).addTo(sbMap);
+      pastLine   = L.polyline([],    { color:'#e0241c', weight:3.5, opacity:.92, lineCap:'round', lineJoin:'round' }).addTo(sbMap);
+      modeMarker = L.marker([0,0], { icon:L.divIcon({className:'',html:''}), interactive:false, opacity:0, zIndexOffset:400 }).addTo(sbMap);
       fitWorld();
 
       markers = photos.map((p,i) => {
@@ -988,6 +1231,7 @@
       const brg = travelBearing(active);
       // arrow + markers always update (even when locked)
       markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, brg)));
+      updateJourney();
       const p = photos[active];
       // camera only moves when NOT locked
       if(!mapLocked) sbMap.flyTo([p.lat, p.lng], 5, { duration: 1.1 });
@@ -1015,13 +1259,18 @@
     renderRuler(); setView('horizontal'); updateFab(); updateStory(); updateHeaderDate();
     // dynamic counts
     (function(){
-      const cc = new Set(photos.map(p=>p.loc.split(', ').pop())).size;
+      const cc = new Set(photos.map(p=>p.loc.split(', ').pop())).size;   // countries
+      const pc = new Set(photos.map(p=>p.loc)).size;                      // distinct places
+      const yrs = photos.map(p=>p.year), minY=Math.min(...yrs), maxY=Math.max(...yrs);
       const mc=document.getElementById('momentCount'); if(mc) mc.textContent = photos.length+' moments';
-      const ms=document.getElementById('memoryStats'); if(ms) ms.textContent = photos.length+' moments · '+photos.length+' places · '+cc+' countries';
+      const ms=document.getElementById('memoryStats'); if(ms) ms.textContent = `${photos.length} moments · ${pc} places · ${cc} countries · ${minY}–${maxY}`;
     })();
     // swipe on the modal media pane
     const _mp=document.getElementById('mediaPane');
     if(_mp){ _mp.addEventListener('touchstart',swStart,{passive:true}); _mp.addEventListener('touchend',swEnd); }
+    // swipe the immersive hero photo to move between dates
+    const _ps=document.getElementById('photoStage');
+    if(_ps){ _ps.addEventListener('touchstart',swStart,{passive:true}); _ps.addEventListener('touchend',swEnd); }
     // swipe/scroll a reel updates the active photo
     const _car=document.getElementById('carousel');
     if(_car){ _car.addEventListener('scroll', onReelScroll, {passive:true}); }
@@ -1077,15 +1326,22 @@
       b.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); stepActive(dir); } });
     });
     window.addEventListener('pointerup', stopHold);
+    const _latest=document.getElementById('rlLatest');
+    if(_latest) _latest.addEventListener('click', jumpLatest);
     updateNavButtons();
     // on load: show the full single Earth + center the ruler & reel on the active (newest) photo
     setTimeout(()=>{
       sbMap.invalidateSize();
       fitWorld();
       markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, travelBearing(i))));
+      updateJourney(); updateTravel();
       markers[active] && markers[active].openPopup();
       scrollRulerToActive('auto'); scrollActiveIntoView('auto');
     }, 300);
+    // one-time hint that the ruler is draggable
+    const _hint=document.getElementById('rlHint');
+    if(_hint){ setTimeout(()=>_hint.classList.add('show'),900); setTimeout(()=>_hint.classList.remove('show'),5200);
+      ['pointerdown','wheel'].forEach(ev=>document.getElementById('timelineRail').addEventListener(ev,()=>_hint.classList.remove('show'),{once:true,passive:true})); }
     // keep the world filling the width on resize (when not zoomed into a photo)
     let _wt; window.addEventListener('resize', ()=>{ clearTimeout(_wt); _wt=setTimeout(()=>{ if(sbMap && !playing) { sbMap.invalidateSize(); fitWorld(); } },200); });
   </script>
