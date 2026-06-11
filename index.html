@@ -372,6 +372,7 @@
       <!-- hero photo (only visible when the map is off) -->
       <div id="photoStage" class="absolute inset-0 z-0 overflow-hidden rounded-4xl">
         <img id="stageImg" class="h-full w-full object-cover" alt="" onclick="openModal(active)" onerror="this.onerror=null;this.src='https://picsum.photos/seed/life'+(this.dataset.id||1)+'/1080/1350'" />
+        <video id="stageVideo" class="hidden h-full w-full object-cover" autoplay muted loop playsinline onclick="openModal(active)"></video>
         <div id="stageScrim" class="pointer-events-none absolute inset-0"></div>
         <div class="pointer-events-none absolute bottom-6 left-6 right-[96px] z-10 text-white">
           <p id="stageName" class="text-2xl font-extrabold drop-shadow-[0_2px_8px_rgba(0,0,0,.6)]"></p>
@@ -497,6 +498,7 @@
       <!-- LEFT media -->
       <div id="mediaPane" class="relative h-[45%] w-full overflow-hidden bg-black sm:h-full sm:w-[68%]">
         <img id="modalImg" class="h-full w-full object-cover" src="" alt="" onerror="this.onerror=null;this.src='https://picsum.photos/seed/life'+(photos[active]?photos[active].id:1)+'/1080/1350'" />
+        <video id="modalVideo" class="hidden h-full w-full bg-black object-contain" controls autoplay muted loop playsinline></video>
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20"></div>
         <!-- story progress bars -->
         <div id="storyBars" class="absolute left-3 right-16 top-3 z-20 flex gap-1"></div>
@@ -508,8 +510,8 @@
           <p id="modalName" class="mt-1 text-base font-medium opacity-90 sm:text-lg">Morning hike</p>
         </div>
 
-        <!-- media controls (FB-style floating translucent) -->
-        <div class="absolute bottom-5 left-0 flex w-full items-center justify-center gap-7 px-4">
+        <!-- media controls (FB-style floating translucent) — hidden for videos (native controls take over) -->
+        <div id="modalCtrls" class="absolute bottom-5 left-0 flex w-full items-center justify-center gap-7 px-4">
           <button onclick="move(-1)" class="fbtn grid h-11 w-11 place-items-center rounded-full"><i class="fa fa-chevron-left"></i></button>
           <button id="modalPlay" onclick="togglePlay()" class="grid h-14 w-14 place-items-center rounded-full bg-primary-theme text-white shadow-glow active:scale-90"><i class="fa fa-play text-lg"></i></button>
           <button onclick="move(1)" class="fbtn grid h-11 w-11 place-items-center rounded-full"><i class="fa fa-chevron-right"></i></button>
@@ -726,8 +728,8 @@
       'The newest, tiniest love of our lives.'
     ];
     const BORN = _dates[0][0];
-    // a few moments are home-movies (videos) — index → clip length
-    const _vid = {2:'0:38', 9:'1:12', 14:'2:05', 17:'3:24'};
+    // a few moments are home-movies (videos) — index → {duration, clip}
+    const _vid = {2:{d:'0:38',v:1}, 9:{d:'1:12',v:2}, 14:{d:'2:05',v:3}, 17:{d:'3:24',v:4}};
     // moments dated AFTER today can't appear (and can't be uploaded) — only what has already happened
     const TODAY = new Date();
     const photos = _data.map((c,i)=>{
@@ -735,7 +737,7 @@
       return { id:i+1, name:c[0], loc:c[1], lat:c[2], lng:c[3], time:c[4], kw:_kw[i], desc:_desc[i],
         y, mo, d, day:_wd[new Date(y,mo,d).getDay()], age:y-BORN,
         dmy:`${String(d).padStart(2,'0')} ${_mo[mo]}`, monShort:_mo[mo], monFull:_moF[mo], year:y,
-        type:_vid[i]?'video':'photo', dur:_vid[i]||null, fav:(i%4===0) };
+        type:_vid[i]?'video':'photo', dur:_vid[i]?_vid[i].d:null, vsrc:_vid[i]?('vid/v'+_vid[i].v+'.mp4'):null, fav:(i%4===0) };
     }).filter(p => new Date(p.y, p.mo, p.d) <= TODAY)   // never show the future
       .sort((a,b)=> new Date(a.y,a.mo,a.d) - new Date(b.y,b.mo,b.d)); // keep oldest → newest
     // themed images by keyword; picsum is the fallback (see onerror handlers) if a photo fails to load
@@ -926,10 +928,20 @@
       pre.src=src;
       if(pre.complete) apply();   // cached → apply immediately
     }
+    // play a <video> once it's ready (avoids the AbortError from play()-during-load)
+    function playWhenReady(v){ if(!v) return; v.muted=true; const go=()=>{ v.play().catch(()=>{}); };
+      if(v.readyState>=2) go(); else v.addEventListener('loadeddata', go, {once:true}); }
     function updateStage(){
       const p=photos[active];
-      const img=document.getElementById('stageImg');
-      if(img && img.dataset.id!==String(p.id)){ img.dataset.id=String(p.id); fadeSwap(img, imgHD(p.id)); }
+      const img=document.getElementById('stageImg'), vid=document.getElementById('stageVideo');
+      if(p.type==='video' && vid){
+        if(vid.dataset.id!==String(p.id)){ vid.dataset.id=String(p.id); vid.src=p.vsrc; }
+        vid.classList.remove('hidden'); playWhenReady(vid);
+        if(img) img.classList.add('hidden');
+      } else {
+        if(vid){ vid.pause(); vid.classList.add('hidden'); }
+        if(img){ img.classList.remove('hidden'); if(img.dataset.id!==String(p.id)){ img.dataset.id=String(p.id); fadeSwap(img, imgHD(p.id)); } }
+      }
       const nm=document.getElementById('stageName');
       if(nm) nm.innerHTML = `${p.name}${p.fav?' <i class="fa fa-star text-base" style="color:var(--brand)"></i>':''}`;
       const mt=document.getElementById('stageMeta');
@@ -967,10 +979,13 @@
     function renderCarousel() {
       const el = document.getElementById('carousel');
       const desktop = window.matchMedia('(min-width:1024px)').matches;
+      const media = p => p.type==='video'
+        ? `<video class="card-img h-full w-full object-cover" src="${p.vsrc}" poster="${imgFor(p.id)}" autoplay muted loop playsinline preload="metadata"></video>`
+        : `<img src="${imgFor(p.id)}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='${imgAlt(p.id)}'" class="card-img h-full w-full object-cover" />`;
       const overlay = (p)=>`
-            <img src="${imgFor(p.id)}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='${imgAlt(p.id)}'" class="card-img h-full w-full object-cover" />
+            ${media(p)}
             <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"></div>
-            ${p.type==='video'?`<span class="vid-play"><i class="fa-solid fa-play"></i></span><span class="vid-dur"><i class="fa-solid fa-video"></i> ${p.dur}</span>`:''}
+            ${p.type==='video'?`<span class="vid-dur"><i class="fa-solid fa-volume-xmark"></i> ${p.dur}</span>`:''}
             <div class="absolute left-3 right-3 top-3 flex items-center justify-between">
               <span class="glass rounded-full px-2.5 py-1 text-[11px] font-semibold text-accent-blue">${p.time}</span>
               <div class="flex gap-1.5 opacity-0 transition group-hover:opacity-100">
@@ -1131,7 +1146,16 @@
     // fill the detail viewer from the active photo (fixes the old hard-coded content)
     function fillModal(){
       const p=photos[active];
-      const im=document.getElementById('modalImg'); if(im && im.dataset.id!==String(p.id)){ im.dataset.id=String(p.id); fadeSwap(im, imgHD(p.id)); }
+      const im=document.getElementById('modalImg'), mv=document.getElementById('modalVideo');
+      if(p.type==='video' && mv){
+        if(mv.dataset.id!==String(p.id)){ mv.dataset.id=String(p.id); mv.src=p.vsrc; }
+        mv.classList.remove('hidden'); playWhenReady(mv);
+        if(im) im.classList.add('hidden');
+      } else {
+        if(mv){ mv.pause(); mv.classList.add('hidden'); }
+        if(im){ im.classList.remove('hidden'); if(im.dataset.id!==String(p.id)){ im.dataset.id=String(p.id); fadeSwap(im, imgHD(p.id)); } }
+      }
+      const ctrls=document.getElementById('modalCtrls'); if(ctrls) ctrls.style.display = p.type==='video' ? 'none' : '';
       const set=(id,t)=>{ const e=document.getElementById(id); if(e) e.textContent=t; };
       set('modalDate',p.dmy); set('modalYear',p.year); set('modalName',p.name);
       set('modalTitle',p.name); set('modalDesc',p.desc);
@@ -1163,11 +1187,11 @@
       updateStory(); renderTimelineActive();
     }
     function openModal(i){ setActive(i);
+      document.getElementById('modal').classList.remove('hidden');   // show first so a video can actually play
       fillModal();
-      document.getElementById('modal').classList.remove('hidden');
       updateStory();
     }
-    function closeModal(){ document.getElementById('modal').classList.add('hidden'); }
+    function closeModal(){ document.getElementById('modal').classList.add('hidden'); const mv=document.getElementById('modalVideo'); if(mv) mv.pause(); }
     function toggleComments(){
       const pane=document.getElementById('commentPane'), media=document.getElementById('mediaPane'), ch=document.getElementById('commentChevron');
       const open=pane.classList.contains('sm:hidden')||pane.classList.contains('hidden-sm');
