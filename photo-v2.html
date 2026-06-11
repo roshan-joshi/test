@@ -355,6 +355,7 @@
           June <span class="grad-text">9</span>, 2026
         </h1>
         <p class="mt-1 text-sm text-accent-blue/60">Relive your moments from this day.</p>
+        <button id="onThisDay" class="chip mt-3 hidden items-center gap-2.5 rounded-full py-2 pl-3 pr-4 text-sm font-semibold text-primary-theme transition hover:brightness-105 active:scale-[.98]"></button>
       </div>
     </header>
 
@@ -1429,6 +1430,19 @@
       const yrs = photos.map(p=>p.year), minY=Math.min(...yrs), maxY=Math.max(...yrs);
       const mc=document.getElementById('momentCount'); if(mc) mc.textContent = photos.length+' moments';
       const ms=document.getElementById('memoryStats'); if(ms) ms.textContent = `${photos.length} moments · ${pc} places · ${cc} countries · ${minY}–${maxY}`;
+    })();
+    // "On this day" — surface the moment closest to today's calendar date (jump to it on click)
+    (function(){
+      const el=document.getElementById('onThisDay'); if(!el) return;
+      const now=new Date(), here=new Date(2000, now.getMonth(), now.getDate());
+      let best=-1, bestD=999;
+      photos.forEach((p,i)=>{ const d=Math.abs((here-new Date(2000,p.mo,p.d))/86400000); const dist=Math.min(d,366-d); if(dist<bestD){ bestD=dist; best=i; } });
+      if(best<0) return;
+      const p=photos[best], yrs=now.getFullYear()-p.year;
+      const lead = bestD<1 ? 'On this day' : 'Around this time of year';
+      el.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i><span>${lead} · <b>${p.name}</b> · ${yrs} year${yrs!==1?'s':''} ago</span><i class="fa fa-chevron-right text-xs opacity-70"></i>`;
+      el.onclick = ()=> setActive(best);
+      el.classList.remove('hidden'); el.style.display='inline-flex';
     })();
     // swipe on the modal media pane
     const _mp=document.getElementById('mediaPane');
