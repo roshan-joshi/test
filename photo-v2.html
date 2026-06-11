@@ -102,6 +102,9 @@
     .sb-pin { display:grid; place-items:center; width:30px; height:30px; border-radius:50% 50% 50% 0;
       background:#36454f; transform: rotate(-45deg); box-shadow:0 6px 16px rgba(0,0,0,.3); border:2px solid #fff; }
     .sb-pin i { transform: rotate(45deg); color:#fff; font-size:11px; }
+    /* small inactive marker dot (reduces overlap clutter; active stays the arrow) */
+    .sb-dot { width:13px; height:13px; border-radius:50%; background:#36454f; border:2px solid rgba(255,255,255,.95); box-shadow:0 2px 6px rgba(0,0,0,.35); }
+    html.dark .sb-dot { background:#cfd6de; border-color:rgba(0,0,0,.5); }
     /* active = directional arrow disc */
     .sb-arrow { position:relative; display:grid; place-items:center; width:46px; height:46px; border-radius:50%;
       background:#f05540; border:3px solid #fff; box-shadow:0 8px 22px rgba(240,85,64,.55); animation: pinPulse 1.4s infinite; }
@@ -133,7 +136,7 @@
       <!-- search (desktop) -->
       <label class="chip hidden max-w-md flex-1 items-center gap-2.5 rounded-full px-4 py-2 text-sm md:flex">
         <i class="fa-solid fa-magnifying-glass text-accent-blue/45"></i>
-        <input class="w-full bg-transparent outline-none placeholder:text-accent-blue/40" placeholder="Search photos, people, places…" />
+        <input oninput="searchPhotos(this.value)" class="w-full bg-transparent outline-none placeholder:text-accent-blue/40" placeholder="Search photos, people, places…" />
       </label>
 
       <!-- nav links (desktop) -->
@@ -484,13 +487,15 @@
     // smaller images for cards/thumbnails (fast); HD only for the full viewer
     const imgFor = id => `https://picsum.photos/seed/sb${id}/600/750`;
     const imgHD  = id => `https://picsum.photos/seed/sb${id}/1080/1350`;
-    let active = 0, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1, currentFilter = 'all';
+    let active = 0, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1, currentFilter = 'all', searchQuery = '';
 
     function matchesFilter(p){
+      if(searchQuery && !((p.name+' '+p.loc).toLowerCase().includes(searchQuery))) return false;
       if(currentFilter==='videos') return p.type==='video';
       if(currentFilter==='faves')  return !!p.fav;
       return true; // all / photos
     }
+    function searchPhotos(q){ searchQuery=(q||'').trim().toLowerCase(); renderCarousel(); }
 
     function setView(mode){
       viewMode = mode;
@@ -510,6 +515,30 @@
       } else {
         cont.scrollTo({ top: cont.scrollTop + (kr.top-cr.top) - (cr.height-kr.height)/2, behavior: behavior||'smooth' });
       }
+    }
+    // ---- swipe/scroll a reel → sync the active photo (player, timeline, map) ----
+    let _scrollSyncT, _syncing=false;
+    function onReelScroll(){
+      clearTimeout(_scrollSyncT);
+      _scrollSyncT=setTimeout(()=>{
+        if(_syncing||playing) return;
+        const cont=document.getElementById('carousel');
+        const cr=cont.getBoundingClientRect(), cx=cr.left+cr.width/2, cy=cr.top+cr.height/2;
+        let best=-1, bestD=1e9;
+        [...cont.children].forEach((card,i)=>{
+          if(card.classList.contains('hidden')) return;
+          const r=card.getBoundingClientRect();
+          const d=(viewMode==='horizontal')?Math.abs((r.left+r.width/2)-cx):Math.abs((r.top+r.height/2)-cy);
+          if(d<bestD){ bestD=d; best=i; }
+        });
+        if(best>=0 && best!==active){
+          _syncing=true;
+          active=best;
+          [...cont.children].forEach((c,j)=>{ c.classList.toggle('ring-4', j===best); c.classList.toggle('ring-primary-theme', j===best); });
+          renderTimeline(); flyToActive(); updateFab(); updateStory();
+          setTimeout(()=>{ _syncing=false; }, 60);
+        }
+      },130);
     }
 
     function setFilter(btn){
@@ -741,10 +770,10 @@
       className: '',
       html: activeFlag
         ? `<div class="sb-arrow"><i class="arw fa fa-location-arrow" style="--brg:${brg-45}deg"></i></div>` // fa-location-arrow points NE(45°) → offset -45 so it aligns to north
-        : `<div class="sb-pin"><i class="fa fa-circle"></i></div>`,
-      iconSize: activeFlag ? [46,46] : [30,30],
-      iconAnchor: activeFlag ? [23,23] : [15,30],
-      popupAnchor: activeFlag ? [0,-26] : [0,-30],
+        : `<div class="sb-dot"></div>`,
+      iconSize: activeFlag ? [46,46] : [13,13],
+      iconAnchor: activeFlag ? [23,23] : [7,7],
+      popupAnchor: activeFlag ? [0,-26] : [0,-8],
     });
 
     const popupHTML = (p) => `<div style="position:relative;width:162px;height:120px;overflow:hidden">
@@ -823,6 +852,9 @@
     // swipe on the modal media pane
     const _mp=document.getElementById('mediaPane');
     if(_mp){ _mp.addEventListener('touchstart',swStart,{passive:true}); _mp.addEventListener('touchend',swEnd); }
+    // swipe/scroll a reel updates the active photo
+    const _car=document.getElementById('carousel');
+    if(_car){ _car.addEventListener('scroll', onReelScroll, {passive:true}); }
     // on load: show the full single Earth (fills width), highlight first pin (no fly-in)
     setTimeout(()=>{
       sbMap.invalidateSize();
