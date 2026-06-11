@@ -98,7 +98,10 @@
     .rl-line { width:2px; height:10px; background:var(--c-line); border-radius:2px; transition:height .25s, background .25s, width .25s, box-shadow .25s; }
     .rl-major { height:16px; background:var(--c-a2); opacity:.5; }
     .rl-day { font-size:11px; font-weight:700; color:var(--c-text); opacity:.42; transition:all .25s; }
-    .rl-mon { position:absolute; top:1px; font-size:10px; font-weight:800; letter-spacing:.04em; color:var(--c-a2); white-space:nowrap; }
+    .rl-mon { position:absolute; top:1px; font-size:10px; font-weight:800; letter-spacing:.04em; color:var(--c-a2); white-space:nowrap; transition:color .2s; }
+    .rl-tick:hover .rl-mon, .rl-tick:hover .rl-day { color:#f05540; }   /* hover hint: labels are tappable to jump */
+    .rl-mon-yr { font-weight:900; font-size:10.5px; }                  /* year-boundary label shows the full year */
+    .rl-ydiv { position:absolute; left:-1px; top:8px; bottom:9px; border-left:1px dashed var(--c-a2); opacity:.45; }
     .rl-tick.active .rl-line { background:#f05540; height:24px; width:3px; box-shadow:0 0 10px 1px rgba(240,85,64,.55); }
     .rl-tick.active .rl-day { color:#f05540; opacity:1; transform:scale(1.3); }
     .rl-spacer { flex:0 0 50%; }
@@ -141,6 +144,12 @@
     .grad-text { background: linear-gradient(95deg,#f05540,#dd2f39); -webkit-background-clip:text; background-clip:text; color:transparent; }
     .fade-up { animation: fadeUp .6s cubic-bezier(.2,.7,.2,1) both; }
     @keyframes fadeUp { from { opacity:0; transform: translateY(14px);} to {opacity:1; transform:none;} }
+    /* respect users who prefer reduced motion: drop entrance/pulse/looping animations */
+    @media (prefers-reduced-motion: reduce){
+      .fade-up, .ph-star, .sb-arrow, .sb-arrow::after { animation: none !important; }
+      .ph-star { transform: translate(-50%,0) rotate(45deg) !important; }
+      * { scroll-behavior: auto !important; }
+    }
     .card-img { transition: transform .7s cubic-bezier(.2,.7,.2,1); }
     .group:hover .card-img { transform: scale(1.07); }
     /* map markers */
@@ -551,6 +560,8 @@
     const imgFor = id => `https://picsum.photos/seed/sb${id}/600/750`;
     const imgHD  = id => `https://picsum.photos/seed/sb${id}/1080/1350`;
     let active = photos.length-1, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1, currentFilter = 'all', searchQuery = '';
+    // honor the OS "reduce motion" setting → skip the smooth glide, jump instantly
+    const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function matchesFilter(p){
       if(searchQuery && !((p.name+' '+p.loc).toLowerCase().includes(searchQuery))) return false;
@@ -587,10 +598,11 @@
       const cont=document.getElementById('carousel'); if(!cont) return;
       const card=cont.children[active]; if(!card) return;
       const cr=cont.getBoundingClientRect(), kr=card.getBoundingClientRect();
+      const bh = REDUCED ? 'auto' : (behavior||'smooth');
       if(viewMode==='horizontal'){
-        cont.scrollTo({ left: cont.scrollLeft + (kr.left-cr.left) - (cr.width-kr.width)/2, behavior: behavior||'smooth' });
+        cont.scrollTo({ left: cont.scrollLeft + (kr.left-cr.left) - (cr.width-kr.width)/2, behavior: bh });
       } else {
-        cont.scrollTo({ top: cont.scrollTop + (kr.top-cr.top) - (cr.height-kr.height)/2, behavior: behavior||'smooth' });
+        cont.scrollTo({ top: cont.scrollTop + (kr.top-cr.top) - (cr.height-kr.height)/2, behavior: bh });
       }
     }
     // ---- swipe/scroll a reel → sync the active photo (player, timeline, map) ----
@@ -644,13 +656,16 @@
     // ---- TIMELINE RULER ----
     function renderRuler(){
       const rail=document.getElementById('timelineRail');
-      let last='';
+      let lastMon='', lastYear=null;
       const vis = photos.map((p,i)=>({p,i})).filter(o=>matchesFilter(o.p));
       rail.innerHTML = `<div class="rl-spacer"></div>` + vis.map(({p,i})=>{
-        const my=p.monShort+p.year, major=(my!==last); last=my;
-        return `<button data-rt="${i}" onclick="setActive(${i})" aria-label="${p.dmy} ${p.year}" class="rl-tick ${i===active?'active':''}">
-          ${major?`<span class="rl-mon">${p.monShort} '${String(p.year).slice(2)}</span>`:''}
-          <span class="rl-line ${major?'rl-major':''}"></span>
+        const monKey=p.monShort+p.year, newMon=(monKey!==lastMon); lastMon=monKey;
+        const newYear=(lastYear!==null && p.year!==lastYear), firstEver=(lastYear===null); lastYear=p.year;
+        const showYear = newYear || firstEver;            // full year shown at the first tick + each year boundary
+        return `<button data-rt="${i}" onclick="setActive(${i})" aria-label="${p.dmy} ${p.year}" title="Jump to ${p.monFull} ${p.d}, ${p.year}" class="rl-tick ${i===active?'active':''}">
+          ${newYear?`<span class="rl-ydiv"></span>`:''}
+          ${newMon?`<span class="rl-mon ${showYear?'rl-mon-yr':''}">${p.monShort}${showYear?` ${p.year}`:''}</span>`:''}
+          <span class="rl-line ${newMon?'rl-major':''}"></span>
           <span class="rl-day">${String(p.d).padStart(2,'0')}</span>
         </button>`;
       }).join('') + `<div class="rl-spacer"></div>`;
@@ -666,7 +681,7 @@
       const tick=rail && rail.querySelector('.rl-tick[data-rt="'+which+'"]'); if(!tick) return;
       const rr=rail.getBoundingClientRect(), tr=tick.getBoundingClientRect();
       const target=Math.round(rail.scrollLeft + (tr.left-rr.left) - (rr.width-tr.width)/2);
-      rail.scrollTo({ left: target, behavior: behavior==='auto'?'auto':'smooth' });
+      rail.scrollTo({ left: target, behavior: (REDUCED||behavior==='auto')?'auto':'smooth' });
     }
     let _rulerT;
     function onRulerScroll(){
