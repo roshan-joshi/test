@@ -10,6 +10,8 @@
   <!-- Leaflet (real, free map — no API key) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- exifr: reads a photo's real metadata (date taken, GPS, camera) right in the browser -->
+  <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
   <link rel="preconnect" href="https://a.tile.openstreetmap.org" />
   <link rel="preconnect" href="https://b.tile.openstreetmap.org" />
   <link rel="preconnect" href="https://c.tile.openstreetmap.org" />
@@ -74,12 +76,15 @@
       background: url(logo.png) left center / auto 30px no-repeat; }
     /* ===== immersive photo STAGE (shown when the map is OFF) ===== */
     #photoStage, #stagePlay { display:none; }
-    #stageWrap.stage-on { position:relative; height:74vh; min-height:440px; border-radius:2rem; overflow:visible;
-      box-shadow:0 18px 50px -16px rgba(54,69,79,.30); }   /* visible so floating toolbar/ruler tooltips aren't clipped (photo self-clips) */
-    #stageWrap.stage-on #photoStage { display:block; }
-    #stageWrap.stage-on #toolbar, #stageWrap.stage-on #rulerSec { position:absolute; left:14px; right:14px; z-index:20; margin:0; }
-    #stageWrap.stage-on #toolbar { top:16px; flex-wrap:nowrap; }
-    #stageWrap.stage-on #rulerSec { top:70px; }
+    #stageWrap.stage-on { position:relative; height:76vh; min-height:500px; border-radius:0; overflow:visible; box-shadow:none; }
+    /* the photo is the hero; the toolbar + ruler sit in a clean strip ABOVE it (not over the image) */
+    #stageWrap.stage-on #photoStage { display:block; top:152px; border-radius:2rem;
+      box-shadow:0 18px 50px -16px rgba(54,69,79,.30); }   /* overflow:visible on wrap so ruler tooltips aren't clipped; photo self-clips */
+    #stageWrap.stage-on #toolbar, #stageWrap.stage-on #rulerSec { position:absolute; left:2px; right:2px; z-index:20; margin:0; }
+    #stageWrap.stage-on #toolbar { top:2px; flex-wrap:nowrap; }
+    #stageWrap.stage-on #rulerSec { top:56px; }
+    /* the reel-layout switcher controls the hidden photo reel — meaningless on a single immersive photo, so hide it */
+    #stageWrap.stage-on #viewSwitch { display:none; }
     #stageScrim { background:linear-gradient(180deg, rgba(0,0,0,.58) 0%, rgba(0,0,0,.14) 22%, rgba(0,0,0,0) 48%, rgba(0,0,0,.10) 70%, rgba(0,0,0,.66) 100%); }
     #stagePlay { position:absolute; bottom:20px; right:20px; z-index:25;
       height:64px; width:64px; place-items:center; border-radius:9999px; color:#fff; font-size:22px; cursor:pointer;
@@ -175,11 +180,28 @@
     .rl-tick.active .rl-yr { color:var(--brand); opacity:1; transform:scale(1.18); font-weight:800; }
     /* narrative bookends fill the empty ends */
     .rl-spacer { flex:0 0 50%; display:flex; align-items:center; overflow:hidden; }
-    .rl-cap-l { justify-content:flex-end; padding-right:8px; }
+    .rl-cap-l { justify-content:flex-end; padding-right:8px; gap:12px; }
+    /* ancestry link — the roots before the timeline begins */
+    .rl-anc { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:9999px;
+      font-size:12px; font-weight:800; white-space:nowrap; cursor:pointer; color:var(--brand);
+      background:rgba(var(--brand-glow),.10); border:1.5px solid rgba(var(--brand-glow),.30);
+      transition:background .2s, transform .15s; }
+    .rl-anc:hover { background:rgba(var(--brand-glow),.18); transform:translateY(-1px); }
+    .rl-anc:active { transform:scale(.96); }
     .rl-cap-r { justify-content:flex-start; padding-left:8px; gap:14px; }
     .rl-cap { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--c-a2); opacity:.82; white-space:nowrap; }
     .rl-cap i { color:var(--brand); }
     .rl-future { font-size:10px; font-style:italic; color:var(--c-text); opacity:.32; white-space:nowrap; }
+    /* "add a memory" entry point — lives at the Today end of the journey */
+    .rl-add { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:9999px;
+      font-size:12px; font-weight:800; white-space:nowrap; cursor:pointer; color:var(--brand);
+      background:rgba(var(--brand-glow),.10); border:1.5px dashed rgba(var(--brand-glow),.55);
+      transition:background .2s, transform .15s; }
+    .rl-add:hover { background:rgba(var(--brand-glow),.18); transform:translateY(-1px); }
+    .rl-add:active { transform:scale(.96); }
+    .rl-add-glow { color:#fff; background:var(--brand); border-color:transparent; animation:rlAddPulse 2.4s ease-in-out infinite; }
+    @keyframes rlAddPulse { 0%,100%{ box-shadow:0 6px 16px rgba(var(--brand-glow),.40);} 50%{ box-shadow:0 8px 26px rgba(var(--brand-glow),.85);} }
+    @media (prefers-reduced-motion: reduce){ .rl-add-glow{ animation:none; } }
     /* date pill riding the playhead = the focused day + month */
     .rl-pill { position:absolute; left:50%; top:-2px; transform:translateX(-50%); z-index:7; white-space:nowrap;
       background:var(--brand); color:#fff; font-size:10.5px; font-weight:800; letter-spacing:.02em; padding:3px 10px; border-radius:9999px;
@@ -207,6 +229,13 @@
     .rl-nav:disabled { opacity:.35; cursor:default; box-shadow:none; }
     html.dark .rl-nav { box-shadow:0 2px 8px rgba(0,0,0,.4); }
     @media (min-width:640px){ .rl-nav{ width:42px; height:42px; font-size:15px; } }
+    /* persistent "add a memory" button in the fixed ruler chrome (always visible — even on mobile / map-off) */
+    .rl-add-btn { background:var(--brand); color:#fff; border-color:transparent; box-shadow:0 4px 14px rgba(var(--brand-glow),.45); }
+    .rl-add-btn:hover:not(:disabled) { background:var(--brand-2); color:#fff; border-color:transparent; box-shadow:0 6px 20px rgba(var(--brand-glow),.6); }
+    .rl-add-btn.glow { animation:rlAddPulse 2.2s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce){ .rl-add-btn.glow{ animation:none; } }
+    /* the "+" is only for mobile (the ruler is too narrow there to reach the text pill); desktop uses the pill */
+    @media (min-width:640px){ #rlAdd{ display:none; } }
     /* the nav buttons sit at the panel edges → anchor their tooltips inward so they stay on-screen */
     #rlPrev::after { left:0; transform:translateX(0) translateY(-4px); }
     #rlPrev:hover::after { transform:translateX(0) translateY(0); }
@@ -291,6 +320,71 @@
       background:var(--brand); border:2px solid #fff; box-shadow:0 4px 16px rgba(var(--brand-glow),.7); }
     .leaflet-container { border-radius: 2rem; font-family:'Plus Jakarta Sans',sans-serif; background:#dfe7ec; }
     html.dark .leaflet-container { background:#0f151b; }
+
+    /* ---- interactive loop: toast, like, nav, focus ---- */
+    #sbToast { position:fixed; left:50%; bottom:26px; transform:translate(-50%, 24px); z-index:5000;
+      display:flex; align-items:center; gap:10px; max-width:90vw;
+      padding:12px 16px; border-radius:9999px; font-size:14px; font-weight:600; color:#fff;
+      background:rgba(28,38,48,.96); box-shadow:0 12px 34px rgba(0,0,0,.28); backdrop-filter:blur(8px);
+      opacity:0; pointer-events:none; transition:opacity .28s, transform .28s; }
+    #sbToast.show { opacity:1; transform:translate(-50%, 0); pointer-events:auto; }
+    #sbToast i { color:var(--brand); }
+    #sbToast #sbToastAct { margin-left:4px; padding:4px 12px; border-radius:9999px; font-weight:800;
+      background:var(--brand); color:#fff; font-size:13px; }
+    .like-btn.liked { color:var(--brand) !important; }
+    .like-btn.liked i { animation:likePop .42s ease; }
+    @keyframes likePop { 0%{transform:scale(1)} 40%{transform:scale(1.45)} 100%{transform:scale(1)} }
+    .nav-active { color:var(--brand) !important; }
+    /* ancestry mini-tree */
+    .anc-tree { display:flex; flex-direction:column; align-items:center; }
+    .anc-row { display:flex; justify-content:center; gap:18px; flex-wrap:wrap; }
+    .anc-node { display:flex; flex-direction:column; align-items:center; gap:5px; font-size:11px; font-weight:700; color:var(--c-a2); }
+    .anc-node img { height:48px; width:48px; border-radius:9999px; object-fit:cover; border:2px solid #fff; box-shadow:0 4px 12px rgba(54,69,79,.18); }
+    .anc-you img { height:62px; width:62px; border:3px solid var(--brand); box-shadow:0 6px 18px rgba(var(--brand-glow),.5); }
+    .anc-link { width:2px; height:22px; margin:7px 0; border-radius:2px; background:linear-gradient(rgba(var(--brand-glow),.7), rgba(var(--brand-glow),.15)); }
+    html.dark .anc-node { color:rgba(255,255,255,.72); }
+    /* upload privacy segmented control */
+    .up-seg { display:flex; gap:6px; }
+    .up-seg button { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 6px;
+      border-radius:12px; font-size:12px; font-weight:700; color:var(--c-a2); background:var(--c-bg);
+      border:1.5px solid transparent; cursor:pointer; transition:.15s; }
+    .up-seg button.on { color:var(--brand); border-color:rgba(var(--brand-glow),.5); background:rgba(var(--brand-glow),.10); }
+    .up-travel button { padding:9px 4px; font-size:14px; }
+    /* people picker */
+    .up-people { display:flex; flex-wrap:wrap; gap:6px; }
+    .up-person { display:inline-flex; align-items:center; gap:6px; padding:3px 11px 3px 3px; border-radius:9999px;
+      font-size:12px; font-weight:700; color:var(--c-a2); background:var(--c-bg); border:1.5px solid transparent; cursor:pointer; transition:.15s; }
+    .up-person img { height:24px; width:24px; border-radius:9999px; object-fit:cover; }
+    .up-person.on { color:var(--brand); border-color:rgba(var(--brand-glow),.5); background:rgba(var(--brand-glow),.10); }
+    /* location autocomplete */
+    .ac-list { position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:1200; max-height:208px; overflow-y:auto; list-style:none; margin:0;
+      padding:4px; background:#fff; border:1px solid var(--c-bg); border-radius:14px; box-shadow:0 16px 38px rgba(54,69,79,.20); }
+    html.dark .ac-list { background:#1b2430; border-color:rgba(255,255,255,.08); }
+    .ac-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; font-size:13px; font-weight:600; color:var(--c-text); cursor:pointer; }
+    .ac-item i { color:var(--brand); font-size:11px; }
+    .ac-item:hover, .ac-item.ac-active { background:var(--c-bg); }
+    /* mini location-picker map */
+    #upMap { z-index:0; }
+    #upMap .leaflet-container { border-radius:0; height:100%; width:100%; background:#dfe7ec; }
+    html.dark #upMap .leaflet-container { background:#0f151b; }
+    /* auto-detected metadata chips + AI status */
+    .meta-chip { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:9999px; font-size:11px; font-weight:700; color:var(--c-a2); background:var(--c-bg); }
+    .meta-chip i { color:var(--brand); }
+    .meta-src { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; color:#7a8a99; background:rgba(0,0,0,.05); padding:1px 5px; border-radius:6px; }
+    .meta-src.ai { color:#fff; background:var(--brand); }
+    .meta-none { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:var(--c-a2); opacity:.6; }
+    html.dark .meta-src { color:#9fb0bf; background:rgba(255,255,255,.08); }
+    #aiState .ai-shimmer, #aiState .ai-done { display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:9999px;
+      font-size:11px; font-weight:700; color:#fff; background:rgba(0,0,0,.62); backdrop-filter:blur(6px); }
+    #aiState .ai-shimmer i { color:#fff; animation:aiSpin 1.1s linear infinite; }
+    #aiState .ai-done i { color:#6ee7a0; }
+    @keyframes aiSpin { to{ transform:rotate(360deg);} }
+    #upDrop.drag { background:rgba(var(--brand-glow),.16); border-color:var(--brand); transform:scale(1.01); }
+    @media (prefers-reduced-motion: reduce){ #aiState .ai-shimmer i{ animation:none; } }
+    /* keyboard focus: a clear, brand-tinted ring on every interactive element (WCAG 2.4.7) */
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, label:focus-visible, [tabindex]:focus-visible, [role="button"]:focus-visible {
+      outline:3px solid var(--brand); outline-offset:2px; border-radius:10px; }
+    @media (prefers-reduced-motion: reduce){ #sbToast, .like-btn.liked i { transition:none; animation:none; } }
   </style>
 </head>
 
@@ -313,29 +407,23 @@
 
       <!-- nav links (desktop) -->
       <div class="hidden items-center gap-1 text-sm font-medium lg:flex">
-        <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-grey-light hover:text-primary-theme">Home</a>
-        <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-grey-light hover:text-primary-theme">Circle of Life</a>
-        <a href="#" class="rounded-full bg-white px-3 py-1.5 font-semibold text-primary-theme shadow-soft dark:bg-white/10">Photo</a>
-        <a href="#" class="rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-grey-light hover:text-primary-theme">Friends</a>
+        <a href="#top" data-nav onclick="navTo(event,this,'top')" class="nav-link rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-grey-light hover:text-primary-theme">Home</a>
+        <a href="#siteFooter" data-nav onclick="navTo(event,this,'siteFooter')" class="nav-link rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-grey-light hover:text-primary-theme">About</a>
+        <a href="#stageWrap" data-nav onclick="navTo(event,this,'stageWrap')" class="nav-link nav-active rounded-full bg-white px-3 py-1.5 font-semibold text-primary-theme shadow-soft dark:bg-white/10">Dashboard</a>
+        <a href="#siteFooter" data-nav onclick="navTo(event,this,'siteFooter')" class="nav-link rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-grey-light hover:text-primary-theme">Friends</a>
+        <a href="#top" data-nav onclick="navTo(event,this,'top')" class="nav-link rounded-full px-3 py-1.5 text-accent-blue/70 transition hover:bg-grey-light hover:text-primary-theme">Profile</a>
       </div>
 
       <!-- right actions -->
       <div class="ml-auto flex items-center gap-2 sm:gap-2.5">
-        <button class="hidden items-center gap-2 rounded-full bg-primary-theme px-4 py-2 text-sm font-semibold text-white shadow-glow transition hover:brightness-110 active:scale-95 md:flex">
-          <i class="fa-solid fa-plus"></i> Upload
-        </button>
-        <button aria-label="Messages" class="hidden h-10 w-10 place-items-center rounded-full text-accent-blue/60 transition hover:bg-grey-light hover:text-primary-theme md:grid">
+        <button aria-label="Chat" onclick="toast('Messaging lives in your full Systemboom space','fa-comment-dots')" class="grid h-10 w-10 place-items-center rounded-full text-accent-blue/60 transition hover:bg-grey-light hover:text-primary-theme">
           <i class="fa-regular fa-comment-dots"></i>
         </button>
         <button id="themeBtn" onclick="toggleTheme()" aria-label="Day / night mode" class="grid h-10 w-10 place-items-center rounded-full text-accent-blue/60 transition hover:bg-grey-light hover:text-primary-theme">
           <i id="themeIcon" class="fa-regular fa-moon"></i>
         </button>
-        <button aria-label="Notifications" class="relative grid h-10 w-10 place-items-center rounded-full text-accent-blue/60 transition hover:bg-grey-light hover:text-primary-theme">
-          <i class="fa-regular fa-bell"></i>
-          <span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary-theme ring-2 ring-white"></span>
-        </button>
-        <button class="flex items-center gap-1.5">
-          <img class="h-9 w-9 rounded-full object-cover ring-2 ring-primary-theme/40" src="https://i.pravatar.cc/80?img=12" alt="me" />
+        <button aria-label="Your account" onclick="toast('Signed in as Roshan Joshi','fa-circle-user')" class="flex items-center gap-1.5">
+          <img class="h-9 w-9 rounded-full object-cover ring-2 ring-primary-theme/40" src="https://i.pravatar.cc/80?img=12" alt="Roshan Joshi" />
           <i class="fa-solid fa-chevron-down hidden text-xs text-accent-blue/50 md:block"></i>
         </button>
       </div>
@@ -345,38 +433,35 @@
   <!-- ===================== PAGE ===================== -->
   <main class="mx-auto max-w-7xl px-4 pb-6 pt-6 sm:px-6 sm:pb-8">
 
-    <!-- (A) HEADER -->
-    <header class="fade-up mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <!-- (A) HEADER — date on the left, the life-journey summary + Play all on the right -->
+    <header class="fade-up mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <span class="chip inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-light-blue">
           <i class="fa-regular fa-image"></i> Photo · Timeline
         </span>
-        <h1 id="hdrDate" class="mt-3 text-3xl font-extrabold tracking-tight text-accent-blue sm:text-4xl">
+        <h1 id="hdrDate" class="mt-2 text-3xl font-extrabold tracking-tight text-accent-blue sm:text-4xl">
           June <span class="grad-text">9</span>, 2026
         </h1>
-        <p class="mt-1 text-sm text-accent-blue/60">Relive your moments from this day.</p>
-        <button id="onThisDay" class="chip mt-3 hidden items-center gap-2.5 rounded-full py-2 pl-3 pr-4 text-sm font-semibold text-primary-theme transition hover:brightness-105 active:scale-[.98]"></button>
+        <button id="onThisDay" class="chip mt-2 hidden items-center gap-2.5 rounded-full py-1.5 pl-3 pr-4 text-sm font-semibold text-primary-theme transition hover:brightness-105 active:scale-[.98]"></button>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary-theme to-primary-red text-lg text-white shadow-glow"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <div class="min-w-0 leading-tight">
+          <p class="text-sm font-bold text-accent-blue">Your life journey</p>
+          <p id="memoryStats" class="text-xs text-accent-blue/60">a lifetime of moments</p>
+        </div>
+        <button onclick="playMemories()" class="ml-auto shrink-0 rounded-full bg-primary-theme px-4 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-95">
+          <i class="fa fa-play"></i> Play all
+        </button>
       </div>
     </header>
 
     <!-- (B2) FILTER CHIPS -->
-    <div class="fade-up mb-6 flex gap-2 overflow-x-auto pb-1 text-sm scrollbar-hide">
+    <div class="fade-up mb-3 flex gap-2 overflow-x-auto pb-1 text-sm scrollbar-hide">
       <button onclick="setFilter(this)" class="shrink-0 rounded-full bg-primary-theme px-4 py-1.5 font-semibold text-white shadow-glow">All</button>
       <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme">Photos</button>
       <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme">Videos</button>
       <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme"><i class="fa fa-star text-primary-theme"></i> Faves</button>
-    </div>
-
-    <!-- (B3) MEMORIES HIGHLIGHT CARD — glass, content-forward; red only on the icon + Play -->
-    <div class="fade-up liquid-light mb-6 flex items-center gap-3 overflow-hidden rounded-3xl p-4">
-      <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary-theme to-primary-red text-xl text-white shadow-glow"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-      <div class="min-w-0">
-        <p class="text-base font-bold leading-tight text-accent-blue">Your life journey</p>
-        <p id="memoryStats" class="text-xs text-accent-blue/60">a lifetime of moments</p>
-      </div>
-      <button onclick="playMemories()" class="ml-auto shrink-0 rounded-full bg-primary-theme px-4 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-95">
-        <i class="fa fa-play"></i> Play all
-      </button>
     </div>
 
     <!-- (B4) STAGE WRAP — toolbar + ruler. When the map is OFF this turns into a big hero photo
@@ -396,7 +481,7 @@
       </div>
 
       <!-- UNIFIED TOOLBAR -->
-      <div id="toolbar" class="fade-up mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div id="toolbar" class="fade-up mb-2.5 flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <!-- map enable / disable -->
         <button id="mapBtn" onclick="toggleMap()" data-tip="Show / hide map" class="tip flex items-center gap-2 rounded-full bg-primary-theme px-3.5 py-2 text-sm font-semibold text-white shadow-glow transition active:scale-95">
@@ -413,20 +498,13 @@
           </select>
         </label>
       </div>
-      <!-- photo view switcher -->
-      <div class="chip flex items-center gap-1 rounded-full p-1">
+      <!-- photo view switcher (reel layouts — hidden in immersive map-off mode, where there's no reel) -->
+      <div id="viewSwitch" class="chip flex items-center gap-1 rounded-full p-1">
         <button id="viewH" onclick="setView('horizontal')" data-tip="Horizontal reel" aria-label="Horizontal reel" class="tip grid h-9 w-9 place-items-center rounded-full text-sm transition hover:text-primary-theme"><i class="fa-solid fa-film"></i></button>
         <button id="viewV" onclick="setView('vertical')" data-tip="Vertical reel" aria-label="Vertical reel" class="tip grid h-9 w-9 place-items-center rounded-full text-sm transition hover:text-primary-theme"><i class="fa-solid fa-mobile-screen-button"></i></button>
         <button id="viewG" onclick="setView('grid')" data-tip="Grid view" aria-label="Grid" class="tip grid h-9 w-9 place-items-center rounded-full text-sm transition hover:text-primary-theme"><i class="fa-solid fa-table-cells-large"></i></button>
       </div>
     </div>
-
-      <!-- TRAVEL RECORDS — distance roamed + how the latest move happened -->
-      <div id="travelBar" class="fade-up mb-3 flex flex-wrap items-center gap-2 text-sm">
-        <span class="liquid-light tv-chip" data-tip="Distance roamed so far" title="Distance roamed so far"><i class="fa-solid fa-earth-asia tv-ic"></i><b id="tvTotal">0 km</b><span class="tv-sub">roamed</span></span>
-        <span class="liquid-light tv-chip"><i class="fa-solid fa-cake-candles tv-ic"></i><span id="tvAge">Newborn</span></span>
-        <span class="liquid-light tv-chip"><i id="tvHopIcon" class="fa-solid fa-baby tv-ic"></i><span id="tvHop">Born here</span></span>
-      </div>
 
       <!-- LIFE CHAPTERS — the table of contents of a life; tap to jump, current chapter highlights -->
       <div id="chapterRail" class="fade-up mb-2 flex gap-1.5">
@@ -438,7 +516,7 @@
       </div>
 
     <!-- TIMELINE RULER (scrubber) — drag/scroll to scrub, hold ◀ ▶ to fly through dates; the playhead marks the active photo -->
-    <section id="rulerSec" class="fade-up mb-3">
+    <section id="rulerSec" class="fade-up mb-2.5">
       <div class="liquid-light rl-bar rounded-[26px] px-2 py-2.5 sm:px-3">
         <div class="rl-hint" id="rlHint">✦ Drag the ruler to travel through time</div>
         <button id="rlPrev" class="rl-nav tip" data-tip="Earlier — hold to rewind" aria-label="Go to an earlier date"><i class="fa fa-chevron-left"></i></button>
@@ -449,6 +527,7 @@
         </div>
         <button id="rlNext" class="rl-nav tip" data-tip="Later — hold to fast-forward" aria-label="Go to a later date"><i class="fa fa-chevron-right"></i></button>
         <button id="rlLatest" class="rl-nav tip" data-tip="Jump to latest" aria-label="Jump to the most recent photo"><i class="fa fa-angles-right"></i></button>
+        <button id="rlAdd" class="rl-nav rl-add-btn tip" onclick="openUpload()" data-tip="Add today’s memory" aria-label="Add a memory"><i class="fa fa-plus"></i></button>
       </div>
       <div id="srLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
     </section>
@@ -460,7 +539,7 @@
     <!-- (C) MAP PANEL (real Leaflet map) -->
     <section id="mapPanel" class="fade-up relative mb-4 h-[40vh] w-full overflow-hidden rounded-4xl shadow-card transition-all duration-500 sm:h-[42vh]">
       <div id="map" class="h-full w-full"></div>
-      <div class="glass-dark pointer-events-none absolute left-4 top-4 z-[500] rounded-xl px-3 py-1.5 text-xs font-medium text-white">
+      <div class="glass-dark pointer-events-none absolute left-16 top-4 z-[500] rounded-xl px-3 py-1.5 text-xs font-medium text-white">
         <i class="fa-solid fa-location-dot text-primary-theme"></i> <span id="mapLabel">Morning hike</span>
       </div>
       <!-- Map lock toggle -->
@@ -470,6 +549,12 @@
       </button>
       <div id="mapLockBadge" class="hidden absolute bottom-4 right-4 z-[500] items-center gap-1.5 rounded-full bg-primary-theme px-3 py-1 text-xs font-semibold text-white shadow-glow">
         <i class="fa fa-lock"></i> Map locked
+      </div>
+      <!-- TRAVEL RECORDS — distance roamed + how the latest move happened (floats on the map) -->
+      <div id="travelBar" class="pointer-events-none absolute bottom-4 left-4 right-4 z-[500] flex flex-wrap items-center gap-2 text-sm sm:right-16">
+        <span class="liquid-light tv-chip pointer-events-auto" data-tip="Distance roamed so far" title="Distance roamed so far"><i class="fa-solid fa-earth-asia tv-ic"></i><b id="tvTotal">0 km</b><span class="tv-sub">roamed</span></span>
+        <span class="liquid-light tv-chip pointer-events-auto"><i class="fa-solid fa-cake-candles tv-ic"></i><span id="tvAge">Newborn</span></span>
+        <span class="liquid-light tv-chip pointer-events-auto"><i id="tvHopIcon" class="fa-solid fa-baby tv-ic"></i><span id="tvHop">Born here</span></span>
       </div>
     </section>
 
@@ -540,7 +625,7 @@
 
       <!-- RIGHT comments -->
       <div id="commentPane" class="flex h-[55%] w-full flex-col sm:h-full sm:w-[32%]">
-        <div class="boom-scrollbar flex-1 overflow-y-auto p-5">
+        <div id="mCommentsScroll" class="boom-scrollbar flex-1 overflow-y-auto p-5">
           <!-- author -->
           <div class="flex items-start justify-between">
             <div class="flex gap-3">
@@ -549,7 +634,7 @@
                 <h3 class="font-bold leading-tight">Roshan Joshi</h3>
                 <div class="flex items-center gap-2 text-xs text-accent-blue/50">
                   <span id="modalAgo">2 hours ago</span>
-                  <i class="fas fa-globe-americas" title="Public"></i>
+                  <i id="modalPrivacy" class="fas fa-globe-americas" title="Public"></i>
                 </div>
                 <p id="modalLoc" class="mt-0.5 text-xs text-accent-blue/50"><i class="fa fa-location-dot mr-1"></i>Kathmandu, Nepal</p>
               </div>
@@ -573,42 +658,27 @@
               <span class="grid h-6 w-6 place-items-center rounded-full bg-blue-500 text-[10px] text-white"><i class="fa fa-thumbs-up"></i></span>
               <span class="-ml-1.5 grid h-6 w-6 place-items-center rounded-full bg-red-500 text-[10px] text-white"><i class="fa fa-heart"></i></span>
               <span class="-ml-1.5 grid h-6 w-6 place-items-center rounded-full bg-yellow-400 text-[10px] text-white"><i class="fas fa-laugh-beam"></i></span>
-              <span class="ml-2 text-accent-blue/70">12</span>
+              <span id="mLikeCount" class="ml-2 text-accent-blue/70">12</span>
             </div>
-            <span class="text-accent-blue/60">3 comments</span>
+            <span id="mCommentCount" class="text-accent-blue/60">3 comments</span>
           </div>
 
           <!-- actions -->
           <div class="mt-3 grid grid-cols-3 gap-1 border-y border-grey-light py-1 text-sm">
-            <button class="flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-regular fa-thumbs-up"></i> Like</button>
-            <button class="flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-regular fa-comment"></i> Comment</button>
-            <button class="flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-solid fa-share-nodes"></i> Share</button>
+            <button id="mLikeBtn" onclick="toggleLike()" class="like-btn flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-regular fa-thumbs-up"></i> Like</button>
+            <button onclick="focusCommentInput()" class="flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-regular fa-comment"></i> Comment</button>
+            <button onclick="openShare()" class="flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-solid fa-share-nodes"></i> Share</button>
           </div>
 
-          <!-- comments -->
-          <div class="mt-4 space-y-3">
-            <div class="flex gap-2">
-              <img class="h-8 w-8 rounded-full object-cover" src="https://i.pravatar.cc/60?img=32" />
-              <div class="rounded-2xl rounded-tl-sm bg-grey-light px-3 py-2">
-                <p class="text-xs font-bold">Alice Sharma</p>
-                <p class="text-sm">Such a beautiful memory 💛</p>
-              </div>
-            </div>
-            <div class="flex gap-2">
-              <img class="h-8 w-8 rounded-full object-cover" src="https://i.pravatar.cc/60?img=45" />
-              <div class="rounded-2xl rounded-tl-sm bg-grey-light px-3 py-2">
-                <p class="text-xs font-bold">Bob Thapa</p>
-                <p class="text-sm">Time really does fly 🥹</p>
-              </div>
-            </div>
-          </div>
+          <!-- comments (rendered per-memory) -->
+          <div id="mComments" class="mt-4 space-y-3"></div>
         </div>
 
         <!-- input -->
         <div class="border-t border-grey-light p-3">
           <div class="flex items-center gap-2 rounded-full bg-grey-light px-4 py-2.5">
-            <input class="w-full bg-transparent text-sm outline-none placeholder:text-accent-blue/40" placeholder="Write a comment..." />
-            <button class="grid h-8 w-8 place-items-center rounded-full bg-primary-theme text-white shadow-glow transition hover:brightness-110"><i class="fa fa-paper-plane text-xs"></i></button>
+            <input id="mCommentInput" onkeydown="if(event.key==='Enter'){event.preventDefault();addComment();}" class="w-full bg-transparent text-sm outline-none placeholder:text-accent-blue/40" placeholder="Write a comment..." aria-label="Write a comment" />
+            <button onclick="addComment()" aria-label="Post comment" class="grid h-8 w-8 place-items-center rounded-full bg-primary-theme text-white shadow-glow transition hover:brightness-110"><i class="fa fa-paper-plane text-xs"></i></button>
           </div>
         </div>
       </div>
@@ -619,9 +689,176 @@
     </div>
   </div>
 
+  <!-- ===================== SHARE SHEET ===================== -->
+  <div id="shareModal" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeShare()"></div>
+    <div class="relative w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl dark:bg-[#1b2430]">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-accent-blue">Share memory</h3>
+        <button onclick="closeShare()" aria-label="Close share" class="grid h-8 w-8 place-items-center rounded-full text-accent-blue/50 transition hover:bg-grey-light"><i class="fa fa-xmark"></i></button>
+      </div>
+      <div class="mt-4 flex items-center gap-3 rounded-2xl bg-grey-light p-3">
+        <img id="shareThumb" class="h-14 w-14 rounded-xl object-cover" alt="" />
+        <div class="min-w-0">
+          <p id="shareTitle" class="truncate text-sm font-bold text-accent-blue">Memory</p>
+          <p id="shareMeta" class="truncate text-xs text-accent-blue/55">—</p>
+        </div>
+      </div>
+      <div class="mt-4 grid grid-cols-4 gap-2 text-center text-xs font-medium text-accent-blue/80">
+        <button onclick="shareTo('Messages')" class="flex flex-col items-center gap-1.5 rounded-2xl py-3 transition hover:bg-grey-light"><span class="grid h-11 w-11 place-items-center rounded-full bg-green-500 text-white"><i class="fa-solid fa-comment"></i></span>Message</button>
+        <button onclick="shareTo('Facebook')" class="flex flex-col items-center gap-1.5 rounded-2xl py-3 transition hover:bg-grey-light"><span class="grid h-11 w-11 place-items-center rounded-full bg-[#1877f2] text-white"><i class="fa-brands fa-facebook-f"></i></span>Facebook</button>
+        <button onclick="shareTo('Instagram')" class="flex flex-col items-center gap-1.5 rounded-2xl py-3 transition hover:bg-grey-light"><span class="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white"><i class="fa-brands fa-instagram"></i></span>Instagram</button>
+        <button onclick="shareTo('Email')" class="flex flex-col items-center gap-1.5 rounded-2xl py-3 transition hover:bg-grey-light"><span class="grid h-11 w-11 place-items-center rounded-full bg-accent-blue text-white"><i class="fa-solid fa-envelope"></i></span>Email</button>
+      </div>
+      <div class="mt-3 flex items-center gap-2 rounded-full bg-grey-light p-1.5 pl-4">
+        <input id="shareLink" readonly value="https://systemboom.app/m/1" class="w-full bg-transparent text-xs text-accent-blue/70 outline-none" aria-label="Share link" />
+        <button onclick="copyShareLink()" class="shrink-0 rounded-full bg-primary-theme px-4 py-2 text-xs font-bold text-white shadow-glow transition hover:brightness-110"><i class="fa fa-link"></i> Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== UPLOAD ===================== -->
+  <div id="uploadModal" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeUpload()"></div>
+    <div class="boom-scrollbar relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl dark:bg-[#1b2430]">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-accent-blue"><i class="fa-solid fa-wand-magic-sparkles text-primary-theme"></i> Add a memory</h3>
+        <button onclick="closeUpload()" aria-label="Close upload" class="grid h-8 w-8 place-items-center rounded-full text-accent-blue/50 transition hover:bg-grey-light"><i class="fa fa-xmark"></i></button>
+      </div>
+      <!-- chooser: drop / browse / take a photo -->
+      <div id="upChoose">
+        <div id="upDrop" role="button" tabindex="0"
+          onclick="document.getElementById('upFile').click()"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('upFile').click();}"
+          ondragover="event.preventDefault(); this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
+          ondrop="event.preventDefault(); this.classList.remove('drag'); handleDrop(event)"
+          class="mt-4 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary-theme/40 bg-primary-theme/5 py-9 text-center transition hover:bg-primary-theme/10">
+          <span class="grid h-12 w-12 place-items-center rounded-full bg-primary-theme text-white shadow-glow"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+          <span class="text-sm font-semibold text-accent-blue">Drop a photo or click to browse</span>
+          <span class="text-xs text-accent-blue/50"><i class="fa-solid fa-wand-magic-sparkles text-primary-theme"></i> We'll read its date, place &amp; details automatically</span>
+        </div>
+        <button type="button" onclick="document.getElementById('upCam').click()" class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-grey-light py-2.5 text-sm font-semibold text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme">
+          <i class="fa-solid fa-camera"></i> Take a photo
+        </button>
+      </div>
+      <input id="upFile" type="file" accept="image/*,.heic,.heif" class="hidden" onchange="onUploadFile(this)" />
+      <input id="upCam" type="file" accept="image/*" capture="environment" class="hidden" onchange="onUploadFile(this)" />
+
+      <!-- preview + AI status + auto-detected metadata -->
+      <div id="upPreview" class="mt-4 hidden">
+        <div class="relative overflow-hidden rounded-2xl">
+          <img id="upPreviewImg" class="max-h-52 w-full object-cover" alt="Selected photo preview" />
+          <button onclick="resetUpload()" aria-label="Choose a different photo" class="absolute right-2 top-2 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white"><i class="fa fa-rotate-left"></i> Change</button>
+          <div id="aiState" class="absolute bottom-2 left-2 hidden"></div>
+        </div>
+        <div id="upMeta" class="mt-2 flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <!-- details — auto-filled from the photo + AI, editable by you -->
+      <div class="mt-4 space-y-3 text-left">
+        <div>
+          <div class="mb-1 flex items-center justify-between">
+            <label for="upCaption" class="text-xs font-semibold text-accent-blue/70">Caption <span class="text-primary-theme">*</span></label>
+            <button type="button" id="upSuggest" onclick="aiAnotherCaption()" class="hidden items-center gap-1 text-[11px] font-bold text-primary-theme transition hover:underline"><i class="fa-solid fa-wand-magic-sparkles"></i> Suggest another</button>
+          </div>
+          <input id="upCaption" maxlength="60" oninput="updateUploadValid()" placeholder="What's this moment?" class="w-full rounded-xl border border-grey-light bg-grey-light px-4 py-2.5 text-sm text-accent-blue outline-none focus:border-primary-theme" />
+        </div>
+        <!-- LOCATION — from GPS if the photo has it, otherwise search a place or drag the pin -->
+        <div>
+          <label for="upPlace" class="mb-1 block text-xs font-semibold text-accent-blue/70">Location</label>
+          <div class="relative flex gap-2">
+            <input id="upPlace" maxlength="60" autocomplete="off" oninput="onUpPlaceInput()" onkeydown="acKey(event)" onblur="setTimeout(hideAC,180)" placeholder="Start typing a place…" class="w-full rounded-xl border border-grey-light bg-grey-light px-4 py-2.5 text-sm text-accent-blue outline-none focus:border-primary-theme" />
+            <button type="button" id="upLocate" onclick="locateUpPlace()" aria-label="Find this place on the map" title="Find this place on the map" class="grid w-11 shrink-0 place-items-center rounded-xl bg-primary-theme text-white shadow-glow transition hover:brightness-110 active:scale-95"><i class="fa-solid fa-magnifying-glass-location"></i></button>
+            <ul id="upPlaceAC" class="ac-list hidden" role="listbox"></ul>
+          </div>
+          <div id="upMap" class="mt-2 h-40 w-full overflow-hidden rounded-xl border border-grey-light"></div>
+          <p class="mt-1 text-[11px] text-accent-blue/45"><i class="fa-solid fa-thumbtack"></i> Drag the pin (or tap the map) to set exactly where this happened.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="upDate" class="mb-1 block text-xs font-semibold text-accent-blue/70">Date <span class="text-primary-theme">*</span></label>
+            <input id="upDate" type="date" oninput="renderMeta()" class="w-full rounded-xl border border-grey-light bg-grey-light px-4 py-2.5 text-sm text-accent-blue outline-none focus:border-primary-theme" />
+          </div>
+          <div>
+            <label for="upMood" class="mb-1 block text-xs font-semibold text-accent-blue/70">Feeling</label>
+            <select id="upMood" class="w-full cursor-pointer rounded-xl border border-grey-light bg-grey-light px-4 py-2.5 text-sm text-accent-blue outline-none focus:border-primary-theme">
+              <option>Joyful</option><option>Proud</option><option>Grateful</option><option>Excited</option><option>Peaceful</option><option>Nostalgic</option><option>Adventurous</option><option>Loved</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- WHO'S IN IT — tags appear on the memory ("with Mom, Dad…") -->
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-accent-blue/70">Who's in it?</label>
+          <div id="upPeople" class="up-people"></div>
+        </div>
+
+        <!-- HOW YOU GOT HERE — sets the travel icon on the map's arrow + the journey records -->
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-accent-blue/70">How did you get here?</label>
+          <div id="upTravel" class="up-seg up-travel">
+            <button type="button" data-mode="" class="on" onclick="setTravel(this)" title="Auto — choose by distance"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+            <button type="button" data-mode="walk" onclick="setTravel(this)" title="On foot"><i class="fa-solid fa-person-walking"></i></button>
+            <button type="button" data-mode="bike" onclick="setTravel(this)" title="By bike"><i class="fa-solid fa-bicycle"></i></button>
+            <button type="button" data-mode="car" onclick="setTravel(this)" title="By road"><i class="fa-solid fa-car-side"></i></button>
+            <button type="button" data-mode="train" onclick="setTravel(this)" title="By train"><i class="fa-solid fa-train"></i></button>
+            <button type="button" data-mode="boat" onclick="setTravel(this)" title="By sea"><i class="fa-solid fa-ship"></i></button>
+            <button type="button" data-mode="plane" onclick="setTravel(this)" title="By air"><i class="fa-solid fa-plane-up"></i></button>
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-accent-blue/70">Who can see it</label>
+          <div id="upPrivacy" class="up-seg">
+            <button type="button" data-pv="Public" class="on" onclick="setPrivacy(this)"><i class="fa-solid fa-globe-americas"></i> Public</button>
+            <button type="button" data-pv="Friends" onclick="setPrivacy(this)"><i class="fa-solid fa-user-group"></i> Friends</button>
+            <button type="button" data-pv="Private" onclick="setPrivacy(this)"><i class="fa-solid fa-lock"></i> Only me</button>
+          </div>
+        </div>
+      </div>
+      <div class="mt-5 flex items-center justify-end gap-2">
+        <button onclick="closeUpload()" class="rounded-full px-4 py-2.5 text-sm font-semibold text-accent-blue/70 transition hover:bg-grey-light">Cancel</button>
+        <button id="upSave" onclick="saveUpload()" disabled class="rounded-full bg-primary-theme px-5 py-2.5 text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"><i class="fa fa-check"></i> Add to timeline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== ANCESTRY TREE (teaser — full module lives elsewhere) ===================== -->
+  <div id="ancModal" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAncestry()"></div>
+    <div class="relative w-full max-w-lg rounded-3xl bg-white p-6 text-center shadow-2xl dark:bg-[#1b2430]">
+      <button onclick="closeAncestry()" aria-label="Close ancestry" class="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-accent-blue/50 transition hover:bg-grey-light"><i class="fa fa-xmark"></i></button>
+      <span class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-primary-theme to-primary-red text-lg text-white shadow-glow"><i class="fa-solid fa-sitemap"></i></span>
+      <h3 class="mt-3 text-lg font-extrabold text-accent-blue">Your Ancestry Tree</h3>
+      <p class="mx-auto mt-1 max-w-sm text-sm text-accent-blue/60">The roots of your Circle of Life — the generations whose story came before yours.</p>
+      <div class="anc-tree mt-6">
+        <div class="anc-row">
+          <div class="anc-node"><img src="https://i.pravatar.cc/64?img=51" alt=""/><span>Grandpa</span></div>
+          <div class="anc-node"><img src="https://i.pravatar.cc/64?img=49" alt=""/><span>Grandma</span></div>
+          <div class="anc-node"><img src="https://i.pravatar.cc/64?img=53" alt=""/><span>Nana</span></div>
+          <div class="anc-node"><img src="https://i.pravatar.cc/64?img=26" alt=""/><span>Nani</span></div>
+        </div>
+        <div class="anc-link"></div>
+        <div class="anc-row">
+          <div class="anc-node"><img src="https://i.pravatar.cc/64?img=13" alt=""/><span>Dad</span></div>
+          <div class="anc-node"><img src="https://i.pravatar.cc/64?img=45" alt=""/><span>Mom</span></div>
+        </div>
+        <div class="anc-link"></div>
+        <div class="anc-row">
+          <div class="anc-node anc-you"><img src="https://i.pravatar.cc/80?img=12" alt=""/><span>You</span></div>
+        </div>
+      </div>
+      <div class="mt-6 flex items-center justify-center gap-2">
+        <button onclick="closeAncestry()" class="rounded-full px-4 py-2.5 text-sm font-semibold text-accent-blue/70 transition hover:bg-grey-light">Close</button>
+        <button onclick="toast('Opening your full Ancestry Tree','fa-sitemap')" class="rounded-full bg-primary-theme px-5 py-2.5 text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-95"><i class="fa-solid fa-up-right-from-square"></i> Open full tree</button>
+      </div>
+      <p class="mt-3 text-[11px] text-accent-blue/40">Ancestry is a dedicated space in Systemboom.</p>
+    </div>
+  </div>
 
   <!-- ===================== FOOTER ===================== -->
-  <footer class="ftr relative mt-6 overflow-hidden text-white">
+  <footer id="siteFooter" class="ftr relative mt-6 overflow-hidden text-white">
     <!-- brand accent line + soft glow -->
     <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-theme via-primary-red to-primary-theme"></div>
     <div class="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary-theme/20 blur-3xl"></div>
@@ -784,9 +1021,24 @@
       .sort((a,b)=> new Date(a.y,a.mo,a.d) - new Date(b.y,b.mo,b.d)); // keep oldest → newest
     // themed images by keyword; picsum is the fallback (see onerror handlers) if a photo fails to load
     const _kwById = {}; photos.forEach(p=> _kwById[p.id]=p.kw);
-    const imgFor = id => `img/life${id}.jpg`;   // self-hosted themed images (fast, offline, no external dependency)
+    const _uploads = {};   // uploaded memories keep their image data-URL here, keyed by id
+    const imgFor = id => _uploads[id] || `img/life${id}.jpg`;   // self-hosted themed images (fast, offline, no external dependency)
     const imgHD  = id => imgFor(id);
-    const imgAlt = id => `https://picsum.photos/seed/life${id}/900/1100`;   // fallback if a local file is missing
+    const imgAlt = id => _uploads[id] || `https://picsum.photos/seed/life${id}/900/1100`;   // fallback if a local file is missing
+
+    /* ---- social state: every memory carries its own likes + comments so the loop feels real ---- */
+    const ME = { name:'Roshan Joshi', img:'https://i.pravatar.cc/80?img=12' };
+    const _cseed = ['Such a beautiful memory 💛','Time really does fly 🥹','Love this one ❤️','Look how little you were!','This made my day 😊','Pure gold ✨','Treasure this forever 🌟','So happy for you 🎉'];
+    const _cppl  = [PEOPLE.mom, PEOPLE.dad, PEOPLE.gran, PEOPLE.maya, PEOPLE.arjun, PEOPLE.sara].filter(Boolean);
+    photos.forEach((p,i)=>{
+      p.likes = 7 + ((i*13+5) % 34);
+      p.liked = false;
+      const n = 1 + ((i*7) % 3);   // 1–3 seed comments per memory
+      p.comments = Array.from({length:n}, (_,k)=>{
+        const who = _cppl[(i+k) % _cppl.length];
+        return { name:who.name, img:who.img, text:_cseed[(i*3+k) % _cseed.length] };
+      });
+    });
 
     // ---- travel maths: how far this life has roamed ----
     function haversineKm(a,b){
@@ -795,8 +1047,12 @@
       const h=Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
       return 2*R*Math.asin(Math.sqrt(h));
     }
-    const _hopKm = photos.map((p,i)=> i===0 ? 0 : haversineKm(photos[i-1], p));     // distance of each hop
-    const _cumKm = _hopKm.map((__,i)=> _hopKm.slice(0,i+1).reduce((a,b)=>a+b,0));    // total up to each moment
+    let _hopKm = photos.map((p,i)=> i===0 ? 0 : haversineKm(photos[i-1], p));     // distance of each hop
+    let _cumKm = _hopKm.map((__,i)=> _hopKm.slice(0,i+1).reduce((a,b)=>a+b,0));    // total up to each moment
+    function recomputeTravel(){
+      _hopKm = photos.map((p,i)=> i===0 ? 0 : haversineKm(photos[i-1], p));
+      _cumKm = _hopKm.map((__,i)=> _hopKm.slice(0,i+1).reduce((a,b)=>a+b,0));
+    }
     function travelMode(km){
       if(km<=0)   return {icon:'fa-baby',            label:'born here'};
       if(km<12)   return {icon:'fa-person-walking',  label:'on foot'};
@@ -804,6 +1060,17 @@
       if(km<1200) return {icon:'fa-train',           label:'by train'};
       return            {icon:'fa-plane-up',        label:'by air'};
     }
+    // explicit travel modes a user can choose (overrides the auto-by-distance guess)
+    const TRAVEL_MODES = {
+      walk: {icon:'fa-person-walking', label:'on foot'},
+      bike: {icon:'fa-bicycle',        label:'by bike'},
+      car:  {icon:'fa-car-side',       label:'by road'},
+      train:{icon:'fa-train',          label:'by train'},
+      boat: {icon:'fa-ship',           label:'by sea'},
+      plane:{icon:'fa-plane-up',       label:'by air'},
+    };
+    // the mode for the hop INTO photo i — honor an explicit choice, else infer from distance
+    function modeOf(i){ const p=photos[i]; if(p && p.modeKey && TRAVEL_MODES[p.modeKey]) return TRAVEL_MODES[p.modeKey]; return travelMode(_hopKm[i]); }
     const km = n => Math.round(n).toLocaleString();
     let active = photos.length-1, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1, currentFilter = 'all', searchQuery = '';
     // honor the OS "reduce motion" setting → skip the smooth glide, jump instantly
@@ -918,9 +1185,26 @@
       }).join('');
       // narrative bookends so the ends never look empty
       const birth = vis.length ? vis[0].p.year : '';
-      const leftCap  = `<div class="rl-spacer rl-cap-l"><span class="rl-cap"><i class="fa-solid fa-seedling"></i> The beginning · ${birth}</span></div>`;
-      const rightCap = `<div class="rl-spacer rl-cap-r"><span class="rl-cap"><i class="fa-regular fa-clock"></i> Today · ${TODAY.getDate()} ${_mo[TODAY.getMonth()]} ${TODAY.getFullYear()}</span><span class="rl-future">the rest is unwritten…</span></div>`;
+      // before birth there are no dated moments — that space links to the Ancestry Tree (separate module)
+      const leftCap  = `<div class="rl-spacer rl-cap-l">
+        <button class="rl-anc" onclick="openAncestry()" title="Before your story began — explore your family roots"><i class="fa-solid fa-sitemap"></i> Ancestry</button>
+        <span class="rl-cap"><i class="fa-solid fa-seedling"></i> The beginning · ${birth}</span></div>`;
+      // the journey ends at "today" — the add pill lives here on desktop (wide ruler shows it);
+      // on mobile the ruler is too narrow to reach it, so the fixed "+" button takes over (see updateAddBtn)
+      const todayHas = photos.some(p=> p.y===TODAY.getFullYear() && p.mo===TODAY.getMonth() && p.d===TODAY.getDate());
+      const rightCap = `<div class="rl-spacer rl-cap-r">
+        <span class="rl-cap"><i class="fa-regular fa-clock"></i> Today · ${TODAY.getDate()} ${_mo[TODAY.getMonth()]} ${TODAY.getFullYear()}</span>
+        <button class="rl-add${todayHas?'':' rl-add-glow'}" onclick="openUpload()" title="Add a memory — any date up to today"><i class="fa-solid fa-plus"></i> ${todayHas?'Add a memory':'Add today’s memory'}</button>
+        <span class="rl-future">the rest is unwritten…</span></div>`;
       rail.innerHTML = leftCap + ticks + rightCap;
+      updateAddBtn();
+    }
+    // the persistent + button glows until today has a memory
+    function updateAddBtn(){
+      const b=document.getElementById('rlAdd'); if(!b) return;
+      const todayHas = photos.some(p=> p.y===TODAY.getFullYear() && p.mo===TODAY.getMonth() && p.d===TODAY.getDate());
+      b.classList.toggle('glow', !todayHas);
+      b.setAttribute('data-tip', todayHas ? 'Add a memory' : 'Add today’s memory');
     }
     function renderTimelineActive(){
       document.querySelectorAll('.rl-tick').forEach(t=>t.classList.toggle('active', +t.dataset.rt===active));
@@ -999,7 +1283,7 @@
         if(hop) hop.textContent='Born in '+photos[0].loc.split(',')[0];
         if(hopIc) hopIc.className='fa-solid fa-baby tv-ic';
       } else {
-        const m=travelMode(_hopKm[active]);
+        const m=modeOf(active);
         const from=photos[active-1].loc.split(',')[0], to=photos[active].loc.split(',')[0];
         if(hop) hop.innerHTML = `${from} → <b>${to}</b> · ${km(_hopKm[active])} km <span class="tv-sub">${m.label}</span>`;
         if(hopIc) hopIc.className=`fa-solid ${m.icon} tv-ic`;
@@ -1025,16 +1309,16 @@
       const media = p => p.type==='video'
         ? `<video class="card-img h-full w-full object-cover" src="${p.vsrc}" poster="${imgFor(p.id)}" autoplay muted loop playsinline preload="metadata"></video>`
         : `<img src="${imgFor(p.id)}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='${imgAlt(p.id)}'" class="card-img h-full w-full object-cover" />`;
-      const overlay = (p)=>`
+      const overlay = (p,i)=>`
             ${media(p)}
             <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"></div>
             ${p.type==='video'?`<span class="vid-dur"><i class="fa-solid fa-volume-xmark"></i> ${p.dur}</span>`:''}
             <div class="absolute left-3 right-3 top-3 flex items-center justify-between">
               <span class="glass rounded-full px-2.5 py-1 text-[11px] font-semibold text-accent-blue">${p.time}</span>
               <div class="flex gap-1.5 opacity-0 transition group-hover:opacity-100">
-                <button aria-label="Edit" onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-pen"></i></button>
-                <button aria-label="Share" onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-share-nodes"></i></button>
-                <button aria-label="Delete" onclick="event.stopPropagation()" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-trash text-red-300"></i></button>
+                <button aria-label="Open memory" onclick="event.stopPropagation();openModal(${i})" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-pen"></i></button>
+                <button aria-label="Share memory" onclick="event.stopPropagation();openShare(${i})" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-share-nodes"></i></button>
+                <button aria-label="Delete memory" onclick="event.stopPropagation();deleteMemory(${i})" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-trash text-red-300"></i></button>
               </div>
             </div>
             <div class="absolute bottom-0 left-0 w-full p-3 text-white">
@@ -1042,7 +1326,7 @@
               <p class="text-base font-bold leading-tight">${p.name}${p.fav?' <i class=\"fa fa-star text-primary-theme text-[11px]\"></i>':''}</p>
               <div class="mt-1 flex items-center justify-between text-xs text-white/80">
                 <span>${p.dmy} · ${p.day}</span>
-                <span class="flex items-center gap-2"><span><i class="fa fa-heart text-primary-theme"></i> 12</span><span><i class="fa-regular fa-comment"></i> 3</span></span>
+                <span class="flex items-center gap-2"><span><i class="fa-${p.liked?'solid':'regular'} fa-heart text-primary-theme"></i> ${p.likes}</span><span><i class="fa-regular fa-comment"></i> ${p.comments.length}</span></span>
               </div>
             </div>`;
       const a11y = i=>`role="button" tabindex="0" aria-label="${photos[i].name}" onclick="openModal(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openModal(${i});}"`;
@@ -1062,17 +1346,17 @@
         el.className = 'maskx snap-x-m flex gap-3 overflow-x-auto px-1 pb-2 scrollbar-hide';
         const sz = big ? 'w-[84vw] aspect-[4/5] sm:aspect-auto sm:h-[34rem] sm:w-[24rem]' : 'h-44 w-36 sm:h-56 sm:w-44';
         el.innerHTML = photos.map((p,i)=>`
-          <div ${a11y(i)} class="${hid(p)} snap-c group relative shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-500 ${i===active?'ring-4 ring-primary-theme':'opacity-95 hover:opacity-100'} ${sz}">${overlay(p)}</div>`).join('');
+          <div ${a11y(i)} class="${hid(p)} snap-c group relative shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-500 ${i===active?'ring-4 ring-primary-theme':'opacity-95 hover:opacity-100'} ${sz}">${overlay(p,i)}</div>`).join('');
       } else if (viewMode === 'vertical') {
         // vertical reel — one photo at a time (TikTok/Reels style)
         el.className = `masky flex ${big?'h-[72vh]':'h-[48vh]'} flex-col gap-3 overflow-y-auto pr-1 boom-scrollbar snap-y snap-mandatory`;
         el.innerHTML = photos.map((p,i)=>`
-          <div ${a11y(i)} class="${hid(p)} snap-c group relative w-full shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'opacity-95'} ${big?'h-[70vh]':'h-[46vh]'}">${overlay(p)}</div>`).join('');
+          <div ${a11y(i)} class="${hid(p)} snap-c group relative w-full shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'opacity-95'} ${big?'h-[70vh]':'h-[46vh]'}">${overlay(p,i)}</div>`).join('');
       } else {
         // grid — bigger cells (fewer columns) when map is off
         el.className = `grid ${big?'max-h-[80vh] grid-cols-1 sm:grid-cols-2':'max-h-[46vh] grid-cols-2 sm:grid-cols-3'} gap-2 overflow-y-auto pr-1 boom-scrollbar sm:gap-3`;
         el.innerHTML = photos.map((p,i)=>`
-          <div ${a11y(i)} class="${hid(p)} group relative aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'hover:-translate-y-0.5'}">${overlay(p)}</div>`).join('');
+          <div ${a11y(i)} class="${hid(p)} group relative aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'hover:-translate-y-0.5'}">${overlay(p,i)}</div>`).join('');
       }
     }
 
@@ -1222,6 +1506,9 @@
       if(vibe) vibe.innerHTML = `<span class="vibe-chip"><i class="fa-solid fa-face-smile"></i> ${p.mood}</span>`
         + `<span class="vibe-chip"><i class="fa-solid ${p.season[1]}"></i> ${p.season[0]}</span>`
         + `<span class="vibe-chip"><i class="fa-solid fa-music"></i> ${p.song}</span>`;
+      const pv=document.getElementById('modalPrivacy');
+      if(pv){ const map={Public:['fa-globe-americas','Public'], Friends:['fa-user-group','Friends only'], Private:['fa-lock','Only me']}, k=p.privacy||'Public'; pv.className='fas '+map[k][0]; pv.title=map[k][1]; }
+      paintLike(); renderComments();
     }
     // go to a specific index + keep the open modal in sync
     function move2(n){ setActive(n);
@@ -1250,8 +1537,9 @@
       document.getElementById('modal').classList.remove('hidden');   // show first so a video can actually play
       fillModal();
       updateStory();
+      if(typeof syncBodyScroll==='function') syncBodyScroll();
     }
-    function closeModal(){ document.getElementById('modal').classList.add('hidden'); const mv=document.getElementById('modalVideo'); if(mv) mv.pause(); }
+    function closeModal(){ document.getElementById('modal').classList.add('hidden'); const mv=document.getElementById('modalVideo'); if(mv) mv.pause(); if(typeof syncBodyScroll==='function') syncBodyScroll(); }
     function toggleComments(){
       const pane=document.getElementById('commentPane'), media=document.getElementById('mediaPane'), ch=document.getElementById('commentChevron');
       const open=pane.classList.contains('sm:hidden')||pane.classList.contains('hidden-sm');
@@ -1289,6 +1577,417 @@
     // lock + re-center the ruler so a resize reflow doesn't drift the active photo
     let _rt; window.addEventListener('resize', ()=>{ lockRuler(); clearTimeout(_rt); _rt=setTimeout(()=>{ renderCarousel(); lockRuler(); scrollRulerToActive('auto'); },150); });
 
+    /* ============ INTERACTIVE LOOP — likes · comments · share · upload · nav ============ */
+    function esc(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+    // toast — optional { label, fn } adds an action button (e.g. Undo)
+    function toast(msg, icon='fa-circle-check', action){
+      let t=document.getElementById('sbToast');
+      if(!t){ t=document.createElement('div'); t.id='sbToast'; t.setAttribute('role','status'); t.setAttribute('aria-live','polite'); document.body.appendChild(t); }
+      t.innerHTML = `<i class="fa-solid ${icon}"></i><span>${msg}</span>` + (action?`<button type="button" id="sbToastAct">${action.label}</button>`:'');
+      t.classList.add('show');
+      if(action){ const a=document.getElementById('sbToastAct'); if(a) a.onclick=()=>{ t.classList.remove('show'); action.fn(); }; }
+      clearTimeout(t._to); t._to=setTimeout(()=>t.classList.remove('show'), action?5200:2400);
+    }
+
+    // ---- LIKE ----
+    function toggleLike(){
+      const p=photos[active];
+      p.liked=!p.liked; p.likes=Math.max(0, p.likes+(p.liked?1:-1));
+      paintLike(); renderCarousel();
+      if(p.liked) toast('You loved “'+p.name+'”','fa-heart');
+    }
+    function paintLike(){
+      const p=photos[active], b=document.getElementById('mLikeBtn');
+      if(b){ b.classList.toggle('liked', !!p.liked); b.innerHTML = `<i class="fa-${p.liked?'solid':'regular'} fa-thumbs-up"></i> ${p.liked?'Liked':'Like'}`; }
+      const c=document.getElementById('mLikeCount'); if(c) c.textContent=p.likes;
+    }
+
+    // ---- COMMENTS ----
+    function renderComments(){
+      const p=photos[active], wrap=document.getElementById('mComments');
+      if(wrap) wrap.innerHTML = p.comments.length ? p.comments.map(c=>`
+        <div class="flex gap-2">
+          <img class="h-8 w-8 rounded-full object-cover" src="${c.img}" alt=""/>
+          <div class="rounded-2xl rounded-tl-sm bg-grey-light px-3 py-2">
+            <p class="text-xs font-bold">${esc(c.name)}</p>
+            <p class="text-sm">${esc(c.text)}</p>
+          </div></div>`).join('') : `<p class="text-sm text-accent-blue/45">Be the first to say something 💬</p>`;
+      const cc=document.getElementById('mCommentCount'); if(cc) cc.textContent=p.comments.length+' comment'+(p.comments.length!==1?'s':'');
+    }
+    function addComment(){
+      const inp=document.getElementById('mCommentInput'); if(!inp) return;
+      const txt=inp.value.trim(); if(!txt) return;
+      photos[active].comments.push({ name:ME.name, img:ME.img, text:txt });
+      inp.value=''; renderComments(); renderCarousel();
+      const box=document.getElementById('mCommentsScroll'); if(box) box.scrollTop=box.scrollHeight;
+    }
+    function focusCommentInput(){ const i=document.getElementById('mCommentInput'); if(i){ i.focus(); i.scrollIntoView({block:'nearest'}); } }
+
+    // ---- SHARE ----
+    function openShare(i){
+      if(i!=null){ setActive(i); if(!document.getElementById('modal').classList.contains('hidden')) fillModal(); }
+      const p=photos[active];
+      const t=document.getElementById('shareTitle'); if(t) t.textContent=p.name;
+      const mt=document.getElementById('shareMeta'); if(mt) mt.textContent=`${p.dmy} ${p.year} · ${p.loc}`;
+      const th=document.getElementById('shareThumb'); if(th){ th.onerror=function(){this.onerror=null;this.src=imgAlt(p.id);}; th.src=imgFor(p.id); }
+      const lk=document.getElementById('shareLink'); if(lk) lk.value=`https://systemboom.app/m/${p.id}`;
+      const m=document.getElementById('shareModal'); m.classList.remove('hidden'); m.classList.add('flex'); syncBodyScroll();
+    }
+    function closeShare(){ const m=document.getElementById('shareModal'); m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); }
+    function copyShareLink(){
+      const lk=document.getElementById('shareLink');
+      if(lk && navigator.clipboard){ navigator.clipboard.writeText(lk.value).catch(()=>{}); }
+      else if(lk){ lk.select(); try{ document.execCommand('copy'); }catch(e){} }
+      toast('Link copied to clipboard','fa-link');
+    }
+    function shareTo(network){ closeShare(); toast('Shared to '+network,'fa-share-nodes'); }
+
+    // ---- NAV ----
+    function navTo(ev, el, target){
+      if(ev) ev.preventDefault();
+      document.querySelectorAll('[data-nav]').forEach(a=>{ a.classList.remove('nav-active','bg-white','font-semibold','text-primary-theme','shadow-soft'); a.classList.add('text-accent-blue/70'); });
+      el.classList.add('nav-active','bg-white','font-semibold','text-primary-theme','shadow-soft'); el.classList.remove('text-accent-blue/70');
+      if(target==='top'){ window.scrollTo({top:0, behavior:REDUCED?'auto':'smooth'}); return; }
+      const t=document.getElementById(target); if(t) t.scrollIntoView({behavior:REDUCED?'auto':'smooth', block:'start'});
+    }
+
+    // ---- NOTIFICATIONS ----
+    function openNotifs(){
+      const dot=document.getElementById('notifDot'); if(dot) dot.style.display='none';
+      toast('On this day · a year ago you shared “'+(photos[active]?photos[active].name:'a memory')+'”','fa-bell');
+    }
+
+    // lock the page behind any open overlay so a touch-scroll doesn't bleed through
+    function syncBodyScroll(){
+      const anyOpen=['uploadModal','shareModal','ancModal','modal'].some(id=>{ const m=document.getElementById(id); return m && !m.classList.contains('hidden'); });
+      document.body.style.overflow = anyOpen ? 'hidden' : '';
+    }
+    // ---- ANCESTRY (teaser; full module lives elsewhere) ----
+    function openAncestry(){ const m=document.getElementById('ancModal'); if(m){ m.classList.remove('hidden'); m.classList.add('flex'); syncBodyScroll(); } }
+    function closeAncestry(){ const m=document.getElementById('ancModal'); if(m){ m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); } }
+
+    // ---- UPLOAD (reads the photo's own metadata, then AI fills the rest) ----
+    let _newDataURL=null, _upPrivacy='Public', _meta={}, _aiSeed=0, _upMode='', _upMap=null, _upMarker=null, _upPeople=[];
+    function openUpload(){
+      resetUpload();
+      renderPeoplePicker();
+      const di=document.getElementById('upDate'), today=new Date().toISOString().slice(0,10);
+      if(di){ di.max=today; di.value=today; _meta.dateSrc='you'; }
+      const m=document.getElementById('uploadModal'); m.classList.remove('hidden'); m.classList.add('flex'); syncBodyScroll();
+      // mini location map: init + default pin near the latest place, sized after the modal is visible
+      setTimeout(()=>{ initUpMap(); const last=photos[photos.length-1]; if(last) setUpPin(last.lat, last.lng, 3); if(_upMap) _upMap.invalidateSize(); }, 90);
+    }
+    // people picker — built once from the roster
+    function renderPeoplePicker(){
+      const wrap=document.getElementById('upPeople'); if(!wrap || wrap.dataset.built) return; wrap.dataset.built='1';
+      wrap.innerHTML = Object.keys(PEOPLE).map(k=>`<button type="button" data-k="${k}" onclick="togglePerson(this)" class="up-person"><img src="${PEOPLE[k].img}" alt=""/><span>${PEOPLE[k].name}</span></button>`).join('');
+    }
+    function togglePerson(btn){ const k=btn.dataset.k, i=_upPeople.indexOf(k); if(i>=0)_upPeople.splice(i,1); else _upPeople.push(k); btn.classList.toggle('on'); btn.setAttribute('aria-pressed', i<0); }
+    function closeUpload(){ const m=document.getElementById('uploadModal'); m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); }
+    function resetUpload(){
+      _newDataURL=null; _upPrivacy='Public'; _meta={}; _upMode=''; _upPeople=[];
+      ['upFile','upCam'].forEach(id=>{ const fi=document.getElementById(id); if(fi) fi.value=''; });
+      const pv=document.getElementById('upPreview'); if(pv) pv.classList.add('hidden');
+      const ch=document.getElementById('upChoose'); if(ch) ch.classList.remove('hidden');
+      const sg=document.getElementById('upSuggest'); if(sg){ sg.classList.add('hidden'); sg.classList.remove('flex'); }
+      const ms=document.getElementById('upMeta'); if(ms) ms.innerHTML='';
+      const ai=document.getElementById('aiState'); if(ai) ai.classList.add('hidden');
+      ['upCaption','upPlace'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+      const mood=document.getElementById('upMood'); if(mood) mood.selectedIndex=0;
+      const seg=document.getElementById('upPrivacy'); if(seg) seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.pv==='Public'));
+      const tv=document.getElementById('upTravel'); if(tv) tv.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.mode===''));
+      const pp=document.getElementById('upPeople'); if(pp) pp.querySelectorAll('button').forEach(b=>{ b.classList.remove('on'); b.setAttribute('aria-pressed','false'); });
+      _acItems=[]; clearTimeout(_acT); hideAC();
+      updateUploadValid();
+    }
+    function setPrivacy(btn){ _upPrivacy=btn.dataset.pv; btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b===btn)); }
+    function setTravel(btn){ _upMode=btn.dataset.mode||''; btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b===btn)); }
+
+    // mini map location picker — drag the pin or tap to set coordinates
+    function initUpMap(){
+      if(_upMap || !window.L) return;
+      const dark=document.documentElement.classList.contains('dark');
+      _upMap=L.map('upMap', { zoomControl:true, attributionControl:false, scrollWheelZoom:false, worldCopyJump:true }).setView([27.7,85.3], 3);
+      L.tileLayer(dark?'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png':'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { subdomains:dark?'abcd':'abc', maxZoom:19 }).addTo(_upMap);
+      _upMarker=L.marker([27.7,85.3], { draggable:true, icon:L.divIcon({className:'', html:'<div class="sb-arrow" style="transform:none"><i class="arw fa-solid fa-location-dot"></i></div>', iconSize:[46,46], iconAnchor:[23,23]}) }).addTo(_upMap);
+      _upMarker.on('dragend', onUpPinMoved);
+      _upMap.on('click', e=>{ _upMarker.setLatLng(e.latlng); onUpPinMoved(); });
+      // on touch devices, one-finger panning the tiny map would hijack the modal's scroll —
+      // disable map drag (tap-to-place, pin-drag, pinch-zoom and the +/- buttons still work)
+      if(L.Browser && L.Browser.mobile && _upMap.dragging) _upMap.dragging.disable();
+    }
+    function setUpPin(lat,lng,zoom){ initUpMap(); if(!_upMarker) return; _upMarker.setLatLng([lat,lng]); _upMap.setView([lat,lng], zoom||10); _meta.lat=lat; _meta.lng=lng; }
+    function onUpPinMoved(){
+      if(!_upMarker) return; const ll=_upMarker.getLatLng();
+      _meta.lat=ll.lat; _meta.lng=ll.lng; _meta.placeSrc='map';
+      reverseGeocode(ll.lat,ll.lng).then(name=>{ if(name){ document.getElementById('upPlace').value=name; renderMeta(); } });
+      renderMeta();
+    }
+    async function geocodePlace(q){
+      try{ const ctrl=new AbortController(), to=setTimeout(()=>ctrl.abort(),3500);
+        const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`, {signal:ctrl.signal, headers:{'Accept':'application/json'}});
+        clearTimeout(to); if(!res.ok) return null; const j=await res.json();
+        return j[0]? {lat:parseFloat(j[0].lat), lng:parseFloat(j[0].lon)} : null;
+      }catch(e){ return null; }
+    }
+    async function locateUpPlace(){
+      const q=(document.getElementById('upPlace').value||'').trim(); if(!q){ toast('Type a place to search','fa-location-dot'); return; }
+      const btn=document.getElementById('upLocate'), old=btn?btn.innerHTML:'';
+      if(btn){ btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i>'; }
+      const hit=await geocodePlace(q);
+      if(btn){ btn.disabled=false; btn.innerHTML=old; }
+      if(hit){ setUpPin(hit.lat, hit.lng, 11); _meta.placeSrc='you'; renderMeta(); toast('Pinned “'+q+'”','fa-map-pin'); }
+      else toast('Couldn’t find that place — drag the pin instead','fa-triangle-exclamation');
+    }
+
+    // ---- LOCATION AUTOCOMPLETE — live place suggestions as you type ----
+    let _acT=null, _acItems=[], _acIdx=-1, _acSeq=0;
+    function onUpPlaceInput(){
+      renderMeta();
+      const q=(document.getElementById('upPlace').value||'').trim();
+      clearTimeout(_acT);
+      if(q.length<3){ hideAC(); return; }
+      _acT=setTimeout(()=>searchAC(q), 320);   // debounce (kind to the free geocoder)
+    }
+    async function acFetch(q){
+      try{ const ctrl=new AbortController(), to=setTimeout(()=>ctrl.abort(),3500);
+        const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q=${encodeURIComponent(q)}`, {signal:ctrl.signal, headers:{'Accept':'application/json'}});
+        clearTimeout(to); if(!res.ok) return [];
+        const j=await res.json();
+        return j.map(o=>{ const a=o.address||{};
+          const main=a.city||a.town||a.village||a.hamlet||a.county||a.state||o.name||(o.display_name||'').split(',')[0];
+          const parts=[main]; if(a.state && a.state!==main) parts.push(a.state); if(a.country) parts.push(a.country);
+          return { label:parts.filter(Boolean).join(', ')||o.display_name, lat:parseFloat(o.lat), lng:parseFloat(o.lon) };
+        });
+      }catch(e){ return []; }
+    }
+    async function searchAC(q){
+      const seq=++_acSeq;
+      const res=await acFetch(q);
+      if(seq!==_acSeq) return;           // a newer keystroke superseded this response
+      _acItems=res; _acIdx=-1;
+      const ul=document.getElementById('upPlaceAC'); if(!ul) return;
+      if(!res.length){ hideAC(); return; }
+      ul.innerHTML = res.map((r,i)=>`<li role="option" data-i="${i}" onmousedown="event.preventDefault();pickAC(${i})" class="ac-item"><i class="fa-solid fa-location-dot"></i> ${esc(r.label)}</li>`).join('');
+      ul.classList.remove('hidden');
+    }
+    function pickAC(i){
+      const r=_acItems[i]; if(!r) return;
+      document.getElementById('upPlace').value=r.label;
+      setUpPin(r.lat, r.lng, 11); _meta.placeSrc='you';
+      renderMeta(); hideAC();
+    }
+    function hideAC(){ const ul=document.getElementById('upPlaceAC'); if(ul) ul.classList.add('hidden'); _acIdx=-1; }
+    function hlAC(){ const ul=document.getElementById('upPlaceAC'); if(ul) [...ul.children].forEach((li,i)=>li.classList.toggle('ac-active', i===_acIdx)); }
+    function acKey(e){
+      const ul=document.getElementById('upPlaceAC'), open=ul && !ul.classList.contains('hidden');
+      if(open && e.key==='ArrowDown'){ e.preventDefault(); _acIdx=Math.min(_acItems.length-1,_acIdx+1); hlAC(); }
+      else if(open && e.key==='ArrowUp'){ e.preventDefault(); _acIdx=Math.max(0,_acIdx-1); hlAC(); }
+      else if(e.key==='Enter'){ e.preventDefault(); if(open && _acIdx>=0) pickAC(_acIdx); else locateUpPlace(); }
+      else if(e.key==='Escape'){ hideAC(); }
+    }
+    // Esc closes whichever overlay is open
+    document.addEventListener('keydown', e=>{
+      if(e.key!=='Escape') return;
+      const order=[['uploadModal',closeUpload],['shareModal',closeShare],['ancModal',closeAncestry]];
+      for(const [id,fn] of order){ const m=document.getElementById(id); if(m && !m.classList.contains('hidden')){ fn(); return; } }
+      const pm=document.getElementById('modal'); if(pm && !pm.classList.contains('hidden')) closeModal();
+    });
+    // Save needs the two required fields: a photo + a caption
+    function updateUploadValid(){ const s=document.getElementById('upSave'); if(s) s.disabled = !(_newDataURL && (document.getElementById('upCaption').value||'').trim()); }
+
+    function onUploadFile(input){ const f=input.files && input.files[0]; if(f) processFile(f); }
+    function handleDrop(e){ const f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if(f) processFile(f); }
+    // normalize: honor EXIF orientation, downscale to a sane size, compress → upright photos + light memory
+    async function normalizeImage(file){
+      try{
+        const bmp = await createImageBitmap(file, { imageOrientation:'from-image' });
+        const max=1600, s=Math.min(1, max/Math.max(bmp.width, bmp.height));
+        const w=Math.round(bmp.width*s), h=Math.round(bmp.height*s);
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(bmp,0,0,w,h);
+        const out={ url:c.toDataURL('image/jpeg', 0.85), ow:bmp.width, oh:bmp.height, ok:true };
+        if(bmp.close) bmp.close(); return out;
+      }catch(e){
+        const url=await new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>res(null); r.readAsDataURL(file); });
+        return { url, ow:null, oh:null, ok:false };
+      }
+    }
+    async function processFile(f){
+      if(/^video\//.test(f.type)){ toast('Video memories are coming soon — pick a photo for now','fa-video'); return; }
+      const isHeic = /hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name);
+      if(!/^image\//.test(f.type) && !isHeic){ toast('Please choose a photo','fa-triangle-exclamation'); return; }
+      const norm = await normalizeImage(f);
+      if(!norm.url){ toast('Could not read that photo','fa-triangle-exclamation'); return; }
+      _newDataURL = norm.url; _meta.dims = norm.ow ? {w:norm.ow, h:norm.oh} : null;
+      const img=document.getElementById('upPreviewImg');
+      if(img){ img.onerror=()=>{ img.removeAttribute('src'); img.alt='Preview not available for this format'; }; img.src=_newDataURL; }
+      document.getElementById('upPreview').classList.remove('hidden');
+      const ch=document.getElementById('upChoose'); if(ch) ch.classList.add('hidden');
+      const sg=document.getElementById('upSuggest'); if(sg){ sg.classList.remove('hidden'); sg.classList.add('flex'); }
+      if(isHeic && !norm.ok) toast('HEIC photo saved — its details still read fine','fa-circle-info');
+      updateUploadValid();
+      analyzePhoto(f);   // read EXIF from the ORIGINAL file (the canvas copy has none)
+    }
+
+    function imageDims(src){ return new Promise(res=>{ const im=new Image(); im.onload=()=>res({w:im.naturalWidth,h:im.naturalHeight}); im.onerror=()=>res(null); im.src=src; }); }
+    function setAIState(state){
+      const el=document.getElementById('aiState'); if(!el) return; el.classList.remove('hidden');
+      el.innerHTML = state==='reading'
+        ? `<span class="ai-shimmer"><i class="fa-solid fa-wand-magic-sparkles"></i> AI is reading your photo…</span>`
+        : `<span class="ai-done"><i class="fa-solid fa-circle-check"></i> Auto-filled what I could find</span>`;
+      if(state!=='reading') setTimeout(()=>el.classList.add('hidden'), 2400);
+    }
+    // reverse-geocode GPS → a human place name (free OSM Nominatim; graceful fallback)
+    async function reverseGeocode(lat,lng){
+      try{
+        const ctrl=new AbortController(), to=setTimeout(()=>ctrl.abort(),3500);
+        const res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&lat=${lat}&lon=${lng}`, {signal:ctrl.signal, headers:{'Accept':'application/json'}});
+        clearTimeout(to); if(!res.ok) return null;
+        const j=await res.json(), a=j.address||{};
+        const city=a.city||a.town||a.village||a.county||a.state, country=a.country;
+        return [city,country].filter(Boolean).join(', ') || j.display_name || null;
+      }catch(e){ return null; }
+    }
+    // contextual "AI" suggestions derived from the moment's time / season / place
+    function aiSuggest(date, place){
+      const h=date.getHours(), city=place?place.split(',')[0]:'';
+      const tod = h<5?'late night': h<11?'morning': h<15?'midday': h<19?'afternoon':'evening';
+      const T = tod.charAt(0).toUpperCase()+tod.slice(1);   // capitalized, no awkward "A afternoon"
+      const seasonName=seasonOf(date.getMonth())[0], day=date.toLocaleDateString([], {weekday:'long'}), weekend=[0,6].includes(date.getDay());
+      const caps=[ city?`${T} in ${city}`:`A beautiful ${tod}`, weekend?'Weekend moments':`${day} memories`,
+        `${seasonName} feelings`, city?`Golden hour in ${city}`:'Golden hour', 'Moments worth keeping', city?`Lost in ${city}`:'Little joys' ];
+      const moods=['Joyful','Grateful','Peaceful','Nostalgic','Loved','Excited','Adventurous'];
+      const i=(_aiSeed++)%caps.length;
+      return { caption:caps[i], mood:moods[(date.getMinutes()+i)%moods.length] };
+    }
+    function aiAnotherCaption(){ const dv=document.getElementById('upDate').value, d=dv?new Date(dv+'T12:00:00'):new Date();
+      const s=aiSuggest(d, document.getElementById('upPlace').value); _meta.capSrc='ai';
+      document.getElementById('upCaption').value=s.caption; updateUploadValid(); }
+
+    // make sure the EXIF reader is available (lazy-load if the preload tag hasn't set it yet)
+    let _exifrP=null;
+    function ensureExifr(){
+      if(window.exifr) return Promise.resolve(window.exifr);
+      if(_exifrP) return _exifrP;
+      _exifrP=new Promise(res=>{ const s=document.createElement('script');
+        s.src='https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js';
+        s.onload=()=>res(window.exifr||null); s.onerror=()=>res(null); document.head.appendChild(s); });
+      return _exifrP;
+    }
+    async function analyzePhoto(file){
+      setAIState('reading');
+      if(!_meta.dims) _meta.dims = await imageDims(_newDataURL);
+      const EX = await ensureExifr();
+      let exif={}, gps={};
+      try{ if(EX) exif = await EX.parse(file, {pick:['DateTimeOriginal','CreateDate','Make','Model']}) || {}; }catch(e){}
+      try{ if(EX) gps  = await EX.gps(file) || {}; }catch(e){}
+      // date: prefer EXIF "taken" date, else the file's own modified date
+      const taken = exif.DateTimeOriginal || exif.CreateDate || (file.lastModified? new Date(file.lastModified):null);
+      if(taken){ const d=new Date(taken); if(d<=new Date()){ document.getElementById('upDate').value=d.toISOString().slice(0,10); _meta.dateSrc = exif.DateTimeOriginal||exif.CreateDate ? 'photo':'file'; _meta.takenDate=d; } }
+      _meta.cam = [exif.Make, exif.Model].filter(Boolean).join(' ').replace(/\0/g,'').trim();
+      // place + pin: if the photo is geotagged, drop the map pin there and AI-name the place
+      let place=null;
+      if(gps && gps.latitude!=null && gps.longitude!=null){
+        _meta.gps=true; setUpPin(gps.latitude, gps.longitude, 11);
+        place=await reverseGeocode(gps.latitude, gps.longitude);
+        if(place){ document.getElementById('upPlace').value=place; _meta.placeSrc='ai'; }
+      }
+      // AI caption + feeling
+      const sugg=aiSuggest(taken?new Date(taken):new Date(), place||document.getElementById('upPlace').value);
+      const capEl=document.getElementById('upCaption'); if(capEl && !capEl.value){ capEl.value=sugg.caption; _meta.capSrc='ai'; }
+      const moodEl=document.getElementById('upMood'); if(moodEl) moodEl.value=sugg.mood;
+      renderMeta(); updateUploadValid(); setAIState('done');
+    }
+
+    // the auto-detected metadata chips (each tagged with where it came from)
+    function metaChip(icon,text,src){
+      const tag = src==='photo'?'<span class="meta-src">from photo</span>' : src==='ai'?'<span class="meta-src ai">AI</span>' : src==='file'?'<span class="meta-src">file</span>':'';
+      return `<span class="meta-chip"><i class="fa-solid ${icon}"></i> ${esc(String(text))} ${tag}</span>`;
+    }
+    function renderMeta(){
+      const wrap=document.getElementById('upMeta'); if(!wrap) return;
+      const chips=[];
+      const dv=document.getElementById('upDate').value;
+      if(dv){ const d=new Date(dv+'T00:00:00'); chips.push(metaChip('fa-calendar-day', d.toLocaleDateString([], {day:'2-digit',month:'short',year:'numeric'}), _meta.dateSrc)); }
+      const pv=(document.getElementById('upPlace').value||'').trim();
+      if(pv) chips.push(metaChip('fa-location-dot', pv, _meta.placeSrc));
+      else if(_meta.gps) chips.push(metaChip('fa-location-dot', _meta.lat.toFixed(3)+', '+_meta.lng.toFixed(3), 'photo'));
+      if(_meta.cam) chips.push(metaChip('fa-camera', _meta.cam, 'photo'));
+      if(_meta.dims) chips.push(metaChip('fa-image', _meta.dims.w+'×'+_meta.dims.h, 'photo'));
+      if(!_meta.gps && !pv) chips.push(`<span class="meta-none"><i class="fa-regular fa-circle-question"></i> No location in this photo — search or drag the pin</span>`);
+      wrap.innerHTML = chips.join('');
+    }
+
+    function saveUpload(){
+      if(!_newDataURL){ toast('Choose a photo first','fa-image'); document.getElementById('upFile').click(); return; }
+      const cap=(document.getElementById('upCaption').value||'').trim();
+      if(!cap){ toast('Add a caption for this moment','fa-pen'); document.getElementById('upCaption').focus(); return; }
+      const place=(document.getElementById('upPlace').value||'').trim()||(photos.length?photos[photos.length-1].loc:'Home');
+      const dval=document.getElementById('upDate').value, dt=dval?new Date(dval+'T12:00:00'):new Date();
+      const mood=(document.getElementById('upMood')||{}).value||'Joyful';
+      // keep the photo's real time-of-day when the date wasn't changed
+      const useTaken = _meta.takenDate && _meta.takenDate.toISOString().slice(0,10)===dval;
+      const timeStr = (useTaken?_meta.takenDate:dt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      const people = (_upPeople||[]).map(k=>PEOPLE[k]).filter(Boolean);
+      const y=dt.getFullYear(), mo=dt.getMonth(), d=dt.getDate();
+      const id=10001+Object.keys(_uploads).length;
+      _uploads[id]=_newDataURL;
+      const anchor=photos[photos.length-1]||{lat:27.7,lng:85.3};
+      // use the photo's REAL GPS when we found it; otherwise drop near the latest place
+      const lat=(_meta.lat!=null)?_meta.lat:anchor.lat+((id%5)-2)*0.35;
+      const lng=(_meta.lng!=null)?_meta.lng:anchor.lng+((id%3)-1)*0.45;
+      const np={ id, name:cap, loc:place, lat, lng,
+        time:timeStr, kw:'', desc:'', cam:_meta.cam||null,
+        y, mo, d, day:_wd[new Date(y,mo,d).getDay()], age:y-BORN,
+        dmy:`${String(d).padStart(2,'0')} ${_mo[mo]}`, monShort:_mo[mo], monFull:_moF[mo], year:y,
+        type:'photo', dur:null, vsrc:null, people, mood, song:'a new memory', season:seasonOf(mo), milestone:null, fav:false,
+        modeKey:_upMode||null, privacy:_upPrivacy, likes:0, liked:false, comments:[] };
+      photos.push(np);
+      photos.sort((a,b)=> new Date(a.y,a.mo,a.d) - new Date(b.y,b.mo,b.d));
+      recomputeTravel(); rebuildMap(); renderCarousel(); renderRuler(); updateMemoryStats();
+      closeUpload(); setActive(photos.indexOf(np));
+      toast('Memory added to your journey ✨','fa-star');
+    }
+
+    // ---- DELETE (with undo) ----
+    function deleteMemory(i){
+      if(photos.length<=1){ toast("That’s your only memory — keeping it 💛",'fa-heart'); return; }
+      const removed=photos[i];
+      photos.splice(i,1);
+      recomputeTravel(); rebuildMap(); renderCarousel(); renderRuler(); updateMemoryStats();
+      setActive(Math.min(active, photos.length-1));
+      toast('Memory removed','fa-trash',{ label:'Undo', fn:()=>{
+        photos.push(removed); photos.sort((a,b)=> new Date(a.y,a.mo,a.d)-new Date(b.y,b.mo,b.d));
+        recomputeTravel(); rebuildMap(); renderCarousel(); renderRuler(); updateMemoryStats();
+        setActive(photos.indexOf(removed)); toast('Memory restored','fa-rotate-left');
+      }});
+    }
+
+    // rebuild Leaflet markers + route after the timeline changes
+    function rebuildMap(){
+      if(!sbMap) return;
+      markers.forEach(m=> sbMap.removeLayer(m)); markers=[];
+      const route=photos.map(p=>[p.lat,p.lng]);
+      if(futureLine) futureLine.setLatLngs(route);
+      markers=photos.map((p,i)=>{
+        const m=L.marker([p.lat,p.lng],{icon:pinIcon(i===active, modeIconFor(i))}).addTo(sbMap);
+        m.bindPopup(cardHTML(p,i),{closeButton:false,className:'pp-pop',maxWidth:164,autoPan:true,autoPanPadding:[14,24],keepInView:true});
+        m.on('mouseover',()=>m.openPopup()); m.on('mouseout',()=>m.closePopup());
+        m.on('click',()=>{ setActive(i); m.openPopup(); });
+        return m;
+      });
+      updateJourney();
+    }
+
+    // keep the header life-journey stats in sync after add / delete
+    function updateMemoryStats(){
+      const cc=new Set(photos.map(p=>p.loc.split(', ').pop())).size;
+      const pc=new Set(photos.map(p=>p.loc)).size;
+      const yrs=photos.map(p=>p.year), minY=Math.min(...yrs), maxY=Math.max(...yrs);
+      const ms=document.getElementById('memoryStats'); if(ms) ms.textContent=`${photos.length} moments · ${pc} places · ${cc} countries · ${minY}–${maxY}`;
+    }
+
     /* ============ REAL MAP (Leaflet) ============ */
     let sbMap, markers = [], pastLine, futureLine, prevActive = 0, mapLocked = false;
     // progressive trail: bright path already travelled (→ active), faint path still to come,
@@ -1305,7 +2004,7 @@
       if(!sbMap || from===to || from==null) return;
       const a=photos[from], b=photos[to];
       const hop=haversineKm(a,b); if(hop<8) return;           // negligible move — skip
-      const tm=travelMode(hop);
+      const tm=(to!=null && photos[to] && photos[to].modeKey && TRAVEL_MODES[photos[to].modeKey]) ? TRAVEL_MODES[photos[to].modeKey] : travelMode(hop);
       if(!vehicle){ vehicle=L.marker([a.lat,a.lng], {interactive:false, zIndexOffset:600, opacity:0}).addTo(sbMap); }
       vehicle.setIcon(L.divIcon({className:'', html:`<div class="veh"><i class="fa-solid ${tm.icon}"></i></div>`, iconSize:[36,36], iconAnchor:[18,18]}));
       vehicle.setLatLng([a.lat,a.lng]); vehicle.setOpacity(1);
@@ -1335,7 +2034,7 @@
     }
 
     // active marker = the head of the trail, showing HOW you arrived (plane / train / car / on foot)
-    const modeIconFor = i => i>0 ? travelMode(_hopKm[i]).icon : 'fa-baby';
+    const modeIconFor = i => i>0 ? modeOf(i).icon : 'fa-baby';
     const pinIcon = (activeFlag, modeIcon='fa-location-dot') => L.divIcon({
       className: '',
       html: activeFlag
@@ -1348,7 +2047,7 @@
 
     // small preview card shown on hover (or tap) — photo + how you travelled here
     const cardHTML = (p,i) => {
-      const tm = i>0 ? travelMode(haversineKm(photos[i-1],p)) : {icon:'fa-baby',label:'born here'};
+      const tm = i>0 ? modeOf(i) : {icon:'fa-baby',label:'born here'};
       return `<div class="pp">
         <img src="${imgFor(p.id)}" onerror="this.onerror=null;this.src='${imgAlt(p.id)}'"/>
         <span class="pp-mode"><i class="fa-solid ${tm.icon}"></i> ${tm.label}</span>
@@ -1470,13 +2169,14 @@
       let _drag=null, _suppressClick=false;
       _rail.addEventListener('pointerdown', e=>{
         if(e.button!==0) return;
-        _drag={x:e.clientX, sl:_rail.scrollLeft, moved:false};
-        try{ _rail.setPointerCapture(e.pointerId); }catch(_){}
+        _drag={x:e.clientX, sl:_rail.scrollLeft, moved:false, pid:e.pointerId};
+        // capture the pointer only once a real drag starts (in pointermove) — capturing here
+        // would swallow plain clicks on the ticks, the Add-memory button and the Ancestry link
       });
       _rail.addEventListener('pointermove', e=>{
         if(!_drag) return;
         const dx=e.clientX-_drag.x;
-        if(!_drag.moved && Math.abs(dx)>3){ _drag.moved=true; _rail.classList.add('dragging'); if(playing) togglePlay(); }
+        if(!_drag.moved && Math.abs(dx)>3){ _drag.moved=true; _rail.classList.add('dragging'); try{ _rail.setPointerCapture(_drag.pid); }catch(_){} if(playing) togglePlay(); }
         if(_drag.moved){ _rail.scrollLeft=_drag.sl-dx; onRulerScroll(); }
       });
       const _endDrag=()=>{ if(_drag&&_drag.moved){ _suppressClick=true; setTimeout(()=>{_suppressClick=false;},60); } _drag=null; _rail.classList.remove('dragging'); };
