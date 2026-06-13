@@ -350,6 +350,18 @@
       border:1.5px solid transparent; cursor:pointer; transition:.15s; }
     .up-seg button.on { color:var(--brand); border-color:rgba(var(--brand-glow),.5); background:rgba(var(--brand-glow),.10); }
     .up-travel button { padding:9px 4px; font-size:14px; }
+    /* travel micro-choices (type / brand / airline) — only shown when an icon is tapped */
+    .up-travel-sub { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:9px; padding-top:9px; border-top:1px dashed var(--c-line); }
+    .up-sub-label { font-size:11px; font-weight:700; color:var(--c-a2); opacity:.65; margin-right:2px; }
+    .up-sub-chip { padding:5px 11px; border-radius:9999px; font-size:12px; font-weight:700; color:var(--c-a2); background:var(--c-bg); border:1.5px solid transparent; cursor:pointer; transition:.15s; }
+    .up-sub-chip { display:inline-flex; align-items:center; gap:6px; }
+    .up-sub-chip i { font-size:11px; opacity:.9; }
+    .up-sub-chip:hover { color:var(--brand); }
+    .up-sub-chip.on { color:#fff; background:var(--brand); border-color:transparent; }
+    .up-sub-other { border:1.5px dashed var(--c-line); }
+    .up-sub-custom:not(.hidden) { display:inline-flex; align-items:center; gap:5px; }
+    .up-sub-custom input { width:140px; padding:6px 12px; border-radius:9999px; font-size:12px; font-weight:600; color:var(--c-text); background:var(--c-bg); border:1.5px solid rgba(var(--brand-glow),.55); outline:none; }
+    .up-sub-custom button { display:grid; place-items:center; width:30px; height:30px; border-radius:9999px; background:var(--brand); color:#fff; border:none; cursor:pointer; }
     /* people picker */
     .up-people { display:flex; flex-wrap:wrap; gap:6px; }
     .up-person { display:inline-flex; align-items:center; gap:6px; padding:3px 11px 3px 3px; border-radius:9999px;
@@ -806,6 +818,8 @@
             <button type="button" data-mode="boat" onclick="setTravel(this)" title="By sea"><i class="fa-solid fa-ship"></i></button>
             <button type="button" data-mode="plane" onclick="setTravel(this)" title="By air"><i class="fa-solid fa-plane-up"></i></button>
           </div>
+          <!-- micro-choices: revealed only when a mode icon is tapped (type / brand / airline …) -->
+          <div id="upTravelSub" class="up-travel-sub hidden"></div>
         </div>
 
         <div>
@@ -1069,8 +1083,25 @@
       boat: {icon:'fa-ship',           label:'by sea'},
       plane:{icon:'fa-plane-up',       label:'by air'},
     };
-    // the mode for the hop INTO photo i — honor an explicit choice, else infer from distance
-    function modeOf(i){ const p=photos[i]; if(p && p.modeKey && TRAVEL_MODES[p.modeKey]) return TRAVEL_MODES[p.modeKey]; return travelMode(_hopKm[i]); }
+    // the mode for the hop INTO photo i — honor an explicit choice (+ its specific icon/label), else infer from distance
+    function modeOf(i){
+      const p=photos[i];
+      if(p && p.modeKey && TRAVEL_MODES[p.modeKey]){
+        const base=TRAVEL_MODES[p.modeKey];
+        return { icon: p.modeIcon || base.icon, label: p.modeDetail || base.label };
+      }
+      return travelMode(_hopKm[i]);
+    }
+    // optional micro-choices revealed when a travel icon is tapped (type / brand / airline …);
+    // each carries its OWN icon so the map's arrow + gliding vehicle reflect the exact choice
+    const TRAVEL_DETAILS = {
+      walk:  [{l:'On foot',i:'fa-person-walking'},{l:'Hiking',i:'fa-person-hiking'},{l:'Running',i:'fa-person-running'}],
+      bike:  [{l:'Bicycle',i:'fa-bicycle'},{l:'Mountain bike',i:'fa-bicycle'},{l:'E-bike',i:'fa-bicycle'},{l:'Motorbike',i:'fa-motorcycle'},{l:'Scooter',i:'fa-motorcycle'}],
+      car:   [{l:'Car',i:'fa-car-side'},{l:'SUV',i:'fa-car'},{l:'Taxi',i:'fa-taxi'},{l:'Bus',i:'fa-bus'},{l:'Rental car',i:'fa-car-side'},{l:'Tesla',i:'fa-car-side'},{l:'Jeep',i:'fa-car-side'}],
+      train: [{l:'Train',i:'fa-train'},{l:'Metro',i:'fa-train-subway'},{l:'Tram',i:'fa-train-tram'},{l:'High-speed rail',i:'fa-train'}],
+      boat:  [{l:'Ferry',i:'fa-ferry'},{l:'Cruise ship',i:'fa-ship'},{l:'Speedboat',i:'fa-ship'},{l:'Sailboat',i:'fa-sailboat'},{l:'Kayak',i:'fa-ship'}],
+      plane: [{l:'Emirates',i:'fa-plane'},{l:'Qatar Airways',i:'fa-plane'},{l:'Singapore Airlines',i:'fa-plane'},{l:'Lufthansa',i:'fa-plane'},{l:'IndiGo',i:'fa-plane'},{l:'Private jet',i:'fa-jet-fighter-up'},{l:'Helicopter',i:'fa-helicopter'}],
+    };
     const km = n => Math.round(n).toLocaleString();
     let active = photos.length-1, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1, currentFilter = 'all', searchQuery = '';
     // honor the OS "reduce motion" setting → skip the smooth glide, jump instantly
@@ -1667,7 +1698,7 @@
     function closeAncestry(){ const m=document.getElementById('ancModal'); if(m){ m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); } }
 
     // ---- UPLOAD (reads the photo's own metadata, then AI fills the rest) ----
-    let _newDataURL=null, _upPrivacy='Public', _meta={}, _aiSeed=0, _upMode='', _upMap=null, _upMarker=null, _upPeople=[];
+    let _newDataURL=null, _upPrivacy='Public', _meta={}, _aiSeed=0, _upMode='', _upModeDetail='', _upModeIcon='', _upMap=null, _upMarker=null, _upPeople=[];
     function openUpload(){
       resetUpload();
       renderPeoplePicker();
@@ -1685,7 +1716,7 @@
     function togglePerson(btn){ const k=btn.dataset.k, i=_upPeople.indexOf(k); if(i>=0)_upPeople.splice(i,1); else _upPeople.push(k); btn.classList.toggle('on'); btn.setAttribute('aria-pressed', i<0); }
     function closeUpload(){ const m=document.getElementById('uploadModal'); m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); }
     function resetUpload(){
-      _newDataURL=null; _upPrivacy='Public'; _meta={}; _upMode=''; _upPeople=[];
+      _newDataURL=null; _upPrivacy='Public'; _meta={}; _upMode=''; _upModeDetail=''; _upModeIcon=''; _upPeople=[];
       ['upFile','upCam'].forEach(id=>{ const fi=document.getElementById(id); if(fi) fi.value=''; });
       const pv=document.getElementById('upPreview'); if(pv) pv.classList.add('hidden');
       const ch=document.getElementById('upChoose'); if(ch) ch.classList.remove('hidden');
@@ -1696,12 +1727,39 @@
       const mood=document.getElementById('upMood'); if(mood) mood.selectedIndex=0;
       const seg=document.getElementById('upPrivacy'); if(seg) seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.pv==='Public'));
       const tv=document.getElementById('upTravel'); if(tv) tv.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.mode===''));
+      const ts=document.getElementById('upTravelSub'); if(ts){ ts.classList.add('hidden'); ts.innerHTML=''; }
       const pp=document.getElementById('upPeople'); if(pp) pp.querySelectorAll('button').forEach(b=>{ b.classList.remove('on'); b.setAttribute('aria-pressed','false'); });
       _acItems=[]; clearTimeout(_acT); hideAC();
       updateUploadValid();
     }
     function setPrivacy(btn){ _upPrivacy=btn.dataset.pv; btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b===btn)); }
-    function setTravel(btn){ _upMode=btn.dataset.mode||''; btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b===btn)); }
+    function setTravel(btn){
+      _upMode=btn.dataset.mode||''; _upModeDetail=''; _upModeIcon='';   // changing mode clears any prior micro-choice
+      btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b===btn));
+      renderTravelSub(_upMode);
+    }
+    // reveal the micro-choice chips for the chosen mode (hidden for Auto / none)
+    function renderTravelSub(mode){
+      const wrap=document.getElementById('upTravelSub'); if(!wrap) return;
+      const opts=TRAVEL_DETAILS[mode], base=(TRAVEL_MODES[mode]||{}).icon||'fa-tag';
+      if(!mode || !opts){ wrap.classList.add('hidden'); wrap.innerHTML=''; return; }
+      const list=opts.slice();
+      if(_upModeDetail && !list.some(o=>o.l===_upModeDetail)) list.push({l:_upModeDetail, i:_upModeIcon||base}); // keep a typed custom value visible
+      const chips = list.map(o=>`<button type="button" class="up-sub-chip${_upModeDetail===o.l?' on':''}" data-val="${esc(o.l)}" data-icon="${esc(o.i||base)}" onclick="selectTravelDetail(this)"><i class="fa-solid ${o.i||base}"></i> ${esc(o.l)}</button>`).join('');
+      wrap.innerHTML = `<span class="up-sub-label">More specific?</span>` + chips
+        + `<button type="button" class="up-sub-chip up-sub-other" onclick="openCustomDetail()"><i class="fa-solid fa-pen"></i> Other…</button>`
+        + `<span id="upSubCustom" class="up-sub-custom hidden"><input id="upSubInput" maxlength="30" placeholder="Type a name…" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomDetail();}" /><button type="button" aria-label="Add" onclick="addCustomDetail()"><i class="fa fa-check"></i></button></span>`;
+      wrap.classList.remove('hidden');
+    }
+    function selectTravelDetail(chip){
+      const val=chip.dataset.val, toggleOff=(_upModeDetail===val);
+      _upModeDetail = toggleOff ? '' : val;
+      _upModeIcon   = toggleOff ? '' : (chip.dataset.icon||'');
+      chip.parentElement.querySelectorAll('.up-sub-chip').forEach(c=>c.classList.remove('on'));
+      if(!toggleOff) chip.classList.add('on');
+    }
+    function openCustomDetail(){ const c=document.getElementById('upSubCustom'); if(!c) return; c.classList.remove('hidden'); const i=document.getElementById('upSubInput'); if(i){ i.value=''; i.focus(); } }
+    function addCustomDetail(){ const i=document.getElementById('upSubInput'); const v=(i&&i.value||'').trim(); if(!v) return; _upModeDetail=v; _upModeIcon=''; renderTravelSub(_upMode); }
 
     // mini map location picker — drag the pin or tap to set coordinates
     function initUpMap(){
@@ -1942,7 +2000,7 @@
         y, mo, d, day:_wd[new Date(y,mo,d).getDay()], age:y-BORN,
         dmy:`${String(d).padStart(2,'0')} ${_mo[mo]}`, monShort:_mo[mo], monFull:_moF[mo], year:y,
         type:'photo', dur:null, vsrc:null, people, mood, song:'a new memory', season:seasonOf(mo), milestone:null, fav:false,
-        modeKey:_upMode||null, privacy:_upPrivacy, likes:0, liked:false, comments:[] };
+        modeKey:_upMode||null, modeDetail:_upModeDetail||null, modeIcon:_upModeIcon||null, privacy:_upPrivacy, likes:0, liked:false, comments:[] };
       photos.push(np);
       photos.sort((a,b)=> new Date(a.y,a.mo,a.d) - new Date(b.y,b.mo,b.d));
       recomputeTravel(); rebuildMap(); renderCarousel(); renderRuler(); updateMemoryStats();
@@ -2004,7 +2062,7 @@
       if(!sbMap || from===to || from==null) return;
       const a=photos[from], b=photos[to];
       const hop=haversineKm(a,b); if(hop<8) return;           // negligible move — skip
-      const tm=(to!=null && photos[to] && photos[to].modeKey && TRAVEL_MODES[photos[to].modeKey]) ? TRAVEL_MODES[photos[to].modeKey] : travelMode(hop);
+      const tm=modeOf(to);   // honors the specific choice (taxi / motorbike / helicopter …)
       if(!vehicle){ vehicle=L.marker([a.lat,a.lng], {interactive:false, zIndexOffset:600, opacity:0}).addTo(sbMap); }
       vehicle.setIcon(L.divIcon({className:'', html:`<div class="veh"><i class="fa-solid ${tm.icon}"></i></div>`, iconSize:[36,36], iconAnchor:[18,18]}));
       vehicle.setLatLng([a.lat,a.lng]); vehicle.setOpacity(1);
