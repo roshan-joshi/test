@@ -362,6 +362,17 @@
     .up-sub-custom:not(.hidden) { display:inline-flex; align-items:center; gap:5px; }
     .up-sub-custom input { width:140px; padding:6px 12px; border-radius:9999px; font-size:12px; font-weight:600; color:var(--c-text); background:var(--c-bg); border:1.5px solid rgba(var(--brand-glow),.55); outline:none; }
     .up-sub-custom button { display:grid; place-items:center; width:30px; height:30px; border-radius:9999px; background:var(--brand); color:#fff; border:none; cursor:pointer; }
+    .up-fav-on { background:rgba(var(--brand-glow),.10) !important; color:var(--brand) !important; }
+    /* upload gallery thumbnails */
+    .up-thumb { position:relative; flex:0 0 auto; width:60px; height:60px; border-radius:12px; overflow:hidden; border:2px solid transparent; }
+    .up-thumb img { width:100%; height:100%; object-fit:cover; cursor:pointer; display:block; }
+    .up-thumb.cover { border-color:var(--brand); }
+    .up-thumb-tag { position:absolute; left:0; right:0; bottom:0; text-align:center; font-size:8px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:#fff; background:var(--brand); padding:1px 0; }
+    .up-thumb-x { position:absolute; top:2px; right:2px; display:grid; place-items:center; width:18px; height:18px; border-radius:9999px; background:rgba(0,0,0,.6); color:#fff; font-size:9px; border:none; cursor:pointer; }
+    .up-thumb-add { flex:0 0 auto; width:60px; height:60px; border-radius:12px; display:grid; place-items:center; color:var(--brand); background:rgba(var(--brand-glow),.10); border:1.5px dashed rgba(var(--brand-glow),.5); cursor:pointer; font-size:15px; }
+    /* modal gallery dots */
+    .g-dot { width:7px; height:7px; border-radius:9999px; background:rgba(255,255,255,.45); border:none; cursor:pointer; padding:0; transition:.18s; }
+    .g-dot.on { background:#fff; width:20px; }
     /* people picker */
     .up-people { display:flex; flex-wrap:wrap; gap:6px; }
     .up-person { display:inline-flex; align-items:center; gap:6px; padding:3px 11px 3px 3px; border-radius:9999px;
@@ -609,11 +620,14 @@
 
       <!-- LEFT media -->
       <div id="mediaPane" class="relative h-[45%] w-full overflow-hidden bg-black sm:h-full sm:w-[68%]">
-        <img id="modalImg" class="h-full w-full object-cover" src="" alt="" onerror="this.onerror=null;this.src='https://picsum.photos/seed/life'+(photos[active]?photos[active].id:1)+'/1080/1350'" />
+        <img id="modalImg" class="h-full w-full object-cover" src="" alt="" onclick="galleryTap(event)" onerror="this.onerror=null;this.src='https://picsum.photos/seed/life'+(photos[active]?photos[active].id:1)+'/1080/1350'" />
         <video id="modalVideo" class="hidden h-full w-full bg-black object-contain" controls autoplay muted loop playsinline></video>
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20"></div>
         <!-- story progress bars -->
         <div id="storyBars" class="absolute left-3 right-16 top-3 z-20 flex gap-1"></div>
+        <!-- multi-photo gallery: counter + dots (only when a memory has more than one photo) -->
+        <span id="modalCount" class="hidden absolute right-3 top-3 z-20 items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-xs font-bold text-white backdrop-blur"><i class="fa-solid fa-images"></i> <span id="modalCountTxt">1/1</span></span>
+        <div id="modalDots" class="hidden absolute bottom-16 left-0 right-0 z-20 justify-center gap-1.5 sm:bottom-20"></div>
 
         <!-- caption -->
         <div class="absolute bottom-24 left-0 w-full px-6 text-center text-white sm:bottom-28">
@@ -624,9 +638,9 @@
 
         <!-- media controls (FB-style floating translucent) — hidden for videos (native controls take over) -->
         <div id="modalCtrls" class="absolute bottom-5 left-0 flex w-full items-center justify-center gap-7 px-4">
-          <button onclick="move(-1)" class="fbtn grid h-11 w-11 place-items-center rounded-full"><i class="fa fa-chevron-left"></i></button>
+          <button onclick="modalPrevPhoto()" aria-label="Previous photo / memory" class="fbtn grid h-11 w-11 place-items-center rounded-full"><i class="fa fa-chevron-left"></i></button>
           <button id="modalPlay" onclick="togglePlay()" class="grid h-14 w-14 place-items-center rounded-full bg-primary-theme text-white shadow-glow active:scale-90"><i class="fa fa-play text-lg"></i></button>
-          <button onclick="move(1)" class="fbtn grid h-11 w-11 place-items-center rounded-full"><i class="fa fa-chevron-right"></i></button>
+          <button onclick="modalNextPhoto()" aria-label="Next photo / memory" class="fbtn grid h-11 w-11 place-items-center rounded-full"><i class="fa fa-chevron-right"></i></button>
         </div>
 
         <!-- comment toggle -->
@@ -746,14 +760,14 @@
           ondrop="event.preventDefault(); this.classList.remove('drag'); handleDrop(event)"
           class="mt-4 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary-theme/40 bg-primary-theme/5 py-9 text-center transition hover:bg-primary-theme/10">
           <span class="grid h-12 w-12 place-items-center rounded-full bg-primary-theme text-white shadow-glow"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
-          <span class="text-sm font-semibold text-accent-blue">Drop a photo or click to browse</span>
-          <span class="text-xs text-accent-blue/50"><i class="fa-solid fa-wand-magic-sparkles text-primary-theme"></i> We'll read its date, place &amp; details automatically</span>
+          <span class="text-sm font-semibold text-accent-blue">Drop photos or click to browse</span>
+          <span class="text-xs text-accent-blue/50"><i class="fa-solid fa-wand-magic-sparkles text-primary-theme"></i> Add one or many — we'll read the date, place &amp; details</span>
         </div>
         <button type="button" onclick="document.getElementById('upCam').click()" class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-grey-light py-2.5 text-sm font-semibold text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme">
           <i class="fa-solid fa-camera"></i> Take a photo
         </button>
       </div>
-      <input id="upFile" type="file" accept="image/*,.heic,.heif" class="hidden" onchange="onUploadFile(this)" />
+      <input id="upFile" type="file" accept="image/*,.heic,.heif" multiple class="hidden" onchange="onUploadFile(this)" />
       <input id="upCam" type="file" accept="image/*" capture="environment" class="hidden" onchange="onUploadFile(this)" />
 
       <!-- preview + AI status + auto-detected metadata -->
@@ -762,7 +776,10 @@
           <img id="upPreviewImg" class="max-h-52 w-full object-cover" alt="Selected photo preview" />
           <button onclick="resetUpload()" aria-label="Choose a different photo" class="absolute right-2 top-2 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white"><i class="fa fa-rotate-left"></i> Change</button>
           <div id="aiState" class="absolute bottom-2 left-2 hidden"></div>
+          <span id="upCountBadge" class="hidden absolute left-2 top-2 items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-xs font-bold text-white"><i class="fa-solid fa-images"></i> <span id="upCountN">1</span></span>
         </div>
+        <!-- gallery: tap a thumb to make it the cover, × to remove, + to add more -->
+        <div id="upGallery" class="mt-2 hidden flex-nowrap gap-2 overflow-x-auto pb-1 scrollbar-hide"></div>
         <div id="upMeta" class="mt-2 flex flex-wrap gap-1.5"></div>
       </div>
 
@@ -828,6 +845,36 @@
             <button type="button" data-pv="Public" class="on" onclick="setPrivacy(this)"><i class="fa-solid fa-globe-americas"></i> Public</button>
             <button type="button" data-pv="Friends" onclick="setPrivacy(this)"><i class="fa-solid fa-user-group"></i> Friends</button>
             <button type="button" data-pv="Private" onclick="setPrivacy(this)"><i class="fa-solid fa-lock"></i> Only me</button>
+          </div>
+        </div>
+
+        <!-- MORE DETAILS (optional) — story, milestone, soundtrack, favourite; collapsed so the box stays light -->
+        <div class="border-t border-grey-light pt-2">
+          <button type="button" onclick="toggleMoreDetails()" class="flex w-full items-center justify-between py-1 text-xs font-bold text-accent-blue/70 transition hover:text-primary-theme">
+            <span><i class="fa-solid fa-feather-pointed text-primary-theme"></i> More details <span class="font-medium text-accent-blue/40">(optional)</span></span>
+            <i id="upMoreChevron" class="fa fa-chevron-down transition-transform"></i>
+          </button>
+          <div id="upMore" class="hidden space-y-3 pt-2">
+            <div>
+              <label for="upStory" class="mb-1 block text-xs font-semibold text-accent-blue/70">The story</label>
+              <textarea id="upStory" rows="2" maxlength="180" placeholder="What happened in this moment? Tell it in a line or two…" class="w-full resize-none rounded-xl border border-grey-light bg-grey-light px-4 py-2.5 text-sm text-accent-blue outline-none focus:border-primary-theme"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="upMilestone" class="mb-1 block text-xs font-semibold text-accent-blue/70">Milestone</label>
+                <select id="upMilestone" class="w-full cursor-pointer rounded-xl border border-grey-light bg-grey-light px-4 py-2.5 text-sm text-accent-blue outline-none focus:border-primary-theme">
+                  <option value="">None</option><option>First steps</option><option>First day of school</option><option>Graduated</option><option>First job</option><option>Engaged</option><option>Married</option><option>First home</option><option>New baby</option><option>Big trip</option><option>A milestone</option>
+                </select>
+              </div>
+              <div>
+                <label for="upSong" class="mb-1 block text-xs font-semibold text-accent-blue/70">Soundtrack</label>
+                <input id="upSong" maxlength="40" placeholder="the song of this moment 🎵" class="w-full rounded-xl border border-grey-light bg-grey-light px-4 py-2.5 text-sm text-accent-blue outline-none focus:border-primary-theme" />
+              </div>
+            </div>
+            <button type="button" id="upFav" onclick="toggleFav()" class="flex w-full items-center gap-2.5 rounded-xl bg-grey-light px-4 py-2.5 text-sm font-semibold text-accent-blue/80 transition">
+              <span id="upFavStar" class="grid h-6 w-6 place-items-center rounded-full text-accent-blue/40 transition"><i class="fa-regular fa-star"></i></span>
+              Mark as a favourite
+            </button>
           </div>
         </div>
       </div>
@@ -1158,10 +1205,12 @@
     let _scrollSyncT, _reelLock=false, _rulerLock=false, _reelLT, _rulerLT;
     function lockReel(){ _reelLock=true; clearTimeout(_reelLT); _reelLT=setTimeout(()=>{_reelLock=false;},450); }
     function lockRuler(){ _rulerLock=true; clearTimeout(_rulerLT); _rulerLT=setTimeout(()=>{_rulerLock=false;},450); }
+    // while a modal/overlay is open, background reflows mustn't hijack the active photo
+    function modalIsOpen(){ const m=document.getElementById('modal'), u=document.getElementById('uploadModal'); return (m && !m.classList.contains('hidden')) || (u && !u.classList.contains('hidden')); }
     function onReelScroll(){
       clearTimeout(_scrollSyncT);
       _scrollSyncT=setTimeout(()=>{
-        if(_reelLock||playing) return;
+        if(_reelLock||playing||modalIsOpen()) return;
         const cont=document.getElementById('carousel');
         const cr=cont.getBoundingClientRect(), cx=cr.left+cr.width/2, cy=cr.top+cr.height/2;
         let best=-1, bestD=1e9;
@@ -1254,7 +1303,7 @@
     function onRulerScroll(){
       clearTimeout(_rulerT);
       _rulerT=setTimeout(()=>{
-        if(_rulerLock||playing) return;
+        if(_rulerLock||playing||modalIsOpen()) return;
         const rail=document.getElementById('timelineRail');
         const rr=rail.getBoundingClientRect(), cx=rr.left+rr.width/2;
         let best=-1, bestD=1e9;
@@ -1274,14 +1323,16 @@
     // (real browsers run the .5s fade; if the transition is throttled, the timeout forces full opacity)
     function fadeSwap(img, src){
       if(!img) return;
+      img._want=src;   // remember the latest desired image — a later swap (e.g. gallery) must win
       const apply=()=>{
+        if(img._want!==src) return;   // superseded by a newer request → don't clobber it
         img.style.opacity='0'; void img.offsetWidth; img.src=src; img.style.opacity='1';
         clearTimeout(img._fs);
         img._fs=setTimeout(()=>{ img.style.transition='none'; img.style.opacity='1'; void img.offsetWidth; img.style.transition=''; }, 650);
       };
       const pre=new Image();
       pre.onload=apply;
-      pre.onerror=()=>{ img.src=src; img.style.opacity='1'; };
+      pre.onerror=()=>{ if(img._want!==src) return; img.src=src; img.style.opacity='1'; };
       pre.src=src;
       if(pre.complete) apply();   // cached → apply immediately
     }
@@ -1345,7 +1396,10 @@
             <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"></div>
             ${p.type==='video'?`<span class="vid-dur"><i class="fa-solid fa-volume-xmark"></i> ${p.dur}</span>`:''}
             <div class="absolute left-3 right-3 top-3 flex items-center justify-between">
-              <span class="glass rounded-full px-2.5 py-1 text-[11px] font-semibold text-accent-blue">${p.time}</span>
+              <span class="flex items-center gap-1.5">
+                <span class="glass rounded-full px-2.5 py-1 text-[11px] font-semibold text-accent-blue">${p.time}</span>
+                ${(p.gallery&&p.gallery.length>1)?`<span class="glass rounded-full px-2 py-1 text-[11px] font-bold text-accent-blue"><i class="fa-solid fa-images"></i> ${p.gallery.length}</span>`:''}
+              </span>
               <div class="flex gap-1.5 opacity-0 transition group-hover:opacity-100">
                 <button aria-label="Open memory" onclick="event.stopPropagation();openModal(${i})" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-pen"></i></button>
                 <button aria-label="Share memory" onclick="event.stopPropagation();openShare(${i})" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-share-nodes"></i></button>
@@ -1489,7 +1543,7 @@
       if(_swx==null) return;
       const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
       const d = x - _swx; _swx=null;
-      if(Math.abs(d) > 40){ d < 0 ? move(1) : move(-1); }
+      if(Math.abs(d) > 40){ d < 0 ? modalNextPhoto() : modalPrevPhoto(); }
     }
 
     // ---- play all (Memories) ----
@@ -1512,6 +1566,31 @@
       el.innerHTML = `<span style="display:inline-flex">${avs}</span><span>with ${peopleLabel(arr)}</span>`;
     }
     // fill the detail viewer from the active photo (fixes the old hard-coded content)
+    // ---- multi-photo gallery (in the open memory) ----
+    let _gArr=[], _gIdx=0;
+    function galleryOf(p){ if(p.gallery && p.gallery.length) return p.gallery; if(p.type==='video') return []; return [imgFor(p.id)]; }
+    function renderGalleryUI(){
+      const n=_gArr.length, multi=n>1;
+      const c=document.getElementById('modalCount'), ct=document.getElementById('modalCountTxt'), dots=document.getElementById('modalDots');
+      if(c){ c.classList.toggle('hidden', !multi); c.classList.toggle('inline-flex', multi); }
+      if(ct) ct.textContent=(_gIdx+1)+'/'+n;
+      if(dots){ dots.classList.toggle('hidden', !multi); dots.classList.toggle('flex', multi);
+        dots.innerHTML = multi ? _gArr.map((_,i)=>`<button type="button" class="g-dot${i===_gIdx?' on':''}" aria-label="Photo ${i+1}" onclick="showGalleryPhoto(${i})"></button>`).join('') : ''; }
+    }
+    function showGalleryPhoto(i){
+      if(i<0 || i>=_gArr.length) return; _gIdx=i;
+      const im=document.getElementById('modalImg'); if(im){ im._want=_gArr[i]; im.onerror=function(){this.onerror=null;this.src=imgAlt(photos[active].id);}; im.src=_gArr[i]; }
+      renderGalleryUI();
+    }
+    // unified nav: flip through THIS memory's photos first, then roll to the prev/next memory
+    function modalNextPhoto(){ if(_gArr.length>1 && _gIdx < _gArr.length-1) showGalleryPhoto(_gIdx+1); else move(1); }
+    function modalPrevPhoto(){ if(_gArr.length>1 && _gIdx > 0) showGalleryPhoto(_gIdx-1); else move(-1); }
+    // tapping the photo flips through it (left half = back, right half = forward)
+    function galleryTap(e){
+      if(_gArr.length<=1) return;
+      const r=e.currentTarget.getBoundingClientRect(), back=(e.clientX-r.left) < r.width/2;
+      back ? modalPrevPhoto() : modalNextPhoto();
+    }
     function fillModal(){
       const p=photos[active];
       const im=document.getElementById('modalImg'), mv=document.getElementById('modalVideo');
@@ -1523,6 +1602,8 @@
         if(mv){ mv.pause(); mv.classList.add('hidden'); }
         if(im){ im.classList.remove('hidden'); if(im.dataset.id!==String(p.id)){ im.dataset.id=String(p.id); fadeSwap(im, imgHD(p.id)); } }
       }
+      // multi-photo gallery: cover already shown above; set up dots/counter + tap-to-flip
+      _gArr = (p.type==='video') ? [] : galleryOf(p); _gIdx = 0; renderGalleryUI();
       const ctrls=document.getElementById('modalCtrls'); if(ctrls) ctrls.style.display = p.type==='video' ? 'none' : '';
       const set=(id,t)=>{ const e=document.getElementById(id); if(e) e.textContent=t; };
       set('modalDate',p.dmy); set('modalYear',p.year); set('modalName',p.name);
@@ -1698,7 +1779,7 @@
     function closeAncestry(){ const m=document.getElementById('ancModal'); if(m){ m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); } }
 
     // ---- UPLOAD (reads the photo's own metadata, then AI fills the rest) ----
-    let _newDataURL=null, _upPrivacy='Public', _meta={}, _aiSeed=0, _upMode='', _upModeDetail='', _upModeIcon='', _upMap=null, _upMarker=null, _upPeople=[];
+    let _newDataURL=null, _newPhotos=[], _upPrivacy='Public', _meta={}, _aiSeed=0, _upMode='', _upModeDetail='', _upModeIcon='', _upMap=null, _upMarker=null, _upPeople=[];
     function openUpload(){
       resetUpload();
       renderPeoplePicker();
@@ -1714,10 +1795,25 @@
       wrap.innerHTML = Object.keys(PEOPLE).map(k=>`<button type="button" data-k="${k}" onclick="togglePerson(this)" class="up-person"><img src="${PEOPLE[k].img}" alt=""/><span>${PEOPLE[k].name}</span></button>`).join('');
     }
     function togglePerson(btn){ const k=btn.dataset.k, i=_upPeople.indexOf(k); if(i>=0)_upPeople.splice(i,1); else _upPeople.push(k); btn.classList.toggle('on'); btn.setAttribute('aria-pressed', i<0); }
+    // --- "More details" (optional) section: story · milestone · soundtrack · favourite ---
+    let _upFav=false;
+    function toggleMoreDetails(){
+      const m=document.getElementById('upMore'), ch=document.getElementById('upMoreChevron');
+      const open = m.classList.toggle('hidden')===false;
+      if(ch) ch.style.transform = open ? 'rotate(180deg)' : '';
+    }
+    function toggleFav(){
+      _upFav=!_upFav;
+      const btn=document.getElementById('upFav'), s=document.getElementById('upFavStar');
+      if(s){ s.innerHTML = `<i class="fa-${_upFav?'solid':'regular'} fa-star"></i>`; s.style.color = _upFav ? 'var(--brand)' : ''; }
+      if(btn) btn.classList.toggle('up-fav-on', _upFav);
+    }
     function closeUpload(){ const m=document.getElementById('uploadModal'); m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); }
     function resetUpload(){
-      _newDataURL=null; _upPrivacy='Public'; _meta={}; _upMode=''; _upModeDetail=''; _upModeIcon=''; _upPeople=[];
+      _newDataURL=null; _newPhotos=[]; _upPrivacy='Public'; _meta={}; _upMode=''; _upModeDetail=''; _upModeIcon=''; _upPeople=[];
       ['upFile','upCam'].forEach(id=>{ const fi=document.getElementById(id); if(fi) fi.value=''; });
+      const gal=document.getElementById('upGallery'); if(gal){ gal.classList.add('hidden'); gal.classList.remove('flex'); gal.innerHTML=''; }
+      const cb=document.getElementById('upCountBadge'); if(cb){ cb.classList.add('hidden'); cb.classList.remove('inline-flex'); }
       const pv=document.getElementById('upPreview'); if(pv) pv.classList.add('hidden');
       const ch=document.getElementById('upChoose'); if(ch) ch.classList.remove('hidden');
       const sg=document.getElementById('upSuggest'); if(sg){ sg.classList.add('hidden'); sg.classList.remove('flex'); }
@@ -1730,6 +1826,14 @@
       const ts=document.getElementById('upTravelSub'); if(ts){ ts.classList.add('hidden'); ts.innerHTML=''; }
       const pp=document.getElementById('upPeople'); if(pp) pp.querySelectorAll('button').forEach(b=>{ b.classList.remove('on'); b.setAttribute('aria-pressed','false'); });
       _acItems=[]; clearTimeout(_acT); hideAC();
+      // reset "More details"
+      _upFav=false;
+      ['upStory','upSong'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+      const ml=document.getElementById('upMilestone'); if(ml) ml.selectedIndex=0;
+      const fs=document.getElementById('upFavStar'); if(fs){ fs.innerHTML='<i class="fa-regular fa-star"></i>'; fs.style.color=''; }
+      const fb=document.getElementById('upFav'); if(fb) fb.classList.remove('up-fav-on');
+      const more=document.getElementById('upMore'); if(more) more.classList.add('hidden');
+      const mch=document.getElementById('upMoreChevron'); if(mch) mch.style.transform='';
       updateUploadValid();
     }
     function setPrivacy(btn){ _upPrivacy=btn.dataset.pv; btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b===btn)); }
@@ -1854,8 +1958,46 @@
     // Save needs the two required fields: a photo + a caption
     function updateUploadValid(){ const s=document.getElementById('upSave'); if(s) s.disabled = !(_newDataURL && (document.getElementById('upCaption').value||'').trim()); }
 
-    function onUploadFile(input){ const f=input.files && input.files[0]; if(f) processFile(f); }
-    function handleDrop(e){ const f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if(f) processFile(f); }
+    function onUploadFile(input){ if(input.files && input.files.length) processFiles(input.files); input.value=''; }
+    function handleDrop(e){ const f=e.dataTransfer && e.dataTransfer.files; if(f && f.length) processFiles(f); }
+    // process one or many chosen photos → a gallery (first = cover); EXIF/AI runs on the cover
+    async function processFiles(fileList){
+      const all=[...fileList];
+      if(all.some(f=>/^video\//.test(f.type))) toast('Videos come later — adding the photos for now','fa-video');
+      const files=all.filter(f=> /^image\//.test(f.type) || /hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name));
+      if(!files.length){ toast('Please choose photos','fa-triangle-exclamation'); return; }
+      const wasEmpty=_newPhotos.length===0; let firstFile=null, heicFallback=false;
+      for(const f of files){
+        const norm=await normalizeImage(f); if(!norm.url) continue;
+        if(wasEmpty && !firstFile){ firstFile=f; _meta.dims = norm.ow ? {w:norm.ow,h:norm.oh} : null;
+          if((/hei[cf]/i.test(f.type)||/\.hei[cf]$/i.test(f.name)) && !norm.ok) heicFallback=true; }
+        _newPhotos.push(norm.url);
+      }
+      if(!_newPhotos.length){ toast('Could not read those photos','fa-triangle-exclamation'); return; }
+      _newDataURL=_newPhotos[0];
+      paintCoverPreview();
+      document.getElementById('upPreview').classList.remove('hidden');
+      const ch=document.getElementById('upChoose'); if(ch) ch.classList.add('hidden');
+      const sg=document.getElementById('upSuggest'); if(sg){ sg.classList.remove('hidden'); sg.classList.add('flex'); }
+      renderUpGallery(); updateUploadValid();
+      if(heicFallback) toast('HEIC photo saved — its details still read fine','fa-circle-info');
+      if(wasEmpty && firstFile) analyzePhoto(firstFile);   // EXIF from the ORIGINAL cover file
+    }
+    function paintCoverPreview(){
+      const img=document.getElementById('upPreviewImg'); if(img){ img.onerror=()=>{ img.removeAttribute('src'); img.alt='Preview not available'; }; img.src=_newDataURL; }
+      const b=document.getElementById('upCountBadge'), n=document.getElementById('upCountN'), multi=_newPhotos.length>1;
+      if(b){ b.classList.toggle('hidden', !multi); b.classList.toggle('inline-flex', multi); }
+      if(n) n.textContent=_newPhotos.length;
+    }
+    function renderUpGallery(){
+      const g=document.getElementById('upGallery'); if(!g) return;
+      if(!_newPhotos.length){ g.classList.add('hidden'); g.classList.remove('flex'); g.innerHTML=''; return; }
+      g.innerHTML = _newPhotos.map((src,i)=>`<div class="up-thumb${i===0?' cover':''}"><img src="${src}" alt="" onclick="setUpCover(${i})"/>${i===0?'<span class="up-thumb-tag">Cover</span>':''}<button type="button" class="up-thumb-x" aria-label="Remove photo" onclick="removeUpPhoto(${i})"><i class="fa fa-xmark"></i></button></div>`).join('')
+        + `<button type="button" class="up-thumb-add" aria-label="Add more photos" onclick="document.getElementById('upFile').click()"><i class="fa fa-plus"></i></button>`;
+      g.classList.remove('hidden'); g.classList.add('flex');
+    }
+    function setUpCover(i){ if(i<=0 || i>=_newPhotos.length) return; const [p]=_newPhotos.splice(i,1); _newPhotos.unshift(p); _newDataURL=_newPhotos[0]; paintCoverPreview(); renderUpGallery(); }
+    function removeUpPhoto(i){ _newPhotos.splice(i,1); if(!_newPhotos.length){ resetUpload(); return; } _newDataURL=_newPhotos[0]; paintCoverPreview(); renderUpGallery(); updateUploadValid(); }
     // normalize: honor EXIF orientation, downscale to a sane size, compress → upright photos + light memory
     async function normalizeImage(file){
       try{
@@ -1871,23 +2013,6 @@
         return { url, ow:null, oh:null, ok:false };
       }
     }
-    async function processFile(f){
-      if(/^video\//.test(f.type)){ toast('Video memories are coming soon — pick a photo for now','fa-video'); return; }
-      const isHeic = /hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name);
-      if(!/^image\//.test(f.type) && !isHeic){ toast('Please choose a photo','fa-triangle-exclamation'); return; }
-      const norm = await normalizeImage(f);
-      if(!norm.url){ toast('Could not read that photo','fa-triangle-exclamation'); return; }
-      _newDataURL = norm.url; _meta.dims = norm.ow ? {w:norm.ow, h:norm.oh} : null;
-      const img=document.getElementById('upPreviewImg');
-      if(img){ img.onerror=()=>{ img.removeAttribute('src'); img.alt='Preview not available for this format'; }; img.src=_newDataURL; }
-      document.getElementById('upPreview').classList.remove('hidden');
-      const ch=document.getElementById('upChoose'); if(ch) ch.classList.add('hidden');
-      const sg=document.getElementById('upSuggest'); if(sg){ sg.classList.remove('hidden'); sg.classList.add('flex'); }
-      if(isHeic && !norm.ok) toast('HEIC photo saved — its details still read fine','fa-circle-info');
-      updateUploadValid();
-      analyzePhoto(f);   // read EXIF from the ORIGINAL file (the canvas copy has none)
-    }
-
     function imageDims(src){ return new Promise(res=>{ const im=new Image(); im.onload=()=>res({w:im.naturalWidth,h:im.naturalHeight}); im.onerror=()=>res(null); im.src=src; }); }
     function setAIState(state){
       const el=document.getElementById('aiState'); if(!el) return; el.classList.remove('hidden');
@@ -1988,18 +2113,23 @@
       const useTaken = _meta.takenDate && _meta.takenDate.toISOString().slice(0,10)===dval;
       const timeStr = (useTaken?_meta.takenDate:dt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
       const people = (_upPeople||[]).map(k=>PEOPLE[k]).filter(Boolean);
+      // "More details" (optional)
+      const story=(document.getElementById('upStory')||{}).value||'';
+      const songVal=((document.getElementById('upSong')||{}).value||'').trim() || 'a new memory';
+      const milestoneVal=((document.getElementById('upMilestone')||{}).value||'').trim() || null;
       const y=dt.getFullYear(), mo=dt.getMonth(), d=dt.getDate();
       const id=10001+Object.keys(_uploads).length;
-      _uploads[id]=_newDataURL;
+      const gallery=(_newPhotos.length?_newPhotos:[_newDataURL]).slice();
+      _uploads[id]=gallery[0];   // cover (used by imgFor across cards/stage/map)
       const anchor=photos[photos.length-1]||{lat:27.7,lng:85.3};
       // use the photo's REAL GPS when we found it; otherwise drop near the latest place
       const lat=(_meta.lat!=null)?_meta.lat:anchor.lat+((id%5)-2)*0.35;
       const lng=(_meta.lng!=null)?_meta.lng:anchor.lng+((id%3)-1)*0.45;
       const np={ id, name:cap, loc:place, lat, lng,
-        time:timeStr, kw:'', desc:'', cam:_meta.cam||null,
+        time:timeStr, kw:'', desc:story.trim(), cam:_meta.cam||null,
         y, mo, d, day:_wd[new Date(y,mo,d).getDay()], age:y-BORN,
         dmy:`${String(d).padStart(2,'0')} ${_mo[mo]}`, monShort:_mo[mo], monFull:_moF[mo], year:y,
-        type:'photo', dur:null, vsrc:null, people, mood, song:'a new memory', season:seasonOf(mo), milestone:null, fav:false,
+        type:'photo', dur:null, vsrc:null, gallery, people, mood, song:songVal, season:seasonOf(mo), milestone:milestoneVal, fav:_upFav,
         modeKey:_upMode||null, modeDetail:_upModeDetail||null, modeIcon:_upModeIcon||null, privacy:_upPrivacy, likes:0, liked:false, comments:[] };
       photos.push(np);
       photos.sort((a,b)=> new Date(a.y,a.mo,a.d) - new Date(b.y,b.mo,b.d));
@@ -2249,8 +2379,9 @@
       if(tag==='input'||tag==='textarea'||tag==='select'||t.isContentEditable) return;
       if(e.metaKey||e.ctrlKey||e.altKey) return;
       const vis=visibleIdx();
-      if(e.key==='ArrowLeft'){ e.preventDefault(); stepActive(-1); }
-      else if(e.key==='ArrowRight'){ e.preventDefault(); stepActive(1); }
+      const modalOpen = !document.getElementById('modal').classList.contains('hidden');
+      if(e.key==='ArrowLeft'){ e.preventDefault(); modalOpen ? modalPrevPhoto() : stepActive(-1); }
+      else if(e.key==='ArrowRight'){ e.preventDefault(); modalOpen ? modalNextPhoto() : stepActive(1); }
       else if(e.key===' '||e.key==='Spacebar'){ e.preventDefault(); togglePlay(); }
       else if(e.key==='Home'){ e.preventDefault(); if(vis.length){ if(playing) togglePlay(); setActive(vis[0]); } }
       else if(e.key==='End'){ e.preventDefault(); if(vis.length){ if(playing) togglePlay(); setActive(vis[vis.length-1]); } }
