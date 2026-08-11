@@ -54,18 +54,43 @@
       },
     };
   </script>
+  <script>
+    /* Dark-HUD is the default theme ("Cinema Dark"); light remains the alternate.
+       Runs before first paint so there is no flash of the wrong theme. */
+    (function(){ try{ if(sessionStorage.getItem('sb-theme')!=='light') document.documentElement.classList.add('dark'); }catch(_){ document.documentElement.classList.add('dark'); } })();
+  </script>
 
   <style>
     :root {
       --c-bg:#f5f6fa; --c-text:#36454f; --c-line:#dfe2ed; --c-a2:#2d688f;
       /* === SystemBoom brand red (single source of truth — tweak here) === */
       --brand:#D92A20; --brand-2:#AE1C14; --brand-lt:#F87A63; --brand-glow:217,42,32;
+      /* === SYSTEMBOOM Dark-HUD token system (light values; html.dark overrides) === */
+      --bg-0:#f5f6fa; --bg-1:#eef1f6; --bg-2:#e7ebf2;
+      --glass:rgba(255,255,255,.55); --glass-border:rgba(255,255,255,.65); --glass-strong:rgba(255,255,255,.8);
+      --ink:#36454f; --ink-2:#5c6b78; --ink-3:#8494a2;
+      --brand-soft:rgba(217,42,32,.13); --brand-ring:rgba(217,42,32,.35);
+      --gold:#B9973F; --steel:#5E7A93; --ai:#4F7DD9;
     }
-    html.dark { --c-bg:#0e1318; --c-text:#e7ebf2; --c-line:#2a323c; --c-a2:#86b3d6; color-scheme:dark; }
+    html.dark { --c-bg:#0A0E13; --c-text:#F2F5F9; --c-line:#232C37; --c-a2:#9FB4C8; color-scheme:dark;
+      --bg-0:#0A0E13; --bg-1:#10151C; --bg-2:#161D26;
+      --glass:rgba(255,255,255,.07); --glass-border:rgba(255,255,255,.14); --glass-strong:rgba(18,24,32,.66);
+      --ink:#F2F5F9; --ink-2:#AEB8C4; --ink-3:#77828E;
+      --brand-soft:rgba(217,42,32,.22); --brand-ring:rgba(255,90,80,.45);
+      --gold:#D9B65C; --steel:#9FB4C8; --ai:#BFD4FF;
+    }
     body { transition: background .4s, color .4s; background:
       radial-gradient(1200px 500px at 100% -10%, rgba(var(--brand-glow),0.06), transparent 60%),
       radial-gradient(900px 500px at -10% 10%, rgba(45,104,143,0.12), transparent 55%),
       var(--c-bg); }
+    /* Dark HUD: graphite depth + faint STATIC circuit texture (pure CSS, ≤5% visible) */
+    html.dark body { background:
+      radial-gradient(1100px 480px at 50% -12%, rgba(var(--brand-glow),.10), transparent 62%),
+      radial-gradient(900px 520px at -8% 14%, rgba(60,90,120,.10), transparent 55%),
+      repeating-linear-gradient(0deg, rgba(140,170,200,.028) 0 1px, transparent 1px 72px),
+      repeating-linear-gradient(90deg, rgba(140,170,200,.028) 0 1px, transparent 1px 72px),
+      linear-gradient(180deg, var(--bg-0), #0C1118 55%, var(--bg-0));
+    }
     /* dark surfaces */
     html.dark .liquid-light { background: rgba(28,36,46,.55); border-color: rgba(255,255,255,.10); box-shadow: 0 8px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08); }
     html.dark .chip { background: rgba(42,51,62,.6); border-color: rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.07); }
@@ -1225,6 +1250,48 @@
     @keyframes imgInE { from{opacity:0;transform:translateX(30px) scale(1.02)} to{opacity:1;transform:none} }
     @keyframes imgInW { from{opacity:0;transform:translateX(-30px) scale(1.02)} to{opacity:1;transform:none} }
     @media (prefers-reduced-motion: reduce){ .veh-pop,.pin-land,.img-in-e,.img-in-w { animation:none !important; } }
+    /* ===== RED DISCIPLINE (Dark-HUD law): one red action per screen. =====
+       Every selector/tab/chip "selected" state becomes quiet smoked glass with
+       a soft red accent — solid red is reserved for the hero action only. */
+    .stage-mode-btn[aria-pressed="true"],
+    html.dark .stage-mode-btn[aria-pressed="true"],
+    .map-detail-btn[aria-pressed="true"],
+    #filters button[aria-pressed="true"],
+    #viewSwitch button[aria-pressed="true"]{
+      background:var(--glass-strong) !important; color:var(--ink) !important;
+      border:1px solid var(--brand-ring) !important;
+      box-shadow:inset 0 -2px 0 var(--brand), 0 4px 14px rgba(0,0,0,.18) !important;
+    }
+    .ch-seg-active{
+      background:var(--glass-strong) !important; color:var(--ink) !important;
+      border:1px solid var(--brand-ring) !important;
+      box-shadow:inset 0 -2px 0 var(--brand) !important;
+    }
+    .ch-seg-active i{ color:var(--brand); }
+    #filters button[aria-pressed="true"] i{ color:var(--brand); }
+    /* header utilities go neutral — the hero Watch card owns red */
+    #pageHeader button[onclick="openUpload()"]{
+      background:var(--glass-strong) !important; color:var(--ink) !important;
+      border:1px solid var(--glass-border); box-shadow:none !important;
+    }
+    #pageHeader button[onclick="openUpload()"]:hover{ border-color:var(--brand-ring); color:var(--brand) !important; }
+    #journeySummary > div.grid{
+      background:var(--glass-strong) !important; color:var(--gold) !important;
+      border:1px solid var(--glass-border); box-shadow:none !important;
+    }
+    .rl-add-btn{ background:var(--glass-strong) !important; color:var(--ink-2) !important;
+      border:1px solid var(--glass-border) !important; box-shadow:none !important; }
+    .rl-add-btn:hover:not(:disabled){ color:var(--brand) !important; border-color:var(--brand-ring) !important; background:var(--glass-strong) !important; }
+    .rl-add-btn.glow{ animation:none; }
+    /* smoked-glass surface refinement in dark */
+    html.dark .liquid-light{ background:var(--glass-strong); border-color:var(--glass-border); backdrop-filter:blur(18px) saturate(140%); -webkit-backdrop-filter:blur(18px) saturate(140%); }
+    html.dark .chip{ background:var(--glass); border-color:var(--glass-border); }
+    /* logo plaque: subtle red under-glow like the brand reference */
+    .logo-plaque{ position:relative; }
+    .logo-plaque::after{ content:''; position:absolute; left:12%; right:12%; bottom:-9px; height:14px;
+      background:radial-gradient(50% 100% at 50% 0%, rgba(var(--brand-glow),.55), transparent 75%);
+      filter:blur(4px); pointer-events:none; }
+    @media (prefers-reduced-motion: reduce){ .logo-plaque::after{ filter:none; } }
   </style>
   <div id="tvDash" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tvDashTitle" tabindex="-1">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeTvDash()"></div>
@@ -1880,6 +1947,7 @@
     // ---- day / night theme ----
     function toggleTheme(){
       const dark = document.documentElement.classList.toggle('dark');
+      try{ sessionStorage.setItem('sb-theme', dark?'dark':'light'); }catch(_){ }
       const ic = document.getElementById('themeIcon');
       if(ic) ic.className = dark ? 'fa-solid fa-sun' : 'fa-regular fa-moon';
       if(sbMap) syncMapTheme();
