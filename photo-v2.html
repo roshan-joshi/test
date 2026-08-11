@@ -1262,7 +1262,7 @@
     .tv-click:active { transform:translateY(0) scale(.97); }
     .tv-go { font-size:10px; opacity:.45; margin-left:2px; }
     .tv-click:hover .tv-go { opacity:.9; color:var(--brand); }
-    .veh-big { width:46px; height:46px; font-size:20px; }
+    .veh-big { width:56px; height:56px; font-size:24px; }   /* the vehicle is the star — big, legible icon */
     .tvd-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px dashed var(--c-line); font-size:13px; }
     .tvd-row:last-child { border-bottom:none; }
     .tvd-ic { width:30px; height:30px; display:grid; place-items:center; border-radius:10px; background:rgba(var(--brand-glow),.12); color:var(--brand); flex:0 0 auto; }
@@ -3553,6 +3553,7 @@
       _preWatchView = (typeof stageView!=='undefined') ? stageView : 'together';
       document.body.classList.add('watch');
       const bar=document.getElementById('watchBar'); if(bar){ bar.hidden=false; bar.classList.remove('idle'); }
+      const spSel=document.getElementById('wbSpeed'); if(spSel) spSel.value=watchSpeed;   // UI reflects the real pace
       const strip=document.getElementById('journeyStrip'); if(strip){ strip.hidden=false; }
       setWatchPhase('photo');                       // begin on the current photograph
       updateJourneyStrip(0);
@@ -3843,12 +3844,12 @@
       }catch(_){ }
     }
     let watchMode=false, watchPhase='photo', watchPaused=false, _preWatchView=null, _journeyTimerAt=0, _journeyTimerDelay=0, _watchIdleT=null;
-    let watchSpeed=(function(){ try{ return sessionStorage.getItem('sb-watch-speed')||'normal'; }catch(_){ return 'normal'; } })();
+    let watchSpeed=(function(){ try{ return sessionStorage.getItem('sb-watch-speed')||'relaxed'; }catch(_){ return 'relaxed'; } })();   // default: the slow, cinematic pace
     // ONE timing table drives all cinematic pacing (travel scales with distance; dwell = photo time)
     const WATCH_SPEEDS={
-      relaxed:{ k:3.6, min:9000, max:24000, dwell:11000 },
-      normal :{ k:2.6, min:6500, max:17000, dwell:8500 },
-      quick  :{ k:1.4, min:3200, max:11000, dwell:5600 },
+      relaxed:{ k:4.2, min:10000, max:26000, dwell:11000 },
+      normal :{ k:3.0, min: 8000, max:20000, dwell:8500 },
+      quick  :{ k:1.6, min: 4000, max:12000, dwell:5600 },
     };
     function announce(msg){ const el=document.getElementById('srLive'); if(el) el.textContent=msg; }
     // real vehicles never move at constant speed: slow-out → cruise → slow-in
@@ -3867,20 +3868,22 @@
       // NEVER SKIP A VISITED PLACE: a jump spanning several memories flies
       // THROUGH each intermediate located stop in date order — one continuous
       // path with a brief settle + pin pulse at every place actually visited.
-      let pts, stops=[];
+      let pts, stops=[], startIcon=tm.icon;
       const dir=to>from?1:-1, gap=Math.abs(to-from);
       if(gap>1){
         const chain=[from];
         for(let i=from+dir; dir>0? i<to : i>to; i+=dir){ if(hasCoords(photos[i]) && haversineKm(photos[chain[chain.length-1]],photos[i])>=8) chain.push(i); }
         chain.push(to);
         pts=[]; hop=0;
+        startIcon=modeOf(chain[1]).icon;             // the FIRST leg's real means of travel
         for(let c=0;c<chain.length-1;c++){
           const p1=photos[chain[c]], p2=photos[chain[c+1]];
           const seg=legPath(p1,p2,modeOf(chain[c+1]).icon);
           hop+=haversineKm(p1,p2);
           if(c>0) seg.shift();                       // no duplicate joint points
           pts=pts.concat(seg);
-          if(c<chain.length-2) stops.push({ ptIndex:pts.length-1, memIdx:chain[c+1] });
+          // each stop remembers the NEXT leg's vehicle so the icon changes mid-journey
+          if(c<chain.length-2) stops.push({ ptIndex:pts.length-1, memIdx:chain[c+1], nextIcon:modeOf(chain[c+2]).icon });
         }
       } else {
         pts=legPath(a,b,tm.icon);
@@ -3889,7 +3892,7 @@
       if(!journeyMotionEnabled){ if(currentLine) currentLine.setLatLngs(pts); return false; }
       _travelDirX = b.lng===a.lng ? 0 : (b.lng>a.lng ? 1 : -1);   // photos enter from the travel direction
       if(!vehicle){ vehicle=L.marker([a.lat,a.lng], {interactive:false, zIndexOffset:600, opacity:0}).addTo(sbMap); }
-      vehicle.setIcon(L.divIcon({className:'', html:`<div class="veh veh-big veh-pop"><i class="fa-solid ${tm.icon}"></i></div>`, iconSize:[46,46], iconAnchor:[23,23]}));
+      vehicle.setIcon(L.divIcon({className:'', html:`<div class="veh veh-big veh-pop"><i class="fa-solid ${startIcon}"></i></div>`, iconSize:[56,56], iconAnchor:[28,28]}));
       vehicle.setLatLng([a.lat,a.lng]); vehicle.setOpacity(1);
       if(_vehRAF) cancelAnimationFrame(_vehRAF);
       if(REDUCED){ if(currentLine) currentLine.setLatLngs(pts); vehicle.setOpacity(0); if(onLand) onLand(); return false; }
@@ -3898,9 +3901,11 @@
       if(!mapLocked && sbMap.getSize().x) sbMap.flyToBounds(L.latLngBounds(pts), { paddingTopLeft:[70,70], paddingBottomRight:[70, 70+peekPadBottom()], duration:1.0, maxZoom: hop>1200 ? 6 : zoomForHop(hop)+1 });
       if(currentLine) currentLine.setLatLngs([]);
       // 🎬 pacing comes from ONE speed table (Watch mode picks Relaxed/Normal/Quick)
+      // The camera sets the stage FIRST (both places in frame), THEN the vehicle
+      // moves — and the map holds still for the whole crossing.
       const S = WATCH_SPEEDS[watchMode ? watchSpeed : 'normal'];
-      const cruise=Math.min(S.max, Math.max(S.min, hop*S.k)), delay=1050;
-      const isPlane = tm.icon==='fa-plane-up';
+      const cruise=Math.min(S.max, Math.max(S.min, hop*S.k)), delay=1400;
+      let curIcon = startIcon;
       const odo=document.getElementById('tvTotal');
       const kmA=_cumKm[from]||0, kmB=_cumKm[to]||kmA;
       if(watchMode) setWatchPhase('travel');
@@ -3931,9 +3936,16 @@
           if(sp){ const sub=document.getElementById('tbSub'); if(sub) sub.textContent=`passing ${sp.name}`;
                   try{ _dropCityPill(sp, placeParts(sp).city||sp.loc); }catch(_){ }
                   announce(`Passing ${sp.name}`); }
+          // the means of travel changes leg by leg — swap to the next leg's vehicle
+          if(s.nextIcon && s.nextIcon!==curIcon){
+            curIcon=s.nextIcon;
+            const ve=vehicle.getElement && vehicle.getElement(), vi=ve && ve.querySelector('i');
+            if(vi){ vi.className='fa-solid '+curIcon; vi.style.transform=''; }
+            const bi=document.getElementById('tbIcon'); if(bi) bi.className='fa-solid '+curIcon;
+          }
         }
         // the plane BANKS along the curve — nosing where it is heading right now
-        if(isPlane){
+        if(curIcon==='fa-plane-up'){
           const el=vehicle.getElement && vehicle.getElement(), ic=el && el.querySelector('i');
           if(ic) ic.style.transform='rotate('+bearing({lat:pts[idx-1][0],lng:pts[idx-1][1]},{lat:pts[idx][0],lng:pts[idx][1]})+'deg)';
         }
@@ -3947,10 +3959,10 @@
           if(odo) odo.textContent = km(kmB) + ' km';
           updateJourneyStrip(1);
           announce(`Arrived: ${b.name}`);
-          // Phase D — land: camera glides down, vehicle fades, pin settles gently
-          // (guarded: if the pane went hidden mid-flight, skip the camera glide)
-          if(!mapLocked && sbMap.getSize().x){ const z=zoomForHop(hop); sbMap.flyTo(padTarget(b.lat,b.lng,z), z, { duration:1.0 }); }
-          setTimeout(()=>vehicle.setOpacity(0), 250);
+          // Phase D — land: the CAMERA HOLDS STILL. The whole completed route
+          // stays in frame so you can see exactly from where to where you came.
+          // Only the vehicle fades and the pin settles.
+          setTimeout(()=>vehicle.setOpacity(0), 350);
           setTimeout(_clearCityPills, 1600);   // let the arrival city name breathe a beat
           if(onLand) onLand();
         }
