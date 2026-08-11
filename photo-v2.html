@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- ============================================================
+       SYSTEMBOOM · PHOTO — THEME 2  (photo-v2.html)
+       CANONICAL DESIGN MOCKUP — the single source of truth for the
+       Photo · Timeline redesign. Review/approve the design HERE.
+       Do NOT edit photo.html, index.html, photo.BEFORE-ruler.html,
+       or manoj/* to change the design — edit this file. Other
+       variants should eventually be regenerated from / redirected
+       to this canonical mockup.
+       ============================================================ -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Photo · Timeline — Systemboom</title>
@@ -180,6 +189,7 @@
     /* a memory = a coral DOT on the life-line, placed by its day of that year */
     .rl-dot { position:absolute; bottom:27px; width:12px; height:12px; padding:0; border-radius:50%; transform:translate(-50%,0); cursor:pointer; z-index:2;
       background:var(--brand); border:2px solid #fff; box-shadow:0 1px 5px rgba(var(--brand-glow),.5); transition:transform .2s, box-shadow .2s; }
+    .rl-dot::before{ content:''; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); border-radius:50%; }
     html.dark .rl-dot { border-color:#141c26; }
     .rl-dot:hover { transform:translate(-50%,-2px) scale(1.16); box-shadow:0 0 10px 2px rgba(var(--brand-glow),.7); }
     .rl-dot.active { transform:translate(-50%,-3px) scale(1.42); box-shadow:0 0 12px 3px rgba(var(--brand-glow),.9); z-index:3; }
@@ -454,6 +464,358 @@
     a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, label:focus-visible, [tabindex]:focus-visible, [role="button"]:focus-visible {
       outline:3px solid var(--brand); outline-offset:2px; border-radius:10px; }
     @media (prefers-reduced-motion: reduce){ #sbToast, .like-btn.liked i { transition:none; animation:none; } }
+    /* --- canonical mockup hardening: respect the device safe-area for the floating stage play control --- */
+    #stagePlay{ bottom:calc(20px + env(safe-area-inset-bottom, 0px)); }
+    /* travel/journey chips are real buttons now — normalise button defaults so they still look like chips */
+    button.tv-chip{ appearance:none; -webkit-appearance:none; font:inherit; text-align:left; }
+
+    /* ============================================================
+       THEME 2 EXPERIENCE LAYER — memory first, controls second
+       These rules intentionally sit last so the canonical mockup keeps
+       its existing tokens and behaviours while gaining a calmer hierarchy.
+       ============================================================ */
+    :root{
+      --surface:rgba(255,255,255,.82); --surface-solid:#fff;
+      --surface-muted:rgba(255,255,255,.56); --shadow-stage:0 20px 60px -28px rgba(32,45,55,.42);
+      --radius-stage:28px;
+    }
+    html.dark{ --surface:rgba(24,32,42,.88); --surface-solid:#151b23; --surface-muted:rgba(28,36,46,.68); }
+    html,body{ max-width:100%; overflow-x:hidden; }
+    html{ scroll-padding-top:76px; }
+    button,summary,a,input,select,textarea{ touch-action:manipulation; }
+    button{ min-height:44px; }
+    .logo-plaque{ box-shadow:0 5px 14px rgba(var(--brand-glow),.24),inset 0 1px 0 rgba(255,255,255,.22); }
+    .shadow-glow{ box-shadow:0 8px 24px -10px rgba(var(--brand-glow),.58)!important; }
+    #experienceStage{ min-width:0; }
+    #stageWrap{ display:flex; min-width:0; flex-direction:column; }
+    #photoStage{
+      position:relative!important; inset:auto!important; order:1; display:block!important;
+      height:clamp(360px,48vh,520px); overflow:hidden; border-radius:var(--radius-stage);
+      box-shadow:var(--shadow-stage); background:#dfe5eb;
+    }
+    html.dark #photoStage{ background:#111821; }
+    #stageWrap #toolbar{ position:relative!important; inset:auto!important; order:3; z-index:30; margin:12px 0 8px; }
+    #stageWrap #chapterRail{ order:4; }
+    #stageWrap #rulerSec{ position:relative!important; inset:auto!important; order:5; z-index:20; margin:0 0 12px; }
+    #stagePlay{ display:none!important; }
+    #heroActions{ order:2; }
+    #stageScrim{ background:linear-gradient(180deg,rgba(0,0,0,.2),transparent 35%,rgba(0,0,0,.7)); }
+    #stageEngagement{ color:rgba(255,255,255,.84); }
+    #mapPanel{ background:var(--surface-solid); }
+    #mapState{ pointer-events:none; }
+    #mapBtnLabel{ white-space:nowrap; }
+    #galleryToolbar{ display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between; gap:12px 16px; margin-bottom:12px; }
+    #filters{ min-width:0; }
+    #filters button{ min-height:44px; }
+    .memory-card{ isolation:isolate; }
+    .memory-card .card-open{ border:0; background:transparent; }
+    .memory-card .card-menu-trigger,.memory-card .card-favourite{ min-width:44px; min-height:44px; }
+    .memory-card .card-menu{ background:rgba(20,28,36,.94); backdrop-filter:blur(18px); }
+    .memory-card .card-menu button{ width:100%; justify-content:flex-start; color:#fff; }
+    .memory-card.is-active{ box-shadow:0 0 0 3px var(--brand),0 0 0 7px rgba(45,104,143,.28),0 18px 50px -16px rgba(54,69,79,.28); }
+    .card-state{ background:rgba(20,28,36,.78); color:#fff; }
+    .dialog-sheet{ background:var(--surface-solid); color:var(--c-text); }
+    .journey-tab[aria-selected="true"]{ background:var(--brand); color:#fff; border-color:var(--brand); }
+    .journey-tab[aria-selected="false"]{ color:var(--c-a2); background:var(--c-bg); border-color:var(--c-line); }
+    #upStatus:not(:empty){ display:flex; }
+    #upFooter{ padding-bottom:max(0px,env(safe-area-inset-bottom)); }
+    #deleteModal img{ background:var(--c-bg); }
+    .media-failed{ display:grid; place-items:center; background:linear-gradient(145deg,var(--c-bg),var(--surface-solid)); color:var(--c-text); }
+    .media-failed::after{ content:'This memory could not be displayed'; max-width:16rem; padding:24px; text-align:center; font-size:13px; font-weight:700; opacity:.7; }
+    #sbToast{ bottom:calc(18px + env(safe-area-inset-bottom,0px)); border-radius:16px; }
+
+    @media (max-width:767px){
+      nav>div{ min-height:64px; padding-top:8px!important; padding-bottom:8px!important; }
+      nav .logo-plaque{ padding:7px 12px; }
+      nav .ml-auto{ gap:0!important; }
+      nav .ml-auto>button:nth-of-type(2){ display:none; }
+      main{ padding-top:12px!important; }
+      #pageHeader{ margin-bottom:10px; gap:0; }
+      #pageHeader .page-kicker{ display:none; }
+      #hdrDate{ margin-top:0!important; font-size:1.45rem; line-height:1.25; }
+      #onThisDay{ display:none!important; }
+      #journeySummary{ display:none; }
+      #photoStage{ height:300px; border-radius:24px; }
+      #photoStage .stage-copy{ bottom:18px; left:18px; right:18px; }
+      #stageName{ font-size:1.25rem; }
+      #stageMeta{ max-width:31ch; font-size:12px; }
+      #heroActions{ display:grid; grid-template-columns:44px 44px minmax(0,1fr) 44px; gap:8px; margin-top:10px; }
+      #heroActions button{ min-width:44px; height:44px; }
+      #heroAdd{ border-radius:14px; }
+      #stageWrap #toolbar{ margin:8px 0; }
+      #toolbar .desktop-speed,#viewSwitch{ display:none!important; }
+      #mapBtn{ flex:1; justify-content:center; border-radius:14px; }
+      #mapBtnLabel{ display:inline!important; }
+      #mobileDisplayOptions{ display:block; position:relative; }
+      #mobileDisplayOptions summary{ display:grid; width:44px; height:44px; place-items:center; border-radius:14px; cursor:pointer; list-style:none; background:var(--surface); border:1px solid var(--c-line); }
+      #mobileDisplayOptions summary::-webkit-details-marker{ display:none; }
+      #mobileDisplayOptions .options-popover{ position:absolute; right:0; top:calc(100% + 8px); z-index:1000; width:min(310px,calc(100vw - 32px)); padding:14px; border-radius:18px; background:var(--surface-solid); border:1px solid var(--c-line); box-shadow:0 18px 48px rgba(28,38,48,.24); }
+      #chapterRail{ gap:8px!important; overflow-x:auto; padding:2px 1px 6px; scroll-snap-type:x proximity; scrollbar-width:none; }
+      #chapterRail::-webkit-scrollbar{ display:none; }
+      #chapterRail .ch-seg{ flex:0 0 auto!important; min-width:112px; min-height:44px; padding:9px 13px; scroll-snap-align:start; }
+      #chapterRail .ch-name{ display:inline; }
+      #chapterRail .ch-seg-active{ box-shadow:none; }
+      #rulerSec .rl-bar{ border-radius:20px; padding:8px 6px; }
+      #rulerSec #rlLatest{ display:none; }
+      #mapPanel{ border-radius:24px; }
+      #mapPanel:not(.h-0){ height:44vh!important; min-height:330px; margin-bottom:14px!important; }
+      #mapPanel.h-0{ min-height:0!important; }
+      #mapPanel .leaflet-container{ border-radius:24px; }
+      #mapLock,#mapAll{ display:none!important; }
+      #routeMotionBtn{ right:12px; top:12px; min-width:44px; }
+      #travelBar{ left:12px; right:12px; bottom:12px; }
+      #travelBar .tv-chip{ width:100%; min-height:48px; justify-content:center; border-radius:14px; }
+      #galleryToolbar{ display:block; margin-top:4px; }
+      #galleryToolbar h2{ margin-bottom:8px; }
+      #filters{ display:flex; width:100%; overflow-x:auto; gap:8px; padding:2px 1px 8px; scrollbar-width:none; }
+      #filters::-webkit-scrollbar{ display:none; }
+      #filters button{ flex:0 0 auto; padding-left:16px; padding-right:16px; white-space:nowrap; }
+      #tvDash{ align-items:flex-end!important; padding:0!important; }
+      #tvDash .dialog-sheet{ width:100%; max-width:none; max-height:88vh; border-radius:26px 26px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px)); }
+      #modal .detail-shell{ padding-bottom:env(safe-area-inset-bottom,0px); }
+      #modalClose{ top:calc(12px + env(safe-area-inset-top,0px)); right:12px; }
+      #commentPane>div:last-child{ padding-bottom:calc(12px + env(safe-area-inset-bottom,0px)); }
+      #uploadModal{ align-items:stretch!important; padding:0!important; }
+      #uploadModal .upload-sheet{ max-height:none; height:100dvh; max-width:none; border-radius:0; padding:16px 16px 0; }
+      #uploadModal [data-up-step].hidden-step{ display:none!important; }
+      #upFooter{ position:sticky; bottom:0; z-index:40; margin-left:-16px; margin-right:-16px; background:var(--surface-solid); border-top:1px solid var(--c-line); padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px)); }
+      #upSave{ display:none; }
+      #upSave.review-ready{ display:inline-flex; }
+      #upNext.review-ready{ display:none; }
+      #deleteModal,#abandonModal{ align-items:flex-end!important; padding:0!important; }
+      #deleteModal .dialog-sheet,#abandonModal .dialog-sheet{ border-radius:24px 24px 0 0; padding-bottom:calc(20px + env(safe-area-inset-bottom,0px)); }
+    }
+    @media (min-width:768px){
+      #heroActions,#mobileDisplayOptions{ display:none!important; }
+      #upProgressWrap,#upStepLabel{ display:none; }
+      #uploadModal [data-up-step]{ display:block!important; }
+      #upBack,#upNext{ display:none!important; }
+      #upSave{ display:inline-flex!important; }
+    }
+    @media (min-width:1024px){
+      #experienceStage{ display:grid; grid-template-columns:minmax(0,1.58fr) minmax(330px,1fr); gap:18px; align-items:start; }
+      #stageWrap{ grid-column:1; }
+      #mapPanel{ grid-column:2; height:430px!important; margin-top:150px; border-radius:var(--radius-stage); }
+      #mapPanel.h-0{ height:0!important; min-height:0; margin-bottom:0!important; }
+      #photoStage{ height:430px; }
+      #stageWrap #toolbar{ order:1; margin-top:0; }
+      #stageWrap #chapterRail{ order:2; }
+      #stageWrap #rulerSec{ order:3; }
+      #stageWrap #photoStage{ order:4; }
+    }
+
+    /* ============================================================
+       RESPONSIVE STAGE MODES — one shared chapter rail + ruler
+       ============================================================ */
+    #experienceStage{ display:block; min-width:0; }
+    #stageWrap{
+      display:grid; min-width:0; grid-template-columns:minmax(0,1fr);
+      align-items:stretch;
+    }
+    #stageWrap #toolbar{
+      position:relative!important; inset:auto!important; order:initial; z-index:35;
+      width:100%; margin:0 0 8px;
+    }
+    #stageWrap #chapterRail{ order:initial; width:100%; margin:0 0 8px; }
+    #stageWrap #rulerSec{
+      position:relative!important; inset:auto!important; order:initial; z-index:20;
+      width:100%; margin:0 0 12px;
+    }
+    #stageWrap #photoStage{
+      position:relative!important; inset:auto!important; order:initial; display:block!important;
+      grid-column:auto; width:100%; height:clamp(380px,50vh,500px); min-width:0; margin:0;
+      border-radius:var(--radius-stage); overflow:hidden; box-shadow:var(--shadow-stage);
+    }
+    #stageWrap #mapPanel{
+      position:relative; order:initial; grid-column:auto; width:100%; height:clamp(380px,50vh,500px)!important;
+      min-width:0; min-height:0!important; margin:0!important; opacity:1!important;
+      border-radius:var(--radius-stage); overflow:hidden; box-shadow:var(--shadow-stage);
+    }
+    #stageWrap #photoStage[hidden],#stageWrap #mapPanel[hidden]{ display:none!important; height:0!important; min-height:0!important; }
+    #experienceStage[data-stage-view="together"] #mapPanel{ margin-top:20px!important; }
+    #heroActions{ order:initial; }
+    .stage-view-selector{
+      display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:center;
+      min-width:min(100%,330px); padding:4px; border:1px solid var(--c-line); border-radius:16px;
+      background:var(--surface); box-shadow:0 8px 26px -20px rgba(32,45,55,.48);
+      backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    }
+    .stage-mode-btn{
+      display:flex; min-width:0; min-height:36px; align-items:center; justify-content:center; gap:7px;
+      border-radius:12px; padding:7px 12px; color:rgba(50,75,91,.72);
+      font-size:13px; font-weight:800; line-height:1; transition:background-color .2s ease,color .2s ease,box-shadow .2s ease,transform .2s ease;
+    }
+    .stage-mode-btn:hover{ color:var(--brand); background:rgba(255,255,255,.62); }
+    .stage-mode-btn[aria-pressed="true"]{
+      color:#fff; background:var(--brand); box-shadow:0 7px 18px -10px rgba(var(--brand-glow),.9);
+    }
+    .stage-mode-btn:active{ transform:scale(.98); }
+    html.dark .stage-mode-btn{ color:rgba(235,241,245,.7); }
+    html.dark .stage-mode-btn:hover{ color:#fff; background:rgba(255,255,255,.08); }
+    html.dark .stage-mode-btn[aria-pressed="true"]{ color:#fff; background:var(--brand); }
+    #photoStage:not([hidden]),#mapPanel:not([hidden]){ animation:stage-reveal .24s ease both; }
+    @keyframes stage-reveal{ from{ opacity:.25; transform:translateY(4px); } to{ opacity:1; transform:none; } }
+
+    @media (max-width:767px){
+      #stageWrap #toolbar{ margin:0 0 8px; }
+      #toolbar{ flex-wrap:nowrap; }
+      #stageViewSelector{ width:calc(100% - 52px); min-width:0; }
+      .stage-mode-btn{ gap:5px; padding:7px 5px; font-size:12px; }
+      .stage-mode-btn i{ font-size:11px; }
+      #stageWrap #chapterRail{ margin-bottom:7px; }
+      #stageWrap #rulerSec{ margin-bottom:10px; }
+      #stageWrap #photoStage{ height:300px; border-radius:24px; }
+      #stageWrap #mapPanel{ height:350px!important; min-height:350px!important; border-radius:24px; }
+      #experienceStage[data-stage-view="together"] #mapPanel{ margin-top:16px!important; }
+      #travelBar .tv-chip{ max-width:100%; overflow:hidden; }
+      #travelBar .tv-chip>span{ min-width:0; white-space:nowrap; }
+      #travelBar .tv-chip>span:first-of-type{ overflow:hidden; text-overflow:ellipsis; }
+      #travelBar .tv-chip>span:first-of-type .tv-sub,#travelBar .tv-chip>span.ml-auto .tv-sub{ display:none; }
+      #heroActions{ margin:10px 0 14px; }
+    }
+
+    @media (min-width:768px){
+      #stageWrap #photoStage,#stageWrap #mapPanel{ height:clamp(380px,50vh,500px)!important; }
+      #experienceStage[data-stage-view="together"] #mapPanel{ margin-top:20px!important; }
+    }
+
+    @media (min-width:1180px){
+      #stageWrap{ grid-template-columns:minmax(0,7.5fr) minmax(0,4.5fr); column-gap:22px; }
+      #stageWrap #toolbar,#stageWrap #chapterRail,#stageWrap #rulerSec,#heroActions{ grid-column:1/-1; }
+      #experienceStage[data-stage-view="together"] #photoStage{ grid-column:1; }
+      #experienceStage[data-stage-view="together"] #mapPanel{ grid-column:2; margin-top:0!important; }
+      #experienceStage[data-stage-view="photo"] #photoStage,
+      #experienceStage[data-stage-view="map"] #mapPanel{ grid-column:1/-1; }
+      #stageWrap #photoStage,#stageWrap #mapPanel{ height:clamp(420px,52vh,560px)!important; }
+    }
+
+    /* ============================================================
+       MEMORY MAP — calm journey layer + optional detailed explorer
+       ============================================================ */
+    #mapPanel{ isolation:isolate; background:#e8ece9; }
+    html.dark #mapPanel{ background:#111820; }
+    #mapTopControls{ pointer-events:none; }
+    #mapTopControls>*{ pointer-events:auto; }
+    .map-detail-selector{
+      display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:min(270px,100%);
+      padding:3px; border:1px solid rgba(255,255,255,.72); border-radius:15px;
+      background:rgba(255,255,255,.9); box-shadow:0 10px 28px -18px rgba(28,38,48,.55);
+      backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    }
+    html.dark .map-detail-selector{ border-color:rgba(255,255,255,.12); background:rgba(21,27,35,.9); }
+    .map-detail-btn{
+      display:flex; min-width:0; min-height:44px; align-items:center; justify-content:center; gap:6px;
+      border-radius:11px; padding:7px 10px; color:rgba(50,75,91,.72); font-size:11px;
+      font-weight:800; line-height:1; white-space:nowrap; transition:background-color .2s,color .2s,box-shadow .2s;
+    }
+    .map-detail-btn[aria-pressed="true"]{ color:#fff; background:var(--brand); box-shadow:0 7px 18px -10px rgba(var(--brand-glow),.9); }
+    .map-detail-btn:not([aria-pressed="true"]):hover{ color:var(--brand); background:rgba(255,255,255,.68); }
+    html.dark .map-detail-btn{ color:rgba(235,241,245,.72); }
+    html.dark .map-detail-btn:not([aria-pressed="true"]):hover{ color:#fff; background:rgba(255,255,255,.08); }
+    .map-utility-btn,#mapState{
+      min-height:44px; border:1px solid rgba(255,255,255,.78); color:var(--c-text);
+      background:rgba(255,255,255,.9); box-shadow:0 10px 28px -18px rgba(28,38,48,.6);
+      backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    }
+    html.dark .map-utility-btn,html.dark #mapState{ border-color:rgba(255,255,255,.12); background:rgba(21,27,35,.9); }
+    .map-memory-card,.map-city-chooser{
+      position:absolute; z-index:610; left:12px; right:66px; bottom:max(12px,env(safe-area-inset-bottom,0px));
+      max-width:390px; border:1px solid rgba(255,255,255,.78); border-radius:18px;
+      background:rgba(255,255,255,.93); box-shadow:0 18px 42px -22px rgba(28,38,48,.7);
+      backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    }
+    html.dark .map-memory-card,html.dark .map-city-chooser{ border-color:rgba(255,255,255,.12); background:rgba(21,27,35,.94); }
+    .map-memory-card{ padding:9px; }
+    .map-memory-head{ display:flex; min-width:0; align-items:center; gap:9px; }
+    .map-memory-context{ display:flex; min-width:0; align-items:center; gap:10px; padding:1px 2px 0 59px; font-size:10px; font-weight:700; }
+    #mapMemoryThumb{ width:50px; height:50px; flex:0 0 auto; border-radius:13px; object-fit:cover; background:var(--c-bg); }
+    .map-open-memory{ min-height:44px; color:var(--brand); background:rgba(var(--brand-glow),.08); }
+    .map-open-memory:hover{ background:rgba(var(--brand-glow),.14); }
+    .map-privacy{ display:inline-flex; min-width:0; align-items:center; gap:4px; color:rgba(50,75,91,.62); white-space:nowrap; }
+    html.dark .map-privacy{ color:rgba(235,241,245,.58); }
+    .map-memory-actions{ display:grid; grid-template-columns:44px minmax(116px,1fr) 44px 44px; gap:6px; margin-top:8px; }
+    .map-memory-actions>button{
+      position:static!important; display:flex; min-width:0; min-height:44px; align-items:center; justify-content:center; gap:7px;
+      border:1px solid var(--c-line); border-radius:12px; color:var(--c-text); background:var(--surface-solid);
+      font-size:11px; font-weight:800; box-shadow:none;
+    }
+    #routeMotionBtn{ color:#fff; border-color:var(--brand); background:var(--brand); }
+    #routeMotionBtn[aria-pressed="true"]{ box-shadow:0 7px 18px -10px rgba(var(--brand-glow),.9); }
+    .map-memory-actions>button:disabled{ opacity:.38; cursor:not-allowed; }
+    .map-city-chooser{ padding:11px; }
+    .map-city-chooser[hidden]{ display:none!important; }
+    .city-memory-option{ display:flex; width:100%; min-height:48px; align-items:center; gap:9px; border-radius:12px; padding:5px; text-align:left; color:var(--c-text); }
+    .city-memory-option:hover{ background:var(--c-bg); }
+    .city-memory-option img{ width:38px; height:38px; flex:0 0 auto; border-radius:10px; object-fit:cover; }
+    .journey-country-label,.journey-city-label{ pointer-events:none; white-space:nowrap; text-shadow:0 1px 4px rgba(255,255,255,.95); }
+    .journey-country-label{ display:inline-block; border-radius:5px; padding:2px 4px; color:rgba(54,69,79,.76); background:rgba(255,255,255,.5); font-size:10px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+    .journey-city-label{ color:rgba(54,69,79,.88); font-size:10px; font-weight:800; }
+    .journey-city-label::before{ content:''; display:inline-block; width:5px; height:5px; margin-right:5px; border-radius:50%; background:var(--brand); vertical-align:1px; }
+    html.dark .journey-country-label,html.dark .journey-city-label{ color:rgba(239,243,246,.72); text-shadow:0 1px 4px rgba(0,0,0,.92); }
+    html.dark .journey-country-label{ background:rgba(17,24,32,.56); }
+    .map-memory-marker,.map-cluster-marker,.map-active-marker{
+      position:relative; display:grid; width:44px; height:44px; place-items:center; border-radius:50%;
+      filter:drop-shadow(0 5px 7px rgba(28,38,48,.26));
+    }
+    .map-memory-marker::before,.map-cluster-marker::before{
+      content:''; position:absolute; inset:7px; border:2px solid rgba(255,255,255,.96); border-radius:50%; background:#687984;
+    }
+    .map-memory-marker img,.map-cluster-marker img,.map-active-marker img{ position:relative; z-index:1; width:30px; height:30px; border-radius:50%; object-fit:cover; }
+    .map-cluster-marker::after{ content:''; position:absolute; inset:4px 4px 10px 10px; border-radius:50%; border:2px solid rgba(255,255,255,.8); transform:translate(-5px,5px); background:rgba(104,121,132,.52); }
+    .map-marker-count{ position:absolute; z-index:3; right:-2px; top:-2px; display:grid; min-width:20px; height:20px; place-items:center; border:2px solid #fff; border-radius:999px; padding:0 4px; color:#fff; background:#4e5e69; font-size:9px; font-weight:900; }
+    .map-active-marker{ width:54px; height:54px; border:3px solid #fff; background:var(--brand); box-shadow:0 0 0 5px rgba(var(--brand-glow),.18),0 10px 28px rgba(var(--brand-glow),.5); animation:map-marker-breathe 3.6s ease-in-out infinite; }
+    .map-active-marker img{ width:42px; height:42px; border:2px solid rgba(255,255,255,.9); }
+    .map-active-marker.pin-land{ animation:map-marker-land .68s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes map-marker-breathe{ 0%,100%{ box-shadow:0 0 0 4px rgba(var(--brand-glow),.14),0 10px 28px rgba(var(--brand-glow),.45); } 50%{ box-shadow:0 0 0 8px rgba(var(--brand-glow),.08),0 12px 32px rgba(var(--brand-glow),.52); } }
+    @keyframes map-marker-land{ 0%{ transform:translateY(-18px) scale(.74); opacity:.2; } 58%{ transform:translateY(2px) scale(1.08); opacity:1; } 100%{ transform:none; opacity:1; } }
+    .map-marker-mode{ position:absolute; z-index:4; right:-4px; bottom:-3px; display:grid; width:21px; height:21px; place-items:center; border:2px solid #fff; border-radius:50%; color:#fff; background:#4e5e69; font-size:8px; }
+    .map-active-marker .map-marker-mode{ background:var(--brand); }
+    .journey-mode-badge{ display:grid; width:25px; height:25px; place-items:center; border:2px solid rgba(255,255,255,.92); border-radius:50%; color:#fff; background:rgba(78,94,105,.86); box-shadow:0 4px 10px rgba(28,38,48,.2); font-size:9px; }
+    #mapPanel .leaflet-marker-icon{ overflow:visible; }
+    #mapPanel .leaflet-control-zoom{ margin:0 8px 8px 0; border:0; border-radius:14px; overflow:hidden; box-shadow:0 10px 30px -16px rgba(28,38,48,.7); }
+    #mapPanel .leaflet-control-zoom a{ width:44px; height:44px; border:0; color:var(--c-text); background:rgba(255,255,255,.92); font-size:20px; line-height:44px; }
+    html.dark #mapPanel .leaflet-control-zoom a{ color:#eef3f6; background:rgba(21,27,35,.94); }
+    #mapPanel .leaflet-control-attribution{ max-width:70%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; background:rgba(255,255,255,.72); font-size:8px; }
+    #mapLockBadge{ right:12px; bottom:auto; top:118px; }
+    .visited-place-list{ border-top:1px solid var(--c-line); padding-top:13px; }
+    .visited-place-list ul{ display:grid; gap:7px; }
+    .visited-place-row{
+      display:flex; min-width:0; align-items:center; justify-content:space-between; gap:12px;
+      border:1px solid var(--c-line); border-radius:13px; padding:9px 11px; background:var(--c-bg);
+      color:var(--c-text); font-size:11px;
+    }
+    .visited-place-row>span{ display:flex; min-width:0; flex-direction:column; }
+    .visited-place-row>span:last-child{ flex:0 0 auto; align-items:flex-end; text-align:right; }
+    .visited-place-row span span,.visited-place-row small{ color:rgba(50,75,91,.55); font-size:9px; font-weight:700; }
+    html.dark .visited-place-row span span,html.dark .visited-place-row small{ color:rgba(235,241,245,.5); }
+
+    @media (max-width:767px){
+      #mapTopControls{ left:8px; right:8px; top:8px; }
+      .map-detail-selector{ width:100%; }
+      .map-detail-btn{ padding-left:7px; padding-right:7px; font-size:10px; }
+      #mapAll{ display:flex!important; left:8px; top:62px; }
+      #mapLock{ display:grid!important; right:8px; top:62px; }
+      #mapState{ left:8px; top:112px; }
+      .map-memory-card,.map-city-chooser{ left:8px; right:60px; bottom:max(8px,env(safe-area-inset-bottom,0px)); border-radius:16px; }
+      .map-memory-card{ padding:8px; }
+      #mapMemoryThumb{ width:44px; height:44px; border-radius:11px; }
+      .map-memory-context{ flex-wrap:wrap; gap:2px 10px; padding-left:53px; }
+      .map-memory-actions{ grid-template-columns:44px minmax(108px,1fr) 44px 44px; gap:4px; margin-top:6px; }
+      .map-memory-actions>button{ min-height:44px; }
+      #mapPanel .leaflet-control-zoom{ margin:0 6px 6px 0; }
+      #mapLockBadge{ right:8px; top:112px; }
+    }
+
+    @media (prefers-reduced-motion:reduce){
+      #photoStage:not([hidden]),#mapPanel:not([hidden]){ animation:none!important; }
+      .stage-mode-btn{ transition:none; }
+      .map-active-marker{ animation:none!important; }
+      .map-active-marker.pin-land{ animation:none!important; }
+      .map-detail-btn{ transition:none; }
+    }
+    html.reduce-motion #photoStage:not([hidden]),html.reduce-motion #mapPanel:not([hidden]),
+    html.reduce-motion .map-active-marker,html.reduce-motion .map-active-marker.pin-land{ animation:none!important; }
+    html.reduce-motion .stage-mode-btn,html.reduce-motion .map-detail-btn{ transition:none!important; }
   </style>
 </head>
 
@@ -516,9 +878,9 @@
   <main class="mx-auto max-w-7xl px-4 pb-6 pt-6 sm:px-6 sm:pb-8">
 
     <!-- (A) HEADER — date on the left, the life-journey summary + Play all on the right -->
-    <header class="fade-up mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <header id="pageHeader" class="fade-up mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <span class="chip inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-light-blue">
+        <span class="page-kicker chip inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-light-blue">
           <i class="fa-regular fa-image"></i> Photo · Timeline
         </span>
         <h1 id="hdrDate" class="mt-2 text-3xl font-extrabold tracking-tight text-accent-blue sm:text-4xl">
@@ -526,129 +888,188 @@
         </h1>
         <button id="onThisDay" class="chip mt-2 hidden items-center gap-2.5 rounded-full py-1.5 pl-3 pr-4 text-sm font-semibold text-primary-theme transition hover:brightness-105 active:scale-[.98]"></button>
       </div>
-      <div class="flex items-center gap-3">
+      <div id="journeySummary" class="flex items-center gap-3">
         <div class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary-theme to-primary-red text-lg text-white shadow-glow"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
         <div class="min-w-0 leading-tight">
           <p class="text-sm font-bold text-accent-blue">Your life journey</p>
           <p id="memoryStats" class="text-xs text-accent-blue/60">a lifetime of moments</p>
         </div>
-        <button onclick="playMemories()" class="ml-auto shrink-0 rounded-full bg-primary-theme px-4 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-95">
+        <button onclick="openUpload()" class="ml-3 shrink-0 rounded-xl bg-primary-theme px-4 py-2.5 text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-95">
+          <i class="fa fa-plus"></i> Add memory
+        </button>
+        <button onclick="playMemories()" class="chip ml-auto shrink-0 rounded-xl px-4 py-2 text-sm font-bold text-accent-blue transition hover:text-primary-theme active:scale-95">
           <i class="fa fa-play"></i> Play all
         </button>
       </div>
     </header>
 
-    <!-- (B2) FILTER CHIPS -->
-    <div class="fade-up mb-3 flex gap-2 overflow-x-auto pb-1 text-sm scrollbar-hide">
-      <button onclick="setFilter(this)" class="shrink-0 rounded-full bg-primary-theme px-4 py-1.5 font-semibold text-white shadow-glow">All</button>
-      <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme">Photos</button>
-      <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme">Videos</button>
-      <button onclick="setFilter(this)" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme"><i class="fa fa-star text-primary-theme"></i> Faves</button>
-    </div>
+    <div id="experienceStage">
 
-    <!-- (B4) STAGE WRAP — toolbar + ruler. When the map is OFF this turns into a big hero photo
-         with the toolbar + ruler floating over the top and a floating play/pause at the bottom. -->
+    <!-- Canonical stage order: selector, chapters, ruler, then the responsive photo/map stage. -->
     <div id="stageWrap" class="relative">
+      <div id="toolbar" class="fade-up flex items-center justify-between gap-2">
+        <div id="stageViewSelector" class="stage-view-selector" role="group" aria-label="Choose memory stage view">
+          <button type="button" class="stage-mode-btn" data-stage-view="together" aria-pressed="false" onclick="setStageView('together',true)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setStageView('together',true)}"><i class="fa-solid fa-table-columns" aria-hidden="true"></i><span>Together</span></button>
+          <button type="button" class="stage-mode-btn" data-stage-view="photo" aria-pressed="false" onclick="setStageView('photo',true)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setStageView('photo',true)}"><i class="fa-regular fa-image" aria-hidden="true"></i><span>Photo</span></button>
+          <button type="button" class="stage-mode-btn" data-stage-view="map" aria-pressed="false" onclick="setStageView('map',true)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setStageView('map',true)}"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>Map</span></button>
+        </div>
+        <div class="stage-settings flex items-center gap-2">
+          <label data-tip="Slideshow speed" class="desktop-speed tip chip flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-accent-blue">
+            <i class="fa-solid fa-gauge-high text-accent-blue/70"></i>
+            <select id="speedSel" onchange="setSpeed(parseFloat(this.value))" class="cursor-pointer bg-transparent font-semibold text-accent-blue outline-none">
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="1.5">1.5×</option>
+              <option value="2">2×</option>
+            </select>
+          </label>
+          <details id="mobileDisplayOptions">
+            <summary aria-label="Display and playback settings"><i class="fa-solid fa-sliders"></i></summary>
+            <div class="options-popover">
+              <p class="text-sm font-extrabold text-accent-blue">Display &amp; playback</p>
+              <label class="mt-3 flex items-center justify-between gap-3 text-sm font-semibold text-accent-blue/75">Slideshow speed
+                <select onchange="setSpeed(parseFloat(this.value));document.getElementById('speedSel').value=this.value" class="rounded-xl border border-grey-light bg-grey-light px-3 py-2 text-accent-blue">
+                  <option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option>
+                </select>
+              </label>
+              <div class="mt-3 grid grid-cols-3 gap-2" aria-label="Gallery view">
+                <button type="button" onclick="setView('horizontal')" class="chip rounded-xl px-2 text-sm font-semibold"><i class="fa-solid fa-film"></i><span class="sr-only">Horizontal reel</span></button>
+                <button type="button" onclick="setView('vertical')" class="chip rounded-xl px-2 text-sm font-semibold"><i class="fa-solid fa-mobile-screen-button"></i><span class="sr-only">Vertical reel</span></button>
+                <button type="button" onclick="setView('grid')" class="chip rounded-xl px-2 text-sm font-semibold"><i class="fa-solid fa-table-cells-large"></i><span class="sr-only">Grid view</span></button>
+              </div>
+            </div>
+          </details>
+        </div>
+        <div id="stageViewLive" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+      </div>
 
-      <!-- hero photo (only visible when the map is off) -->
+      <!-- LIFE CHAPTERS — the table of contents of a life; tap to jump, current chapter highlights -->
+      <div id="chapterRail" class="fade-up flex gap-1.5" aria-label="Life chapters">
+        <button type="button" class="ch-seg" style="flex:6" onclick="setActive(0)" aria-pressed="false" title="Childhood"><i class="fa-solid fa-baby"></i><span class="ch-name">Childhood</span></button>
+        <button type="button" class="ch-seg" style="flex:4" onclick="setActive(6)" aria-pressed="false" title="School years"><i class="fa-solid fa-school"></i><span class="ch-name">School</span></button>
+        <button type="button" class="ch-seg" style="flex:3" onclick="setActive(10)" aria-pressed="false" title="University"><i class="fa-solid fa-graduation-cap"></i><span class="ch-name">University</span></button>
+        <button type="button" class="ch-seg" style="flex:3" onclick="setActive(13)" aria-pressed="false" title="Career"><i class="fa-solid fa-briefcase"></i><span class="ch-name">Career</span></button>
+        <button type="button" class="ch-seg" style="flex:4" onclick="setActive(16)" aria-pressed="false" title="Family"><i class="fa-solid fa-heart"></i><span class="ch-name">Family</span></button>
+      </div>
+
+      <!-- TIMELINE RULER (scrubber) — drag/scroll to scrub, hold ◀ ▶ to fly through dates; the playhead marks the active photo -->
+      <section id="rulerSec" class="fade-up">
+        <div class="liquid-light rl-bar rounded-[26px] px-2 py-2.5 sm:px-3">
+          <div class="rl-hint" id="rlHint">✦ Drag the ruler to travel through time</div>
+          <button id="rlPrev" class="rl-nav tip" data-tip="Earlier — hold to rewind" aria-label="Go to an earlier date"><i class="fa fa-chevron-left"></i></button>
+          <div class="rl-wrap">
+            <div id="timelineRail" class="rl-track"></div>
+            <div class="playhead"><span class="ph-fill" id="phFill"></span><span class="ph-grip" aria-hidden="true"><i class="fa-solid fa-arrows-left-right"></i></span></div>
+            <div class="rl-pill" id="rlPill">09 Jun</div>
+          </div>
+          <button id="rlNext" class="rl-nav tip" data-tip="Later — hold to fast-forward" aria-label="Go to a later date"><i class="fa fa-chevron-right"></i></button>
+          <button id="rlLatest" class="rl-nav tip" data-tip="Jump to latest" aria-label="Jump to the most recent photo"><i class="fa fa-angles-right"></i></button>
+          <button id="rlAdd" class="rl-nav rl-add-btn tip" onclick="openUpload()" data-tip="Add today’s memory" aria-label="Add a memory"><i class="fa fa-plus"></i></button>
+        </div>
+        <div id="srLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+      </section>
+
       <div id="photoStage" class="absolute inset-0 z-0 overflow-hidden rounded-4xl">
-        <img id="stageImg" class="h-full w-full object-cover" alt="" onclick="openModal(active)" onerror="this.onerror=null;this.src='https://picsum.photos/seed/life'+(this.dataset.id||1)+'/1080/1350'" />
-        <video id="stageVideo" class="hidden h-full w-full object-cover" autoplay muted loop playsinline onclick="openModal(active)"></video>
+        <img id="stageImg" class="h-full w-full object-cover" alt="" onerror="imageFailed(this)" />
+        <video id="stageVideo" class="hidden h-full w-full object-cover" autoplay muted loop playsinline></video>
+        <button id="stageOpen" type="button" onclick="openActiveModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openActiveModal();}" class="absolute inset-0 z-[5] min-h-0 w-full bg-transparent" aria-label="Open selected memory"><span class="sr-only">Open selected memory</span></button>
         <div id="stageScrim" class="pointer-events-none absolute inset-0"></div>
-        <div class="pointer-events-none absolute bottom-6 left-6 right-[96px] z-10 text-white">
+        <div class="stage-copy pointer-events-none absolute bottom-6 left-6 right-[96px] z-10 text-white">
           <p id="stageName" class="text-2xl font-extrabold drop-shadow-[0_2px_8px_rgba(0,0,0,.6)]"></p>
           <p id="stageMeta" class="mt-0.5 text-sm font-medium text-white/85 drop-shadow-[0_1px_4px_rgba(0,0,0,.6)]"></p>
+          <p id="stageEngagement" class="mt-1.5 text-xs font-semibold drop-shadow-[0_1px_4px_rgba(0,0,0,.6)]"></p>
           <div id="stagePeople" class="mt-2 flex items-center gap-2 text-xs font-semibold text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,.7)]"></div>
         </div>
       </div>
 
-      <!-- UNIFIED TOOLBAR -->
-      <div id="toolbar" class="fade-up mb-2.5 flex flex-wrap items-center justify-between gap-2">
-      <div class="flex items-center gap-2">
-        <!-- map enable / disable -->
-        <button id="mapBtn" onclick="toggleMap()" data-tip="Show / hide map" class="tip flex items-center gap-2 rounded-full bg-primary-theme px-3.5 py-2 text-sm font-semibold text-white shadow-glow transition active:scale-95">
-          <i class="fa-solid fa-map-location-dot"></i><span id="mapBtnLabel" class="hidden sm:inline">Map on</span>
-        </button>
-        <!-- playback speed -->
-        <label data-tip="Slideshow speed" class="tip chip flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-accent-blue">
-          <i class="fa-solid fa-gauge-high text-accent-blue/70"></i>
-          <select id="speedSel" onchange="setSpeed(parseFloat(this.value))" class="cursor-pointer bg-transparent font-semibold text-accent-blue outline-none">
-            <option value="0.5">0.5×</option>
-            <option value="1" selected>1×</option>
-            <option value="1.5">1.5×</option>
-            <option value="2">2×</option>
-          </select>
-        </label>
-      </div>
-      <!-- photo view switcher (reel layouts — hidden in immersive map-off mode, where there's no reel) -->
-      <div id="viewSwitch" class="chip flex items-center gap-1 rounded-full p-1">
-        <button id="viewH" onclick="setView('horizontal')" data-tip="Horizontal reel" aria-label="Horizontal reel" class="tip grid h-9 w-9 place-items-center rounded-full text-sm transition hover:text-primary-theme"><i class="fa-solid fa-film"></i></button>
-        <button id="viewV" onclick="setView('vertical')" data-tip="Vertical reel" aria-label="Vertical reel" class="tip grid h-9 w-9 place-items-center rounded-full text-sm transition hover:text-primary-theme"><i class="fa-solid fa-mobile-screen-button"></i></button>
-        <button id="viewG" onclick="setView('grid')" data-tip="Grid view" aria-label="Grid" class="tip grid h-9 w-9 place-items-center rounded-full text-sm transition hover:text-primary-theme"><i class="fa-solid fa-table-cells-large"></i></button>
-      </div>
-    </div>
-
-      <!-- LIFE CHAPTERS — the table of contents of a life; tap to jump, current chapter highlights -->
-      <div id="chapterRail" class="fade-up mb-2 flex gap-1.5">
-        <button class="ch-seg" style="flex:6" onclick="setActive(0)" title="Childhood"><i class="fa-solid fa-baby"></i><span class="ch-name">Childhood</span></button>
-        <button class="ch-seg" style="flex:4" onclick="setActive(6)" title="School years"><i class="fa-solid fa-school"></i><span class="ch-name">School</span></button>
-        <button class="ch-seg" style="flex:3" onclick="setActive(10)" title="University"><i class="fa-solid fa-graduation-cap"></i><span class="ch-name">University</span></button>
-        <button class="ch-seg" style="flex:3" onclick="setActive(13)" title="Career"><i class="fa-solid fa-briefcase"></i><span class="ch-name">Career</span></button>
-        <button class="ch-seg" style="flex:4" onclick="setActive(16)" title="Family"><i class="fa-solid fa-heart"></i><span class="ch-name">Family</span></button>
-      </div>
-
-    <!-- TIMELINE RULER (scrubber) — drag/scroll to scrub, hold ◀ ▶ to fly through dates; the playhead marks the active photo -->
-    <section id="rulerSec" class="fade-up mb-2.5">
-      <div class="liquid-light rl-bar rounded-[26px] px-2 py-2.5 sm:px-3">
-        <div class="rl-hint" id="rlHint">✦ Drag the ruler to travel through time</div>
-        <button id="rlPrev" class="rl-nav tip" data-tip="Earlier — hold to rewind" aria-label="Go to an earlier date"><i class="fa fa-chevron-left"></i></button>
-        <div class="rl-wrap">
-          <div id="timelineRail" class="rl-track"></div>
-          <div class="playhead"><span class="ph-fill" id="phFill"></span><span class="ph-grip" aria-hidden="true"><i class="fa-solid fa-arrows-left-right"></i></span></div>
-          <div class="rl-pill" id="rlPill">09 Jun</div>
-        </div>
-        <button id="rlNext" class="rl-nav tip" data-tip="Later — hold to fast-forward" aria-label="Go to a later date"><i class="fa fa-chevron-right"></i></button>
-        <button id="rlLatest" class="rl-nav tip" data-tip="Jump to latest" aria-label="Jump to the most recent photo"><i class="fa fa-angles-right"></i></button>
-        <button id="rlAdd" class="rl-nav rl-add-btn tip" onclick="openUpload()" data-tip="Add today’s memory" aria-label="Add a memory"><i class="fa fa-plus"></i></button>
-      </div>
-      <div id="srLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
-    </section>
-
-      <!-- floating play/pause (only when the map is off) -->
-      <button id="stagePlay" onclick="togglePlay()" aria-label="Play / pause"><i class="fa fa-play"></i></button>
-    </div><!-- /stageWrap -->
-
-    <!-- (C) MAP PANEL (real Leaflet map) -->
-    <section id="mapPanel" class="fade-up relative mb-4 h-[40vh] w-full overflow-hidden rounded-4xl shadow-card transition-all duration-500 sm:h-[42vh]">
+      <!-- (C) MAP PANEL (real Leaflet map) -->
+      <section id="mapPanel" aria-label="Map and journey" class="fade-up relative w-full overflow-hidden rounded-4xl shadow-card transition-all duration-500">
       <div id="map" class="h-full w-full"></div>
-      <div class="glass-dark pointer-events-none absolute left-16 top-4 z-[500] rounded-xl px-3 py-1.5 text-xs font-medium text-white">
-        <i class="fa-solid fa-location-dot text-primary-theme"></i> <span id="mapLabel">Morning hike</span>
+      <div id="mapTopControls" class="absolute left-3 right-3 top-3 z-[600] flex items-start justify-between gap-2">
+        <div id="mapDetailSelector" class="map-detail-selector" role="group" aria-label="Choose map detail level">
+          <button type="button" class="map-detail-btn" data-map-detail="journey" aria-pressed="false" onclick="setMapDetailMode('journey',true)"><i class="fa-solid fa-route" aria-hidden="true"></i><span>My Journey</span></button>
+          <button type="button" class="map-detail-btn" data-map-detail="explore" aria-pressed="false" onclick="setMapDetailMode('explore',true)"><i class="fa-solid fa-map" aria-hidden="true"></i><span>Explore Map</span></button>
+        </div>
+        <div id="mapDetailLive" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
       </div>
-      <!-- Map lock toggle -->
-      <button id="mapLock" title="Lock map view"
-        class="glass absolute right-4 top-4 z-[500] grid h-10 w-10 place-items-center rounded-xl text-accent-blue shadow-soft transition hover:text-primary-theme">
+      <button id="mapAll" type="button" onclick="fitMyJourney(true)" class="map-utility-btn absolute left-3 top-[66px] z-[600] flex items-center gap-2 rounded-xl px-3 text-xs font-extrabold" aria-label="Fit my journey">
+        <i class="fa-solid fa-arrows-to-circle" aria-hidden="true"></i><span>Fit my journey</span>
+      </button>
+      <button id="mapLock" type="button" title="Lock map view" aria-label="Lock map view" class="map-utility-btn absolute right-3 top-[66px] z-[600] grid w-11 place-items-center rounded-xl">
         <i id="mapLockIcon" class="fa fa-lock-open"></i>
       </button>
-      <!-- See the WHOLE life journey at once -->
-      <button id="mapAll" title="See whole journey" onclick="viewWholeJourney()"
-        class="glass absolute right-4 top-16 z-[500] grid h-10 w-10 place-items-center rounded-xl text-accent-blue shadow-soft transition hover:text-primary-theme">
-        <i class="fa-solid fa-earth-americas"></i>
-      </button>
+      <div id="mapState" class="hidden absolute left-3 top-[118px] z-[600] max-w-[280px] items-start gap-2 rounded-xl px-3 py-2 text-xs font-semibold" role="status" aria-live="polite">
+        <i class="fa-solid fa-cloud-arrow-down mt-0.5 text-primary-theme"></i><span>Basemap unavailable. Your memories and journey are still shown.</span>
+      </div>
       <div id="mapLockBadge" class="hidden absolute bottom-4 right-4 z-[500] items-center gap-1.5 rounded-full bg-primary-theme px-3 py-1 text-xs font-semibold text-white shadow-glow">
         <i class="fa fa-lock"></i> Map locked
       </div>
-      <!-- TRAVEL RECORDS — distance roamed + how the latest move happened (floats on the map) -->
-      <div id="travelBar" class="pointer-events-none absolute bottom-4 left-4 right-4 z-[500] flex flex-wrap items-center gap-2 text-sm sm:right-16">
-        <span role="button" tabindex="0" onclick="openTvDash('dist')" onkeydown="if(event.key==='Enter')openTvDash('dist')" class="liquid-light tv-chip tv-click pointer-events-auto" data-tip="Distance roamed — tap for details" title="Distance roamed — tap for details"><i class="fa-solid fa-earth-asia tv-ic"></i><b id="tvTotal">0 km</b><span class="tv-sub">roamed</span><i class="fa-solid fa-chevron-right tv-go"></i></span>
-        <span role="button" tabindex="0" onclick="openTvDash('life')" onkeydown="if(event.key==='Enter')openTvDash('life')" class="liquid-light tv-chip tv-click pointer-events-auto" data-tip="Life at this moment — tap for details" title="Life at this moment — tap for details"><i class="fa-solid fa-cake-candles tv-ic"></i><span id="tvAge">Newborn</span><i class="fa-solid fa-chevron-right tv-go"></i></span>
-        <span role="button" tabindex="0" onclick="openTvDash('hop')" onkeydown="if(event.key==='Enter')openTvDash('hop')" class="liquid-light tv-chip tv-click pointer-events-auto" data-tip="This trip — tap for details" title="This trip — tap for details"><i id="tvHopIcon" class="fa-solid fa-baby tv-ic"></i><span id="tvHop">Born here</span><i class="fa-solid fa-chevron-right tv-go"></i></span>
+
+      <section id="cityMemoryChooser" class="map-city-chooser" aria-label="Memories in this place" hidden inert>
+        <div class="flex items-center justify-between gap-2">
+          <div><p class="text-[10px] font-extrabold uppercase tracking-widest text-primary-theme">Visited place</p><h3 id="cityChooserTitle" class="text-sm font-extrabold text-accent-blue">Memories here</h3></div>
+          <button type="button" onclick="closeCityMemoryChooser()" class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-accent-blue" aria-label="Close place memories"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="cityChooserList" class="mt-2 max-h-36 space-y-1 overflow-y-auto pr-1 boom-scrollbar"></div>
+      </section>
+
+      <article id="mapMemoryCard" class="map-memory-card" aria-label="Selected map memory" aria-live="polite">
+        <div class="map-memory-head">
+          <img id="mapMemoryThumb" src="img/life20.jpg" alt="" onerror="imageFailed(this)" />
+          <div class="min-w-0 flex-1">
+            <p id="mapLabel" class="truncate text-sm font-extrabold text-accent-blue">Welcoming our daughter</p>
+            <p id="mapMemoryMeta" class="truncate text-[11px] font-semibold text-accent-blue/65">21 Mar 2026 · Kathmandu, Nepal</p>
+          </div>
+          <button id="mapOpenMemory" type="button" onclick="openActiveModal()" class="map-open-memory shrink-0 rounded-xl px-3 text-xs font-extrabold" aria-label="Open selected memory">Open</button>
+        </div>
+        <div class="map-memory-context">
+          <span id="mapMemoryPrivacy" class="map-privacy"><i class="fa-solid fa-lock"></i> Private archive</span>
+          <button type="button" onclick="openTvDash('dist')" class="truncate text-primary-theme underline-offset-2 hover:underline">Journey Insights</button>
+          <span id="tvTotal" class="sr-only">0 km</span><span id="tvAge" class="sr-only">Newborn</span><span id="tvHop" class="sr-only">Born here</span><i id="tvHopIcon" class="hidden fa-solid fa-baby"></i>
+        </div>
+        <div class="map-memory-actions" aria-label="Journey playback controls">
+          <button id="journeyPrev" type="button" onclick="journeyStep(-1)" aria-label="Previous journey memory"><i class="fa-solid fa-chevron-left"></i></button>
+          <button id="routeMotionBtn" type="button" onclick="toggleJourneyMotion()" aria-pressed="false" aria-label="Play my journey"><i class="fa-solid fa-play"></i><span>Play my journey</span></button>
+          <button id="journeyNext" type="button" onclick="journeyStep(1)" aria-label="Next journey memory"><i class="fa-solid fa-chevron-right"></i></button>
+          <button id="journeyRestart" type="button" onclick="restartJourneyPlayback()" aria-label="Restart my journey" title="Restart my journey"><i class="fa-solid fa-rotate-left"></i></button>
+        </div>
+      </article>
+      </section>
+
+      <!-- Essential memory actions stay directly beside the stage on phones. -->
+      <div id="heroActions" aria-label="Selected memory actions">
+        <button type="button" onclick="stepActive(-1)" aria-label="Previous memory" class="chip grid place-items-center rounded-xl text-accent-blue"><i class="fa fa-chevron-left"></i></button>
+        <button type="button" id="heroFavourite" onclick="toggleActiveFavourite()" aria-label="Add selected memory to favorites" aria-pressed="false" class="chip grid place-items-center rounded-xl text-accent-blue"><i class="fa-regular fa-star"></i></button>
+        <button type="button" id="heroAdd" onclick="openUpload()" class="flex min-w-0 items-center justify-center gap-2 bg-primary-theme px-3 text-sm font-bold text-white shadow-glow"><i class="fa fa-plus"></i><span>Add memory</span></button>
+        <button type="button" onclick="stepActive(1)" aria-label="Next memory" class="chip grid place-items-center rounded-xl text-accent-blue"><i class="fa fa-chevron-right"></i></button>
       </div>
-    </section>
+
+      <button id="stagePlay" onclick="togglePlay()" aria-label="Play / pause"><i class="fa fa-play"></i></button>
+    </div><!-- /stageWrap -->
+    </div><!-- /experienceStage -->
 
     <!-- (D) PHOTOS -->
     <section id="photosSec">
-      <div class="mb-3 hidden sm:block">
-        <h2 class="text-lg font-bold text-accent-blue">Photos</h2>
+      <div id="galleryToolbar">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-widest text-accent-blue/45">Your archive</p>
+          <h2 class="text-lg font-bold text-accent-blue">More memories</h2>
+        </div>
+        <label id="mobileSearch" class="chip flex min-h-[44px] w-full items-center gap-2 rounded-xl px-3 text-sm md:hidden">
+          <i class="fa-solid fa-magnifying-glass text-accent-blue/45"></i>
+          <input oninput="searchPhotos(this.value)" class="w-full bg-transparent text-base text-accent-blue outline-none placeholder:text-accent-blue/40" placeholder="Search memories…" aria-label="Search memories" />
+        </label>
+        <div id="viewSwitch" class="chip flex items-center gap-1 rounded-full p-1" aria-label="Gallery view">
+          <button id="viewH" onclick="setView('horizontal')" data-tip="Horizontal reel" aria-label="Horizontal reel" class="tip grid h-11 w-11 place-items-center rounded-full text-sm transition hover:text-primary-theme"><i class="fa-solid fa-film"></i></button>
+          <button id="viewV" onclick="setView('vertical')" data-tip="Vertical reel" aria-label="Vertical reel" class="tip grid h-11 w-11 place-items-center rounded-full text-sm transition hover:text-primary-theme"><i class="fa-solid fa-mobile-screen-button"></i></button>
+          <button id="viewG" onclick="setView('grid')" data-tip="Grid view" aria-label="Grid" class="tip grid h-11 w-11 place-items-center rounded-full text-sm transition hover:text-primary-theme"><i class="fa-solid fa-table-cells-large"></i></button>
+        </div>
+        <div id="filters" class="fade-up text-sm" aria-label="Filter memories">
+          <button type="button" data-filter="all" onclick="setFilter(this)" aria-pressed="true" class="shrink-0 rounded-full bg-primary-theme px-4 py-1.5 font-semibold text-white shadow-glow">All</button>
+          <button type="button" data-filter="photos" onclick="setFilter(this)" aria-pressed="false" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme">Photos</button>
+          <button type="button" data-filter="videos" onclick="setFilter(this)" aria-pressed="false" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme">Videos</button>
+          <button type="button" data-filter="faves" onclick="setFilter(this)" aria-pressed="false" class="chip shrink-0 rounded-full px-4 py-1.5 font-medium text-accent-blue/80 transition hover:text-primary-theme"><i class="fa fa-star text-primary-theme"></i> Favorites</button>
+        </div>
       </div>
 
       <div id="carousel"></div>
@@ -657,7 +1078,7 @@
       <div class="mt-4 flex justify-center">
         <div class="liquid relative flex w-full max-w-md items-center justify-between gap-2 rounded-full p-2 pr-2.5">
           <div class="flex min-w-0 items-center gap-2.5">
-            <img id="fabThumb" class="h-12 w-12 shrink-0 rounded-2xl object-cover ring-2 ring-white/30" alt="" onerror="this.onerror=null;this.src='https://picsum.photos/seed/life'+(photos[active]?photos[active].id:1)+'/600/750'" />
+            <img id="fabThumb" class="h-12 w-12 shrink-0 rounded-2xl object-cover ring-2 ring-white/30" alt="Selected memory thumbnail" onerror="imageFailed(this)" />
             <div class="min-w-0 leading-tight">
               <p id="fabName" class="truncate text-sm font-bold text-white">Kathmandu trek</p>
               <p id="fabIdx" class="text-xs font-medium text-white/60">1 / 6</p>
@@ -678,13 +1099,13 @@
   </main>
 
   <!-- ===================== DETAIL MODAL ===================== -->
-  <div id="modal" class="hidden">
+  <div id="modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
     <div class="fixed inset-0 z-[1000] bg-accent-blue/70 backdrop-blur-sm" onclick="closeModal()"></div>
-    <div class="fixed inset-0 z-[1001] m-auto flex h-full w-full flex-col overflow-hidden bg-white shadow-card sm:h-[82vh] sm:w-11/12 sm:flex-row sm:rounded-4xl xl:w-9/12">
+    <div class="detail-shell fixed inset-0 z-[1001] m-auto flex h-full w-full flex-col overflow-hidden bg-white shadow-card sm:h-[82vh] sm:w-11/12 sm:flex-row sm:rounded-4xl xl:w-9/12">
 
       <!-- LEFT media -->
       <div id="mediaPane" class="relative h-[45%] w-full overflow-hidden bg-black sm:h-full sm:w-[68%]">
-        <img id="modalImg" class="h-full w-full object-cover" src="" alt="" onclick="galleryTap(event)" onerror="this.onerror=null;this.src='https://picsum.photos/seed/life'+(photos[active]?photos[active].id:1)+'/1080/1350'" />
+        <img id="modalImg" class="h-full w-full object-cover" src="" alt="" onclick="galleryTap(event)" onerror="imageFailed(this)" />
         <video id="modalVideo" class="hidden h-full w-full bg-black object-contain" controls autoplay muted loop playsinline></video>
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20"></div>
         <!-- story progress bars -->
@@ -755,9 +1176,9 @@
 
           <!-- actions -->
           <div class="mt-3 grid grid-cols-3 gap-1 border-y border-grey-light py-1 text-sm">
-            <button id="mLikeBtn" onclick="toggleLike()" class="like-btn flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-regular fa-thumbs-up"></i> Like</button>
-            <button onclick="focusCommentInput()" class="flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-regular fa-comment"></i> Comment</button>
-            <button onclick="openShare()" class="flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-solid fa-share-nodes"></i> Share</button>
+            <button id="mLikeBtn" onclick="toggleLike()" aria-label="Like this memory" class="like-btn flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-regular fa-thumbs-up"></i> Like</button>
+            <button onclick="focusCommentInput()" aria-label="Comment on this memory" class="flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-regular fa-comment"></i> Comment</button>
+            <button onclick="openShare()" aria-label="Share this memory" class="flex items-center justify-center gap-2 rounded-xl py-2 font-medium text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme"><i class="fa-solid fa-share-nodes"></i> Share</button>
           </div>
 
           <!-- comments (rendered per-memory) -->
@@ -773,7 +1194,7 @@
         </div>
       </div>
 
-      <button onclick="closeModal()" class="fbtn absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full">
+      <button id="modalClose" onclick="closeModal()" aria-label="Close memory details" class="fbtn absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full">
         <i class="fa fa-xmark text-lg"></i>
       </button>
     </div>
@@ -805,22 +1226,27 @@
     @keyframes imgInW { from{opacity:0;transform:translateX(-30px) scale(1.02)} to{opacity:1;transform:none} }
     @media (prefers-reduced-motion: reduce){ .veh-pop,.pin-land,.img-in-e,.img-in-w { animation:none !important; } }
   </style>
-  <div id="tvDash" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4">
+  <div id="tvDash" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tvDashTitle" tabindex="-1">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeTvDash()"></div>
-    <div class="relative w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl dark:bg-[#1b2430] max-h-[86vh] overflow-y-auto">
+    <div class="dialog-sheet relative w-full max-w-lg rounded-3xl p-5 shadow-2xl max-h-[86vh] overflow-y-auto">
       <div class="flex items-center justify-between">
-        <h3 id="tvDashTitle" class="text-base font-extrabold text-accent-blue"></h3>
-        <button onclick="closeTvDash()" class="grid h-9 w-9 place-items-center rounded-full text-accent-blue transition hover:bg-grey-light" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+        <div><h3 id="tvDashTitle" class="text-lg font-extrabold text-accent-blue">Journey insights</h3><p class="mt-0.5 text-xs text-accent-blue/55">Explore your journey beyond the map.</p></div>
+        <button onclick="closeTvDash()" class="grid h-11 w-11 place-items-center rounded-full text-accent-blue transition hover:bg-grey-light" aria-label="Close journey insights"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div id="tvDashBody" class="mt-3"></div>
+      <div id="tvDashTabs" class="mt-4 grid grid-cols-3 gap-2" role="tablist" aria-label="Journey insight sections">
+        <button type="button" role="tab" id="tvdTabDist" aria-controls="tvDashBody" aria-selected="true" onclick="openTvDash('dist')" class="journey-tab rounded-xl border px-2 py-2 text-xs font-bold">Life journey</button>
+        <button type="button" role="tab" id="tvdTabLife" aria-controls="tvDashBody" aria-selected="false" onclick="openTvDash('life')" class="journey-tab rounded-xl border px-2 py-2 text-xs font-bold">At this moment</button>
+        <button type="button" role="tab" id="tvdTabHop" aria-controls="tvDashBody" aria-selected="false" onclick="openTvDash('hop')" class="journey-tab rounded-xl border px-2 py-2 text-xs font-bold">This trip</button>
+      </div>
+      <div id="tvDashBody" class="mt-3" role="tabpanel" aria-live="polite"></div>
     </div>
   </div>
 
-  <div id="shareModal" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4">
+  <div id="shareModal" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="shareHeading" tabindex="-1">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeShare()"></div>
     <div class="relative w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl dark:bg-[#1b2430]">
       <div class="flex items-center justify-between">
-        <h3 class="text-base font-bold text-accent-blue">Share memory</h3>
+        <h3 id="shareHeading" class="text-base font-bold text-accent-blue">Share memory</h3>
         <button onclick="closeShare()" aria-label="Close share" class="grid h-8 w-8 place-items-center rounded-full text-accent-blue/50 transition hover:bg-grey-light"><i class="fa fa-xmark"></i></button>
       </div>
       <div class="mt-4 flex items-center gap-3 rounded-2xl bg-grey-light p-3">
@@ -843,14 +1269,51 @@
     </div>
   </div>
 
+  <!-- ===================== DELETE CONFIRMATION ===================== -->
+  <div id="deleteModal" class="hidden fixed inset-0 z-[3200] items-center justify-center p-4" role="alertdialog" aria-modal="true" aria-labelledby="deleteTitle" aria-describedby="deleteHelp" tabindex="-1">
+    <div class="absolute inset-0 bg-black/55 backdrop-blur-sm" onclick="closeDeleteConfirm()"></div>
+    <div class="dialog-sheet relative w-full max-w-md rounded-3xl p-5 shadow-2xl">
+      <div class="flex items-start gap-4">
+        <img id="deleteThumb" class="h-20 w-20 shrink-0 rounded-2xl object-cover" alt="" onerror="imageFailed(this)" />
+        <div class="min-w-0">
+          <p class="text-xs font-bold uppercase tracking-wider text-primary-theme">Delete memory</p>
+          <h3 id="deleteTitle" class="mt-1 text-lg font-extrabold text-accent-blue">Delete this memory?</h3>
+          <p id="deleteHelp" class="mt-1 text-sm leading-relaxed text-accent-blue/65">This removes the memory from your timeline. You can undo this action for a short time.</p>
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button id="deleteCancel" type="button" onclick="closeDeleteConfirm()" class="rounded-xl border border-grey-light px-4 text-sm font-bold text-accent-blue">Cancel</button>
+        <button type="button" onclick="confirmDelete()" class="rounded-xl bg-primary-theme px-4 text-sm font-bold text-white shadow-glow"><i class="fa fa-trash"></i> Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="abandonModal" class="hidden fixed inset-0 z-[3300] items-center justify-center p-4" role="alertdialog" aria-modal="true" aria-labelledby="abandonTitle" aria-describedby="abandonHelp" tabindex="-1">
+    <div class="absolute inset-0 bg-black/55 backdrop-blur-sm" onclick="closeAbandonConfirm()"></div>
+    <div class="dialog-sheet relative w-full max-w-sm rounded-3xl p-5 shadow-2xl">
+      <span class="grid h-11 w-11 place-items-center rounded-xl bg-primary-theme/10 text-primary-theme"><i class="fa-solid fa-feather-pointed"></i></span>
+      <h3 id="abandonTitle" class="mt-3 text-lg font-extrabold text-accent-blue">Discard this draft?</h3>
+      <p id="abandonHelp" class="mt-1 text-sm leading-relaxed text-accent-blue/65">The details you entered will be lost. Stay here to keep working on this memory.</p>
+      <div class="mt-5 flex justify-end gap-2">
+        <button id="abandonCancel" type="button" onclick="closeAbandonConfirm()" class="rounded-xl border border-grey-light px-4 text-sm font-bold text-accent-blue">Keep editing</button>
+        <button type="button" onclick="confirmAbandon()" class="rounded-xl bg-primary-theme px-4 text-sm font-bold text-white shadow-glow">Discard draft</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== UPLOAD ===================== -->
-  <div id="uploadModal" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4">
+  <div id="uploadModal" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="upTitle" tabindex="-1">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeUpload()"></div>
-    <div class="boom-scrollbar relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl dark:bg-[#1b2430]">
+    <div class="upload-sheet boom-scrollbar relative max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl dark:bg-[#1b2430]">
       <div class="flex items-center justify-between">
         <h3 class="text-base font-bold text-accent-blue"><i class="fa-solid fa-wand-magic-sparkles text-primary-theme"></i> <span id="upTitle">Add a memory</span></h3>
-        <button onclick="closeUpload()" aria-label="Close upload" class="grid h-8 w-8 place-items-center rounded-full text-accent-blue/50 transition hover:bg-grey-light"><i class="fa fa-xmark"></i></button>
+        <button onclick="closeUpload()" aria-label="Close add memory flow" class="grid h-11 w-11 place-items-center rounded-full text-accent-blue/50 transition hover:bg-grey-light"><i class="fa fa-xmark"></i></button>
       </div>
+      <div id="upProgressWrap" class="mt-2">
+        <div class="h-1.5 overflow-hidden rounded-full bg-grey-light"><span id="upProgress" class="block h-full w-1/4 rounded-full bg-primary-theme transition-all"></span></div>
+        <p id="upStepLabel" class="mt-2 text-xs font-bold text-accent-blue/65">Step 1 of 4 · Select media</p>
+      </div>
+      <div id="upStatus" class="mt-3 hidden items-start gap-2 rounded-xl bg-grey-light px-3 py-2 text-xs font-semibold text-accent-blue" role="status" aria-live="polite"></div>
       <!-- chooser: drop / browse / take a photo -->
       <div id="upChoose">
         <div id="upDrop" role="button" tabindex="0"
@@ -988,9 +1451,13 @@
           </div>
         </div>
       </div>
-      <div class="mt-5 flex items-center justify-end gap-2">
-        <button onclick="closeUpload()" class="rounded-full px-4 py-2.5 text-sm font-semibold text-accent-blue/70 transition hover:bg-grey-light">Cancel</button>
-        <button id="upSave" onclick="saveUpload()" disabled class="rounded-full bg-primary-theme px-5 py-2.5 text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"><i class="fa fa-check"></i> <span id="upSaveLabel">Add to timeline</span></button>
+      <div id="upFooter" class="mt-5 flex items-center justify-between gap-2">
+        <button id="upBack" type="button" onclick="changeUploadStep(-1)" class="rounded-xl border border-grey-light px-4 text-sm font-bold text-accent-blue"><i class="fa fa-chevron-left"></i> Back</button>
+        <div class="ml-auto flex items-center gap-2">
+          <button onclick="closeUpload()" class="rounded-xl px-4 text-sm font-semibold text-accent-blue/70 transition hover:bg-grey-light">Cancel</button>
+          <button id="upNext" type="button" onclick="changeUploadStep(1)" class="rounded-xl bg-primary-theme px-5 text-sm font-bold text-white shadow-glow">Next <i class="fa fa-chevron-right"></i></button>
+          <button id="upSave" onclick="saveUpload()" disabled class="items-center gap-2 rounded-xl bg-primary-theme px-5 py-2.5 text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"><i class="fa fa-check"></i> <span id="upSaveLabel">Add to timeline</span></button>
+        </div>
       </div>
     </div>
   </div>
@@ -1187,15 +1654,16 @@
         y, mo, d, day:_wd[new Date(y,mo,d).getDay()], age:y-BORN,
         dmy:`${String(d).padStart(2,'0')} ${_mo[mo]}`, monShort:_mo[mo], monFull:_moF[mo], year:y,
         type:_vid[i]?'video':'photo', dur:_vid[i]?_vid[i].d:null, vsrc:_vid[i]?('vid/v'+_vid[i].v+'.mp4'):null,
-        people:(_ppl[i]||[]).map(k=>PEOPLE[k]).filter(Boolean), mood:_mood[i], song:_song[i], season:seasonOf(mo), milestone:_milestone[i]||null, fav:(i%4===0) };
+        people:(_ppl[i]||[]).map(k=>PEOPLE[k]).filter(Boolean), mood:_mood[i], song:_song[i], season:seasonOf(mo), milestone:_milestone[i]||null,
+        privacy:(i%6===0?'Friends':'Private'), fav:(i%4===0) };
     }).filter(p => new Date(p.y, p.mo, p.d) <= TODAY)   // never show the future
       .sort((a,b)=> new Date(a.y,a.mo,a.d) - new Date(b.y,b.mo,b.d)); // keep oldest → newest
-    // themed images by keyword; picsum is the fallback (see onerror handlers) if a photo fails to load
+    // self-hosted themed memory images; failures surface an explicit unavailable state
     const _kwById = {}; photos.forEach(p=> _kwById[p.id]=p.kw);
     const _uploads = {};   // uploaded memories keep their image data-URL here, keyed by id
     const imgFor = id => _uploads[id] || `img/life${id}.jpg`;   // self-hosted themed images (fast, offline, no external dependency)
     const imgHD  = id => imgFor(id);
-    const imgAlt = id => _uploads[id] || `https://picsum.photos/seed/life${id}/900/1100`;   // fallback if a local file is missing
+    const imgAlt = id => _uploads[id] || `img/life${id}.jpg`;   // keep failures tied to the real memory; never substitute unrelated imagery
 
     /* ---- social state: every memory carries its own likes + comments so the loop feels real ---- */
     const ME = { name:'Roshan Joshi', img:'https://i.pravatar.cc/80?img=12' };
@@ -1212,7 +1680,9 @@
     });
 
     // ---- travel maths: how far this life has roamed ----
+    const hasCoords=p=>!!p&&Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lng));
     function haversineKm(a,b){
+      if(!hasCoords(a)||!hasCoords(b)||(a.lat===b.lat&&a.lng===b.lng)) return 0;
       const R=6371, toRad=x=>x*Math.PI/180;
       const dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng);
       const h=Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
@@ -1260,9 +1730,16 @@
       plane: [{l:'Emirates',i:'fa-plane'},{l:'Qatar Airways',i:'fa-plane'},{l:'Singapore Airlines',i:'fa-plane'},{l:'Lufthansa',i:'fa-plane'},{l:'IndiGo',i:'fa-plane'},{l:'Private jet',i:'fa-jet-fighter-up'},{l:'Helicopter',i:'fa-helicopter'}],
     };
     const km = n => Math.round(n).toLocaleString();
-    let active = photos.length-1, playing = false, timer = null, mapShown = true, viewMode = 'horizontal', playDir = 1, currentFilter = 'all', searchQuery = '';
+    const STAGE_VIEWS = ['together','photo','map'];
+    let savedStageView = null;
+    try{ savedStageView = sessionStorage.getItem('systemboom-photo-stage-view'); }catch(_err){}
+    if(!STAGE_VIEWS.includes(savedStageView)) savedStageView = null;
+    let stageView = savedStageView || (window.matchMedia('(min-width:768px)').matches ? 'together' : 'photo');
+    let active = photos.length-1, playing = false, timer = null,
+        viewMode = 'horizontal', playDir = 1, currentFilter = 'all', searchQuery = '';
     // honor the OS "reduce motion" setting → skip the smooth glide, jump instantly
-    const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || new URLSearchParams(location.search).has('reduce-motion');
+    if(REDUCED) document.documentElement.classList.add('reduce-motion');
 
     function matchesFilter(p){
       if(searchQuery && !((p.name+' '+p.loc).toLowerCase().includes(searchQuery))) return false;
@@ -1289,8 +1766,8 @@
     // empty-state "Show all" — clear search + reset to the All filter (reuses the normal filter flow)
     function clearFilters(){
       searchQuery='';
-      const si=document.querySelector('input[oninput^="searchPhotos"]'); if(si) si.value='';
-      const allBtn=[...document.querySelectorAll('[onclick="setFilter(this)"]')].find(b=>b.textContent.trim().toLowerCase()==='all');
+      document.querySelectorAll('input[oninput^="searchPhotos"]').forEach(si=>{ si.value=''; });
+      const allBtn=document.querySelector('[data-filter="all"]');
       if(allBtn) setFilter(allBtn); else { currentFilter='all'; reflowFilter(); }
     }
 
@@ -1299,7 +1776,7 @@
       const ids = {horizontal:'viewH', vertical:'viewV', grid:'viewG'};
       Object.values(ids).forEach(id=>{ const b=document.getElementById(id); if(b){ b.classList.remove('bg-primary-theme','text-white','shadow-glow'); b.classList.add('text-accent-blue/70'); } });
       const a=document.getElementById(ids[mode]); if(a){ a.classList.add('bg-primary-theme','text-white','shadow-glow'); a.classList.remove('text-accent-blue/70'); }
-      renderCarousel();
+      lockReel(); renderCarousel(); lockReel();
       scrollActiveIntoView('auto');
     }
     // center the active card WITHIN the reel container (no page jump)
@@ -1324,6 +1801,28 @@
     function lockRuler(){ _rulerLock=true; clearTimeout(_rulerLT); _rulerLT=setTimeout(()=>{_rulerLock=false;},450); }
     // while a modal/overlay is open, background reflows mustn't hijack the active photo
     function modalIsOpen(){ const m=document.getElementById('modal'), u=document.getElementById('uploadModal'); return (m && !m.classList.contains('hidden')) || (u && !u.classList.contains('hidden')); }
+    const _dialogFocusStack=[];
+    function focusDialog(dialog,selector){
+      if(!dialog) return;
+      const current=document.activeElement; if(current && current!==document.body) _dialogFocusStack.push(current);
+      setTimeout(()=>{
+        const target=(selector&&dialog.querySelector(selector))||dialog.querySelector('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')||dialog;
+        if(target&&target.focus) target.focus();
+      },30);
+    }
+    function restoreDialogFocus(){ const target=_dialogFocusStack.pop(); if(target&&target.isConnected&&target.focus) setTimeout(()=>target.focus(),20); }
+    function topDialog(){
+      const open=[...document.querySelectorAll('[role="dialog"],[role="alertdialog"]')].filter(d=>!d.classList.contains('hidden'));
+      return open[open.length-1]||null;
+    }
+    document.addEventListener('keydown',e=>{
+      if(e.key!=='Tab') return; const dialog=topDialog(); if(!dialog) return;
+      const items=[...dialog.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(x=>x.offsetParent!==null);
+      if(!items.length){ e.preventDefault(); dialog.focus(); return; }
+      const first=items[0],last=items[items.length-1];
+      if(e.shiftKey&&document.activeElement===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey&&document.activeElement===last){ e.preventDefault(); first.focus(); }
+    });
     function onReelScroll(){
       clearTimeout(_scrollSyncT);
       _scrollSyncT=setTimeout(()=>{
@@ -1342,27 +1841,48 @@
     }
 
     function setFilter(btn){
-      currentFilter = btn.textContent.trim().toLowerCase();   // all / photos / videos / faves
+      currentFilter = btn.dataset.filter || btn.textContent.trim().toLowerCase();
       document.querySelectorAll('[onclick="setFilter(this)"]').forEach(b=>{
         b.classList.remove('bg-primary-theme','text-white','shadow-glow');
         b.classList.add('chip','text-accent-blue/80');
+        b.setAttribute('aria-pressed','false');
       });
       btn.classList.remove('chip','text-accent-blue/80');
       btn.classList.add('bg-primary-theme','text-white','shadow-glow');
+      btn.setAttribute('aria-pressed','true');
       reflowFilter();
     }
+
+    function imageFailed(img){
+      if(!img) return;
+      img.onerror=null; img.removeAttribute('src'); img.alt='Memory image unavailable';
+      const host=img.closest('#photoStage,#mediaPane,.memory-card,.pp');
+      if(host){ host.classList.add('media-failed'); img.classList.add('hidden'); }
+      else img.classList.add('opacity-25');
+    }
+    function closeCardMenus(){
+      document.querySelectorAll('.card-menu').forEach(m=>m.classList.add('hidden'));
+      document.querySelectorAll('.card-menu-trigger').forEach(b=>b.setAttribute('aria-expanded','false'));
+    }
+    function toggleCardMenu(ev,i){
+      if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+      const menu=document.getElementById('cardMenu'+i), wasOpen=menu && !menu.classList.contains('hidden');
+      closeCardMenus();
+      if(menu && !wasOpen){ menu.classList.remove('hidden'); const btn=ev&&ev.currentTarget; if(btn) btn.setAttribute('aria-expanded','true'); }
+    }
+    function toggleFavourite(i){
+      const p=photos[i]; if(!p) return;
+      p.fav=!p.fav; renderCarousel(); renderRuler(); updateStage();
+      toast(p.fav?'Saved to favorites':'Removed from favorites',p.fav?'fa-star':'fa-star-half-stroke');
+    }
+    function toggleActiveFavourite(){ toggleFavourite(active); }
+    document.addEventListener('click',e=>{ if(!e.target.closest('.card-menu')&&!e.target.closest('.card-menu-trigger')) closeCardMenus(); });
     // ---- day / night theme ----
     function toggleTheme(){
       const dark = document.documentElement.classList.toggle('dark');
       const ic = document.getElementById('themeIcon');
       if(ic) ic.className = dark ? 'fa-solid fa-sun' : 'fa-regular fa-moon';
-      if(sbMap){
-        if(window._tile) sbMap.removeLayer(window._tile);
-        const url = dark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
-                         : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-        window._tile = L.tileLayer(url, { subdomains:'abcd', maxZoom:19, noWrap:true, bounds:[[-85,-180],[85,180]], attribution:'&copy; OpenStreetMap, &copy; CARTO' }).addTo(sbMap);
-        window._tile.bringToBack();
-      }
+      if(sbMap) syncMapTheme();
     }
     // ---- TIMELINE RULER ----
     function renderRuler(){
@@ -1485,13 +2005,19 @@
         if(img) img.classList.add('hidden');
       } else {
         if(vid){ vid.pause(); vid.classList.add('hidden'); }
-        if(img){ img.classList.remove('hidden'); if(img.dataset.id!==String(p.id)){ img.dataset.id=String(p.id); fadeSwap(img, imgHD(p.id)); } }
+        if(img){ img.classList.remove('hidden'); img.parentElement.classList.remove('media-failed'); img.alt=p.name; if(img.dataset.id!==String(p.id)){ img.dataset.id=String(p.id); fadeSwap(img, imgHD(p.id)); } }
       }
       const nm=document.getElementById('stageName');
       if(nm) nm.innerHTML = `${p.name}${p.fav?' <i class="fa fa-star text-base" style="color:var(--brand)"></i>':''}`;
       const mt=document.getElementById('stageMeta');
       if(mt) mt.textContent = `${p.dmy}, ${p.year} · ${p.day} · ${p.time} · ${p.loc}`;
+      const eg=document.getElementById('stageEngagement');
+      if(eg) eg.innerHTML=`<i class="fa-${p.liked?'solid':'regular'} fa-heart"></i> ${p.likes} reactions <span class="mx-1 opacity-50">·</span> <i class="fa-regular fa-comment"></i> ${p.comments.length} comments`;
+      const fav=document.getElementById('heroFavourite');
+      if(fav){ fav.setAttribute('aria-pressed',String(!!p.fav)); fav.setAttribute('aria-label',(p.fav?'Remove selected memory from':'Add selected memory to')+' favorites'); fav.innerHTML=`<i class="fa-${p.fav?'solid':'regular'} fa-star"></i>`; fav.classList.toggle('text-primary-theme',!!p.fav); }
+      const open=document.getElementById('stageOpen'); if(open) open.setAttribute('aria-label',`Open ${p.name}`);
       renderPeople(document.getElementById('stagePeople'), p.people);
+      updateMapMemoryCard();
     }
     // travel records bar: total distance roamed + how the latest hop happened + age
     function updateTravel(){
@@ -1510,9 +2036,24 @@
     }
     // life chapters — which photos belong to each era (indices into the sorted photos array)
     const CHAPTERS=[{a:0,b:5},{a:6,b:9},{a:10,b:12},{a:13,b:15},{a:16,b:19}];
+    function centerActiveChapter(seg,behavior='smooth'){
+      const rail=document.getElementById('chapterRail');
+      if(!rail || !seg || window.matchMedia('(min-width:768px)').matches) return;
+      const left=seg.offsetLeft-(rail.clientWidth-seg.offsetWidth)/2;
+      rail.scrollTo({left:Math.max(0,left),behavior:REDUCED?'auto':behavior});
+    }
     function updateChapters(){
       const segs=document.querySelectorAll('#chapterRail .ch-seg');
-      CHAPTERS.forEach((c,ci)=>{ if(segs[ci]) segs[ci].classList.toggle('ch-seg-active', active>=c.a && active<=c.b); });
+      let selected=null;
+      CHAPTERS.forEach((c,ci)=>{
+        if(!segs[ci]) return;
+        const isActive=active>=c.a && active<=c.b;
+        segs[ci].classList.toggle('ch-seg-active',isActive);
+        segs[ci].setAttribute('aria-pressed',String(isActive));
+        if(isActive){ segs[ci].setAttribute('aria-current','step'); selected=segs[ci]; }
+        else segs[ci].removeAttribute('aria-current');
+      });
+      if(selected) requestAnimationFrame(()=>centerActiveChapter(selected,'smooth'));
     }
     function updateHeaderDate(){
       const p=photos[active], el=document.getElementById('hdrDate');
@@ -1527,23 +2068,29 @@
       const desktop = window.matchMedia('(min-width:1024px)').matches;
       const media = p => p.type==='video'
         ? `<video class="card-img h-full w-full object-cover" src="${p.vsrc}" poster="${imgFor(p.id)}" autoplay muted loop playsinline preload="metadata"></video>`
-        : `<img src="${imgFor(p.id)}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='${imgAlt(p.id)}'" class="card-img h-full w-full object-cover" />`;
+        : `<img src="${imgFor(p.id)}" alt="${p.name}" loading="lazy" onerror="imageFailed(this)" class="card-img h-full w-full object-cover" />`;
       const overlay = (p,i)=>`
             ${media(p)}
             <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"></div>
+            <button type="button" class="card-open absolute inset-0 z-[2] min-h-0 w-full cursor-pointer" aria-label="Open ${esc(p.name)}" aria-current="${i===active?'true':'false'}" onclick="openModal(${i})"><span class="sr-only">Open ${esc(p.name)}</span></button>
             ${p.type==='video'?`<span class="vid-dur"><i class="fa-solid fa-volume-xmark"></i> ${p.dur}</span>`:''}
-            <div class="absolute left-3 right-3 top-3 flex items-center justify-between">
+            <div class="pointer-events-none absolute left-3 right-3 top-3 z-10 flex items-start justify-between">
               <span class="flex items-center gap-1.5">
                 <span class="glass rounded-full px-2.5 py-1 text-[11px] font-semibold text-accent-blue">${p.time}</span>
                 ${(p.gallery&&p.gallery.length>1)?`<span class="glass rounded-full px-2 py-1 text-[11px] font-bold text-accent-blue"><i class="fa-solid fa-images"></i> ${p.gallery.length}</span>`:''}
               </span>
-              <div class="flex gap-1.5 opacity-0 transition group-hover:opacity-100">
-                <button aria-label="Edit memory" onclick="event.stopPropagation();openEdit(${i})" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-pen"></i></button>
-                <button aria-label="Share memory" onclick="event.stopPropagation();openShare(${i})" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-share-nodes"></i></button>
-                <button aria-label="Delete memory" onclick="event.stopPropagation();deleteMemory(${i})" class="fbtn grid h-7 w-7 place-items-center rounded-full text-xs"><i class="fa fa-trash text-red-300"></i></button>
+              <div class="pointer-events-auto relative flex gap-1">
+                <button type="button" aria-label="${p.fav?'Remove from':'Add to'} favorites" aria-pressed="${p.fav}" onclick="event.stopPropagation();toggleFavourite(${i})" class="card-favourite fbtn grid place-items-center rounded-full text-xs"><i class="fa-${p.fav?'solid':'regular'} fa-star"></i></button>
+                <button type="button" aria-label="More actions for ${esc(p.name)}" aria-expanded="false" onclick="toggleCardMenu(event,${i})" class="card-menu-trigger fbtn grid place-items-center rounded-full text-sm"><i class="fa-solid fa-ellipsis"></i></button>
+                <div id="cardMenu${i}" class="card-menu hidden absolute right-0 top-12 z-30 w-36 overflow-hidden rounded-2xl p-1.5 shadow-2xl">
+                  <button type="button" onclick="event.stopPropagation();closeCardMenus();openEdit(${i})" class="flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-xs font-bold hover:bg-white/10"><i class="fa fa-pen"></i> Edit</button>
+                  <button type="button" onclick="event.stopPropagation();closeCardMenus();openShare(${i})" class="flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-xs font-bold hover:bg-white/10"><i class="fa fa-share-nodes"></i> Share</button>
+                  <button type="button" onclick="event.stopPropagation();closeCardMenus();deleteMemory(${i})" class="flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-xs font-bold text-red-200 hover:bg-white/10"><i class="fa fa-trash"></i> Delete</button>
+                </div>
               </div>
             </div>
-            <div class="absolute bottom-0 left-0 w-full p-3 text-white">
+            <span class="card-state ${i===active?'':'hidden'} pointer-events-none absolute left-3 top-16 z-10 rounded-lg px-2 py-1 text-[10px] font-extrabold"><i class="fa fa-eye"></i> Viewing</span>
+            <div class="pointer-events-none absolute bottom-0 left-0 z-[3] w-full p-3 text-white">
               ${p.milestone?`<span class="ms-badge mb-1.5"><i class="fa-solid fa-medal"></i> ${p.milestone}</span>`:''}
               <p class="text-base font-bold leading-tight">${p.name}${p.fav?' <i class=\"fa fa-star text-primary-theme text-[11px]\"></i>':''}</p>
               <div class="mt-1 flex items-center justify-between text-xs text-white/80">
@@ -1551,9 +2098,8 @@
                 <span class="flex items-center gap-2"><span><i class="fa-${p.liked?'solid':'regular'} fa-heart text-primary-theme"></i> ${p.likes}</span><span><i class="fa-regular fa-comment"></i> ${p.comments.length}</span></span>
               </div>
             </div>`;
-      const a11y = i=>`role="button" tabindex="0" aria-label="${photos[i].name}" onclick="openModal(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openModal(${i});}"`;
       const hid = p=>matchesFilter(p)?'':'hidden';
-      const big = !mapShown; // when map is hidden, show bigger photos
+      const big = !window.matchMedia('(min-width:768px)').matches;
 
       // empty state when the active filter / search matches nothing — friendly card + actions
       if(!photos.some(matchesFilter)){
@@ -1584,17 +2130,17 @@
         el.className = 'maskx snap-x-m flex gap-3 overflow-x-auto px-1 pb-2 scrollbar-hide';
         const sz = big ? 'w-[84vw] aspect-[4/5] sm:aspect-auto sm:h-[34rem] sm:w-[24rem]' : 'h-44 w-36 sm:h-56 sm:w-44';
         el.innerHTML = photos.map((p,i)=>`
-          <div ${a11y(i)} class="${hid(p)} snap-c group relative shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-500 ${i===active?'ring-4 ring-primary-theme':'opacity-95 hover:opacity-100'} ${sz}">${overlay(p,i)}</div>`).join('');
+          <article class="memory-card ${hid(p)} snap-c group relative shrink-0 overflow-hidden rounded-3xl shadow-card transition duration-500 ${i===active?'is-active':'opacity-95 hover:opacity-100'} ${sz}">${overlay(p,i)}</article>`).join('');
       } else if (viewMode === 'vertical') {
         // vertical reel — one photo at a time (TikTok/Reels style)
         el.className = `masky flex ${big?'h-[72vh]':'h-[48vh]'} flex-col gap-3 overflow-y-auto pr-1 boom-scrollbar snap-y snap-mandatory`;
         el.innerHTML = photos.map((p,i)=>`
-          <div ${a11y(i)} class="${hid(p)} snap-c group relative w-full shrink-0 cursor-pointer overflow-hidden rounded-3xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'opacity-95'} ${big?'h-[70vh]':'h-[46vh]'}">${overlay(p,i)}</div>`).join('');
+          <article class="memory-card ${hid(p)} snap-c group relative w-full shrink-0 overflow-hidden rounded-3xl shadow-card transition duration-300 ${i===active?'is-active':'opacity-95'} ${big?'h-[70vh]':'h-[46vh]'}">${overlay(p,i)}</article>`).join('');
       } else {
         // grid — bigger cells (fewer columns) when map is off
         el.className = `grid ${big?'max-h-[80vh] grid-cols-1 sm:grid-cols-2':'max-h-[46vh] grid-cols-2 sm:grid-cols-3'} gap-2 overflow-y-auto pr-1 boom-scrollbar sm:gap-3`;
         el.innerHTML = photos.map((p,i)=>`
-          <div ${a11y(i)} class="${hid(p)} group relative aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl shadow-card transition duration-300 ${i===active?'ring-4 ring-primary-theme':'hover:-translate-y-0.5'}">${overlay(p,i)}</div>`).join('');
+          <article class="memory-card ${hid(p)} group relative aspect-[4/5] overflow-hidden rounded-2xl shadow-card transition duration-300 ${i===active?'is-active':'hover:-translate-y-0.5'}">${overlay(p,i)}</article>`).join('');
       }
     }
 
@@ -1602,7 +2148,11 @@
       active=Math.max(0,Math.min(photos.length-1,i));
       // reel: move the active ring + scroll into view (unless the reel initiated)
       const cont=document.getElementById('carousel');
-      if(cont) [...cont.children].forEach((c,j)=>{ c.classList.toggle('ring-4', j===active); c.classList.toggle('ring-primary-theme', j===active); });
+      if(cont) [...cont.children].forEach((c,j)=>{
+        const on=j===active; c.classList.toggle('is-active',on);
+        const open=c.querySelector('.card-open'); if(open) open.setAttribute('aria-current',on?'true':'false');
+        const state=c.querySelector('.card-state'); if(state) state.classList.toggle('hidden',!on);
+      });
       if(src!=='reel'){ lockReel(); scrollActiveIntoView('smooth'); }
       // ruler: highlight + scroll to playhead (unless the ruler initiated)
       renderTimelineActive();
@@ -1643,7 +2193,7 @@
     function updateFab(){
       const fn=document.getElementById('fabName'); if(fn) fn.textContent=photos[active].name;
       const fi=document.getElementById('fabIdx'); if(fi) fi.textContent=(active+1)+' / '+photos.length;
-      const ft=document.getElementById('fabThumb'); if(ft) ft.src=imgFor(photos[active].id);
+      const ft=document.getElementById('fabThumb'); if(ft){ ft.classList.remove('hidden','opacity-25'); ft.parentElement.classList.remove('media-failed'); ft.src=imgFor(photos[active].id); }
     }
     // progress bar that fills over each slide's duration
     let SLIDE_MS = 2000;
@@ -1658,6 +2208,7 @@
     function setSpeed(mult){
       SLIDE_MS = Math.round(2000/mult);
       if(playing){ startProgress(); updateStory(); startTimer(); }
+      if(journeyPlaying) scheduleJourneyAdvance();
     }
     // animate one element's width/height from 0→100% over the slide duration
     // (reflow + timeout so it animates even where requestAnimationFrame is throttled)
@@ -1732,7 +2283,7 @@
     }
     function showGalleryPhoto(i){
       if(i<0 || i>=_gArr.length) return; _gIdx=i;
-      const im=document.getElementById('modalImg'); if(im){ im._want=_gArr[i]; im.onerror=function(){this.onerror=null;this.src=imgAlt(photos[active].id);}; im.src=_gArr[i]; }
+      const im=document.getElementById('modalImg'); if(im){ im._want=_gArr[i]; im.classList.remove('hidden'); im.parentElement.classList.remove('media-failed'); im.onerror=function(){imageFailed(this);}; im.src=_gArr[i]; }
       renderGalleryUI();
     }
     // unified nav: flip through THIS memory's photos first, then roll to the prev/next memory
@@ -1753,7 +2304,7 @@
         if(im) im.classList.add('hidden');
       } else {
         if(mv){ mv.pause(); mv.classList.add('hidden'); }
-        if(im){ im.classList.remove('hidden'); if(im.dataset.id!==String(p.id)){ im.dataset.id=String(p.id); fadeSwap(im, imgHD(p.id)); } }
+        if(im){ im.classList.remove('hidden'); im.parentElement.classList.remove('media-failed'); im.alt=p.name; if(im.dataset.id!==String(p.id)){ im.dataset.id=String(p.id); fadeSwap(im, imgHD(p.id)); } }
       }
       // multi-photo gallery: cover already shown above; set up dots/counter + tap-to-flip
       _gArr = (p.type==='video') ? [] : galleryOf(p); _gIdx = 0; renderGalleryUI();
@@ -1803,8 +2354,10 @@
       fillModal();
       updateStory();
       if(typeof syncBodyScroll==='function') syncBodyScroll();
+      focusDialog(document.getElementById('modal'),'#modalClose');
     }
-    function closeModal(){ document.getElementById('modal').classList.add('hidden'); const mv=document.getElementById('modalVideo'); if(mv) mv.pause(); if(typeof syncBodyScroll==='function') syncBodyScroll(); }
+    function openActiveModal(){ openModal(active); }
+    function closeModal(){ document.getElementById('modal').classList.add('hidden'); const mv=document.getElementById('modalVideo'); if(mv) mv.pause(); if(typeof syncBodyScroll==='function') syncBodyScroll(); restoreDialogFocus(); }
     function toggleComments(){
       const pane=document.getElementById('commentPane'), media=document.getElementById('mediaPane'), ch=document.getElementById('commentChevron');
       const open=pane.classList.contains('sm:hidden')||pane.classList.contains('hidden-sm');
@@ -1814,30 +2367,44 @@
       else { pane.style.display='none'; media.classList.remove('sm:w-[68%]'); media.classList.add('sm:w-full'); ch.className='fa fa-chevron-right'; }
     }
 
-    function toggleMap(){
-      const p=document.getElementById('mapPanel');
-      const shown=!p.classList.contains('h-0');
-      mapShown = !shown;
-      p.classList.toggle('h-0',shown); p.classList.toggle('opacity-0',shown); p.classList.toggle('mb-0',shown);
-      p.classList.toggle('h-[40vh]',!shown); p.classList.toggle('sm:h-[42vh]',!shown); p.classList.toggle('mb-4',!shown);
-      // map button active state
-      const b=document.getElementById('mapBtn');
-      if(b){
-        b.classList.toggle('bg-primary-theme',mapShown); b.classList.toggle('text-white',mapShown); b.classList.toggle('shadow-glow',mapShown);
-        b.classList.toggle('chip',!mapShown); b.classList.toggle('text-accent-blue/80',!mapShown);
-        const lbl=document.getElementById('mapBtnLabel'); if(lbl) lbl.textContent = mapShown?'Map on':'Map off';
-        const ic=b.querySelector('i'); if(ic) ic.className = mapShown ? 'fa-solid fa-map-location-dot' : 'fa-solid fa-map';
-      }
-      // map OFF → immersive hero stage: float toolbar + ruler over a big photo, hide the reel
-      const sw=document.getElementById('stageWrap'); if(sw) sw.classList.toggle('stage-on', !mapShown);
-      const ps=document.getElementById('photosSec'); if(ps) ps.classList.toggle('hidden', !mapShown);
-      const tb=document.getElementById('travelBar'); if(tb) tb.classList.toggle('hidden', !mapShown);
-      const cr=document.getElementById('chapterRail'); if(cr) cr.classList.toggle('hidden', !mapShown);
-      const stp=document.getElementById('stagePlay'); if(stp) stp.innerHTML=`<i class="fa fa-${playing?'pause':'play'}"></i>`;
-      updateStage();
-      renderCarousel(); // (reel is hidden in stage mode, but keep it in sync for when the map returns)
-      if(mapShown && window.sbMap){ setTimeout(()=>{ sbMap.invalidateSize(); flyToActive(); },350); }
+    function setPanelAvailability(panel,available){
+      if(!panel) return;
+      panel.hidden=!available;
+      panel.toggleAttribute('inert',!available);
+      panel.inert=!available;
+      panel.setAttribute('aria-hidden',String(!available));
     }
+    function setStageView(view,userInitiated=false,initial=false){
+      if(!STAGE_VIEWS.includes(view)) return;
+      stageView=view;
+      if(userInitiated){
+        try{ sessionStorage.setItem('systemboom-photo-stage-view',view); }catch(_err){}
+      }
+      const experience=document.getElementById('experienceStage');
+      if(experience) experience.dataset.stageView=view;
+      document.querySelectorAll('#stageViewSelector .stage-mode-btn').forEach(btn=>{
+        btn.setAttribute('aria-pressed',String(btn.dataset.stageView===view));
+      });
+      const showPhoto=view==='together'||view==='photo';
+      const showMap=view==='together'||view==='map';
+      setPanelAvailability(document.getElementById('photoStage'),showPhoto);
+      setPanelAvailability(document.getElementById('mapPanel'),showMap);
+      lockRuler();
+      requestAnimationFrame(()=>{
+        scrollRulerToActive('auto');
+        const current=document.querySelector('#chapterRail .ch-seg-active');
+        centerActiveChapter(current,'auto');
+      });
+      if(showMap && sbMap){ setTimeout(()=>{ sbMap.invalidateSize(); initial?fitMyJourney(false):flyToActive(); },initial?30:260); }
+      if(userInitiated){
+        const live=document.getElementById('stageViewLive');
+        const label=view==='together'?'Together view: photo and map':view==='photo'?'Photo view':'Map view';
+        if(live) live.textContent=label+' selected';
+      }
+    }
+    // Legacy hooks remain safe for any saved inline integrations.
+    function setMapVisibility(show,initial=false){ setStageView(show?'together':'photo',false,initial); }
+    function toggleMap(){ setStageView(stageView==='map'||stageView==='together'?'photo':'together',true); }
     // re-render photos when crossing the mobile/desktop breakpoint;
     // lock + re-center the ruler so a resize reflow doesn't drift the active photo
     let _rt; window.addEventListener('resize', ()=>{ lockRuler(); clearTimeout(_rt); _rt=setTimeout(()=>{ renderCarousel(); lockRuler(); scrollRulerToActive('auto'); },150); });
@@ -1878,7 +2445,7 @@
     }
     function paintLike(){
       const p=photos[active], b=document.getElementById('mLikeBtn');
-      if(b){ b.classList.toggle('liked', !!p.liked); b.innerHTML = `<i class="fa-${p.liked?'solid':'regular'} fa-thumbs-up"></i> ${p.liked?'Liked':'Like'}`; }
+      if(b){ b.classList.toggle('liked', !!p.liked); b.setAttribute('aria-pressed',String(!!p.liked)); b.innerHTML = `<i class="fa-${p.liked?'solid':'regular'} fa-thumbs-up"></i> ${p.liked?'Liked':'Like'}`; }
       const c=document.getElementById('mLikeCount'); if(c) c.textContent=p.likes;
     }
 
@@ -1900,6 +2467,7 @@
       photos[active].comments.push({ name:ME.name, img:ME.img, text:txt });
       inp.value=''; renderComments(); renderCarousel();
       const box=document.getElementById('mCommentsScroll'); if(box) box.scrollTop=box.scrollHeight;
+      toast('Comment added','fa-comment');
     }
     function focusCommentInput(){ const i=document.getElementById('mCommentInput'); if(i){ i.focus(); i.scrollIntoView({block:'nearest'}); } }
 
@@ -1909,20 +2477,23 @@
       const p=photos[active];
       const t=document.getElementById('shareTitle'); if(t) t.textContent=p.name;
       const mt=document.getElementById('shareMeta'); if(mt) mt.textContent=`${p.dmy} ${p.year} · ${p.loc}`;
-      const th=document.getElementById('shareThumb'); if(th){ th.onerror=function(){this.onerror=null;this.src=imgAlt(p.id);}; th.src=imgFor(p.id); }
+      const th=document.getElementById('shareThumb'); if(th){ th.classList.remove('hidden','opacity-25'); th.parentElement.classList.remove('media-failed'); th.onerror=function(){imageFailed(this);}; th.src=imgFor(p.id); }
       const lk=document.getElementById('shareLink'); if(lk) lk.value=`https://systemboom.app/m/${p.id}`;
       const m=document.getElementById('shareModal'); m.classList.remove('hidden'); m.classList.add('flex'); syncBodyScroll();
+      focusDialog(m,'button[aria-label="Close share"]');
     }
-    function closeShare(){ const m=document.getElementById('shareModal'); m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); }
+    function closeShare(){ const m=document.getElementById('shareModal'); m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); restoreDialogFocus(); }
 
     /* ===== TRAVEL / LIFE DASHBOARDS (opened from the map chips) ===== */
     function openTvDash(kind){
       const t=document.getElementById('tvDashTitle'), b=document.getElementById('tvDashBody');
       if(!t||!b) return;
+      t.textContent='Journey insights';
+      const tabIds={dist:'tvdTabDist',life:'tvdTabLife',hop:'tvdTabHop'};
+      Object.entries(tabIds).forEach(([key,id])=>{ const tab=document.getElementById(id); if(tab) tab.setAttribute('aria-selected',String(key===kind)); });
       const upto=active;                                  // everything is "as of" the active memory
       const row=(ic,l,r)=>`<div class="tvd-row"><span class="tvd-ic"><i class="fa-solid ${ic}"></i></span><span class="flex-1">${l}</span><b>${r}</b></div>`;
       if(kind==='dist'){
-        t.innerHTML='<i class="fa-solid fa-earth-asia mr-1 text-primary-theme"></i> Distance roamed';
         // split the kilometres by HOW they were travelled (computed from the map coordinates)
         const split={};
         for(let i=1;i<=upto;i++){ const m=modeOf(i); (split[m.label]=split[m.label]||{icon:m.icon,km:0}).km+=_hopKm[i]; }
@@ -1931,31 +2502,33 @@
         const cc=new Set(photos.slice(0,upto+1).map(p=>p.loc.split(', ').pop())).size;
         const bars=Object.entries(split).sort((x,y)=>y[1].km-x[1].km).map(([label,v])=>
           `<div class="mb-2">${row(v.icon,label,km(v.km)+' km')}<div class="tvd-bar"><span style="width:${Math.max(3,Math.round(v.km/Math.max(1,total)*100))}%"></span></div></div>`).join('');
-        b.innerHTML=`<div class="tvd-big">${km(total)} km</div><div class="mb-3 text-xs opacity-60">roamed so far · ${km(life)} km across the whole story</div>${bars}
+        const places=visitedPlaceGroups(upto);
+        const placeList=places.map(place=>`<li class="visited-place-row"><span><b>${esc(place.city)}</b><span>${esc(place.country)}</span></span><span><b>${place.indices.length}</b> ${place.indices.length===1?'memory':'memories'}<small>${place.first.dmy} ${place.first.year} – ${place.last.dmy} ${place.last.year}</small></span></li>`).join('');
+        b.innerHTML=`<h4 class="text-sm font-extrabold text-accent-blue">Life journey</h4><div class="tvd-big mt-1">${km(total)} km</div><div class="mb-3 text-xs opacity-60">roamed so far · ${km(life)} km across the whole story</div>${bars}
           ${far.km>0?row('fa-route','Longest trip — '+photos[far.i-1].loc.split(',')[0]+' → '+photos[far.i].loc.split(',')[0], km(far.km)+' km'):''}
-          ${row('fa-flag','Countries so far', cc)}`;
+          ${row('fa-flag','Countries so far', cc)}${row('fa-location-dot','Places remembered',places.length)}
+          <section class="visited-place-list mt-4" aria-labelledby="visitedPlacesHeading"><div class="mb-2"><h5 id="visitedPlacesHeading" class="text-xs font-extrabold uppercase tracking-wider text-accent-blue">Visited places</h5><p class="mt-0.5 text-[11px] text-accent-blue/55">City-level locations from memories in this journey. Precise addresses stay private.</p></div><ul>${placeList||'<li class="rounded-xl bg-grey-light p-3 text-xs font-semibold">No named places yet.</li>'}</ul></section>`;
       } else if(kind==='life'){
-        t.innerHTML='<i class="fa-solid fa-cake-candles mr-1 text-primary-theme"></i> Life at this moment';
         const p=photos[upto];
         const places=new Set(photos.slice(0,upto+1).map(x=>x.loc)).size;
         const ms=photos.slice(0,upto+1).filter(x=>x.milestone).map(x=>row('fa-medal',x.milestone+' <span class="opacity-50">· '+x.year+'</span>', x.dmy)).join('');
-        b.innerHTML=`<div class="tvd-big">${p.age<=0?'Newborn':('Age '+p.age)}</div><div class="mb-3 text-xs opacity-60">on ${p.monFull} ${p.d}, ${p.year} · born ${photos[0].year}</div>
+        b.innerHTML=`<h4 class="text-sm font-extrabold text-accent-blue">At this moment</h4><div class="tvd-big mt-1">${p.age<=0?'Newborn':('Age '+p.age)}</div><div class="mb-3 text-xs opacity-60">on ${p.monFull} ${p.d}, ${p.year} · born ${photos[0].year}</div>
           ${row('fa-images','Moments captured', upto+1)}${row('fa-location-dot','Places lived & visited', places)}
           ${ms?'<div class="mt-2 mb-1 text-xs font-bold opacity-60">MILESTONES</div>'+ms:''}`;
       } else {
-        t.innerHTML='<i class="fa-solid fa-route mr-1 text-primary-theme"></i> This trip';
-        if(upto===0){ b.innerHTML=row('fa-baby','The story begins here','')+`<div class="mt-1 text-xs opacity-60">${photos[0].loc} · ${photos[0].year}</div>`; }
+        if(upto===0){ b.innerHTML='<h4 class="text-sm font-extrabold text-accent-blue">This trip</h4>'+row('fa-baby','The story begins here','')+`<div class="mt-1 text-xs opacity-60">${photos[0].loc} · ${photos[0].year}</div>`; }
         else {
           const a=photos[upto-1], p=photos[upto], m=modeOf(upto), hop=_hopKm[upto], total=_cumKm[upto]||1;
-          b.innerHTML=`<div class="tvd-big">${km(hop)} km</div><div class="mb-3 text-xs opacity-60">${a.loc.split(',')[0]} → ${p.loc.split(',')[0]} · ${m.label}</div>
+          b.innerHTML=`<h4 class="text-sm font-extrabold text-accent-blue">This trip</h4><div class="tvd-big mt-1">${km(hop)} km</div><div class="mb-3 text-xs opacity-60">${a.loc.split(',')[0]} → ${p.loc.split(',')[0]} · ${m.label}</div>
             ${row(m.icon,'Travelled', m.label)}${row('fa-calendar','When', p.dmy+' '+p.year)}
             ${row('fa-percent','Share of all roaming', Math.round(hop/total*100)+'%')}
             <div class="tvd-bar mt-1"><span style="width:${Math.max(3,Math.round(hop/total*100))}%"></span></div>`;
         }
       }
-      const m=document.getElementById('tvDash'); m.classList.remove('hidden'); m.classList.add('flex'); syncBodyScroll();
+      const m=document.getElementById('tvDash'), opening=m.classList.contains('hidden'); m.classList.remove('hidden'); m.classList.add('flex'); syncBodyScroll();
+      if(opening) focusDialog(m);
     }
-    function closeTvDash(){ const m=document.getElementById('tvDash'); m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); }
+    function closeTvDash(){ const m=document.getElementById('tvDash'); m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); restoreDialogFocus(); }
     function copyShareLink(){
       const lk=document.getElementById('shareLink');
       if(lk && navigator.clipboard){ navigator.clipboard.writeText(lk.value).catch(()=>{}); }
@@ -2003,21 +2576,72 @@
 
     // lock the page behind any open overlay so a touch-scroll doesn't bleed through
     function syncBodyScroll(){
-      const anyOpen=['uploadModal','shareModal','ancModal','modal','tvDash'].some(id=>{ const m=document.getElementById(id); return m && !m.classList.contains('hidden'); });
+      const anyOpen=['abandonModal','deleteModal','uploadModal','shareModal','ancModal','modal','tvDash'].some(id=>{ const m=document.getElementById(id); return m && !m.classList.contains('hidden'); });
       document.body.style.overflow = anyOpen ? 'hidden' : '';
     }
+    window.addEventListener('offline',()=>{ if(!document.getElementById('uploadModal').classList.contains('hidden')) setUploadStatus('offline','You’re offline. Your draft is still safe in this open flow.'); else toast('You’re offline — existing memories remain available','fa-wifi'); });
+    window.addEventListener('online',()=>{ if(!document.getElementById('uploadModal').classList.contains('hidden')) setUploadStatus('success','Back online. You can continue saving this memory.'); });
     // ---- ANCESTRY (teaser; full module lives elsewhere) ----
     function openAncestry(){ const m=document.getElementById('ancModal'); if(m){ m.classList.remove('hidden'); m.classList.add('flex'); syncBodyScroll(); } }
     function closeAncestry(){ const m=document.getElementById('ancModal'); if(m){ m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); } }
 
     // ---- UPLOAD (reads the photo's own metadata, then AI fills the rest) ----
-    let _newDataURL=null, _newPhotos=[], _upPrivacy='Public', _meta={}, _aiSeed=0, _upMode='', _upModeDetail='', _upModeIcon='', _upMap=null, _upMarker=null, _upPeople=[], _editId=null;
+    let _newDataURL=null, _newPhotos=[], _upPrivacy='Public', _meta={}, _aiSeed=0, _upMode='', _upModeDetail='', _upModeIcon='', _upMap=null, _upMarker=null, _upPeople=[], _editId=null,
+        _upStep=1, _upPrepared=false, _upDirty=false, _upProcessing=false;
+    function prepareUploadSteps(){
+      if(_upPrepared) return; _upPrepared=true;
+      const modal=document.getElementById('uploadModal'), sheet=modal.querySelector('.upload-sheet');
+      const choose=document.getElementById('upChoose'), file=document.getElementById('upFile'), cam=document.getElementById('upCam'), preview=document.getElementById('upPreview');
+      const details=[...modal.querySelectorAll('div')].find(el=>el.classList.contains('space-y-3')&&el.classList.contains('text-left')&&el.querySelector('#upCaption'));
+      if(!sheet||!choose||!details) return;
+      const make=(n,label)=>{ const s=document.createElement('section'); s.dataset.upStep=String(n); s.setAttribute('aria-label',label); return s; };
+      const one=make(1,'Select media'); sheet.insertBefore(one,choose); [choose,file,cam,preview].forEach(el=>el&&one.appendChild(el));
+      const fields=[...details.children], two=make(2,'Moment details'), three=make(3,'People, journey, and privacy'), four=make(4,'Review and save');
+      fields.slice(0,3).forEach(el=>two.appendChild(el)); fields.slice(3).forEach(el=>three.appendChild(el));
+      four.innerHTML=`<div class="rounded-2xl bg-grey-light p-4"><p class="text-xs font-bold uppercase tracking-widest text-accent-blue/45">Ready to remember</p><div class="mt-3 flex gap-3"><img id="upReviewImg" class="h-24 w-20 shrink-0 rounded-xl object-cover" alt="Selected memory preview"/><div class="min-w-0"><p id="upReviewTitle" class="font-extrabold text-accent-blue">Untitled memory</p><p id="upReviewMeta" class="mt-1 text-sm text-accent-blue/60"></p><p id="upReviewPrivacy" class="mt-2 text-xs font-bold text-primary-theme"></p></div></div></div><p class="mt-3 text-xs leading-relaxed text-accent-blue/55">Your selections stay in this draft while the flow is open. Review the details, then add the memory to your timeline.</p>`;
+      details.replaceWith(two,three,four);
+      modal.addEventListener('input',()=>{ _upDirty=true; });
+      modal.addEventListener('change',()=>{ _upDirty=true; });
+    }
+    function setUploadStatus(kind,text){
+      const el=document.getElementById('upStatus'); if(!el) return;
+      if(!text){ el.innerHTML=''; el.classList.add('hidden'); return; }
+      const icons={loading:'fa-spinner fa-spin',success:'fa-circle-check',error:'fa-triangle-exclamation',offline:'fa-wifi'};
+      el.innerHTML=`<i class="fa-solid ${icons[kind]||'fa-circle-info'} ${kind==='error'?'text-primary-theme':''}"></i><span>${text}</span>`;
+      el.classList.remove('hidden');
+    }
+    function renderUploadReview(){
+      const cap=(document.getElementById('upCaption').value||'').trim()||'Untitled memory', place=(document.getElementById('upPlace').value||'').trim()||'Location not added', date=document.getElementById('upDate').value;
+      const t=document.getElementById('upReviewTitle'),m=document.getElementById('upReviewMeta'),p=document.getElementById('upReviewPrivacy'),img=document.getElementById('upReviewImg');
+      if(t)t.textContent=cap; if(m)m.textContent=[date,place].filter(Boolean).join(' · '); if(p)p.innerHTML=`<i class="fa-solid ${_upPrivacy==='Private'?'fa-lock':_upPrivacy==='Friends'?'fa-user-group':'fa-globe-americas'}"></i> ${_upPrivacy}`;
+      if(img&&_newDataURL){ img.src=_newDataURL; img.classList.remove('hidden'); }
+    }
+    function setUploadStep(step){
+      _upStep=Math.max(1,Math.min(4,step));
+      document.querySelectorAll('#uploadModal [data-up-step]').forEach(s=>s.classList.toggle('hidden-step',+s.dataset.upStep!==_upStep));
+      const labels=['Select media','Moment details','People, journey & privacy','Review & save'];
+      const bar=document.getElementById('upProgress'),label=document.getElementById('upStepLabel'),back=document.getElementById('upBack'),next=document.getElementById('upNext'),save=document.getElementById('upSave');
+      if(bar)bar.style.width=(_upStep*25)+'%'; if(label)label.textContent=`Step ${_upStep} of 4 · ${labels[_upStep-1]}`;
+      if(back){ back.disabled=_upStep===1; back.classList.toggle('opacity-40',_upStep===1); }
+      if(next)next.classList.toggle('review-ready',_upStep===4); if(save)save.classList.toggle('review-ready',_upStep===4);
+      if(_upStep===4) renderUploadReview();
+      const sheet=document.querySelector('#uploadModal .upload-sheet'); if(sheet) sheet.scrollTop=0;
+    }
+    function changeUploadStep(delta){
+      if(delta>0&&_upStep===1&&!_newDataURL){ setUploadStatus('error','Choose a photo to continue.'); document.getElementById('upFile').click(); return; }
+      if(delta>0&&_upStep===2){ const cap=(document.getElementById('upCaption').value||'').trim(); if(!cap){ setUploadStatus('error','Add a caption for this moment.'); document.getElementById('upCaption').focus(); return; } }
+      setUploadStatus('', ''); setUploadStep(_upStep+delta);
+    }
     function openUpload(){
+      prepareUploadSteps();
       resetUpload();
       renderPeoplePicker();
       const di=document.getElementById('upDate'), today=new Date().toISOString().slice(0,10);
       if(di){ di.max=today; di.value=today; _meta.dateSrc='you'; }
       const m=document.getElementById('uploadModal'); m.classList.remove('hidden'); m.classList.add('flex'); syncBodyScroll();
+      setUploadStep(1); _upDirty=false;
+      if(!navigator.onLine) setUploadStatus('offline','You’re offline. This mockup will keep the draft on this device until you save.');
+      focusDialog(m,'button[aria-label="Close add memory flow"]');
       // mini location map: init + default pin near the latest place, sized after the modal is visible
       setTimeout(()=>{ initUpMap(); const last=photos[photos.length-1]; if(last) setUpPin(last.lat, last.lng, 3); if(_upMap) _upMap.invalidateSize(); }, 90);
     }
@@ -2069,6 +2693,8 @@
       const fb=document.getElementById('upFav'); if(fb) fb.classList.toggle('up-fav-on', _upFav);
       if(p.desc || p.milestone || (p.song&&p.song!=='a new memory') || p.fav){ const more=document.getElementById('upMore'); if(more) more.classList.remove('hidden'); const mch=document.getElementById('upMoreChevron'); if(mch) mch.style.transform='rotate(180deg)'; }
       renderMeta(); updateUploadValid();
+      _upDirty=true;
+      if(window.matchMedia('(max-width:767px)').matches) setUploadStep(2);
     }
     // people picker — rebuilt from the roster (which can grow when you add someone new)
     let _personSeq=0;
@@ -2107,7 +2733,14 @@
       if(btn) btn.classList.toggle('up-fav-on', _upFav);
       renderCardPreview();
     }
-    function closeUpload(){ const m=document.getElementById('uploadModal'); m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); }
+    function closeUpload(force=false){
+      const m=document.getElementById('uploadModal'); if(!m||m.classList.contains('hidden')) return;
+      if(!force&&_upDirty){ openAbandonConfirm(); return; }
+      m.classList.add('hidden'); m.classList.remove('flex'); _upDirty=false; _upProcessing=false; syncBodyScroll(); restoreDialogFocus();
+    }
+    function openAbandonConfirm(){ const m=document.getElementById('abandonModal'); if(!m||!m.classList.contains('hidden')) return; m.classList.remove('hidden'); m.classList.add('flex'); syncBodyScroll(); focusDialog(m,'#abandonCancel'); }
+    function closeAbandonConfirm(){ const m=document.getElementById('abandonModal'); if(!m||m.classList.contains('hidden')) return; m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); restoreDialogFocus(); }
+    function confirmAbandon(){ const m=document.getElementById('abandonModal'); if(m){ m.classList.add('hidden'); m.classList.remove('flex'); restoreDialogFocus(); } closeUpload(true); }
     function resetUpload(){
       _newDataURL=null; _newPhotos=[]; _upPrivacy='Public'; _meta={}; _upMode=''; _upModeDetail=''; _upModeIcon=''; _upPeople=[]; _editId=null;
       const ti=document.getElementById('upTitle'); if(ti) ti.textContent='Add a memory';
@@ -2136,6 +2769,7 @@
       const fb=document.getElementById('upFav'); if(fb) fb.classList.remove('up-fav-on');
       const more=document.getElementById('upMore'); if(more) more.classList.add('hidden');
       const mch=document.getElementById('upMoreChevron'); if(mch) mch.style.transform='';
+      setUploadStatus('',''); setUploadStep(1); _upDirty=false;
       updateUploadValid();
     }
     function setPrivacy(btn){ _upPrivacy=btn.dataset.pv; btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b===btn)); }
@@ -2253,7 +2887,7 @@
     // Esc closes whichever overlay is open
     document.addEventListener('keydown', e=>{
       if(e.key!=='Escape') return;
-      const order=[['tvDash',closeTvDash],['uploadModal',closeUpload],['shareModal',closeShare],['ancModal',closeAncestry]];
+      const order=[['abandonModal',closeAbandonConfirm],['deleteModal',closeDeleteConfirm],['tvDash',closeTvDash],['uploadModal',closeUpload],['shareModal',closeShare],['ancModal',closeAncestry]];
       for(const [id,fn] of order){ const m=document.getElementById(id); if(m && !m.classList.contains('hidden')){ fn(); return; } }
       const pm=document.getElementById('modal'); if(pm && !pm.classList.contains('hidden')) closeModal();
     });
@@ -2265,25 +2899,33 @@
     // process one or many chosen photos → a gallery (first = cover); EXIF/AI runs on the cover
     async function processFiles(fileList){
       const all=[...fileList];
-      if(all.some(f=>/^video\//.test(f.type))) toast('Videos come later — adding the photos for now','fa-video');
-      const files=all.filter(f=> /^image\//.test(f.type) || /hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name));
-      if(!files.length){ toast('Please choose photos','fa-triangle-exclamation'); return; }
+      const supported=f=>/^image\//.test(f.type)||/hei[cf]/i.test(f.type)||/\.hei[cf]$/i.test(f.name), maxBytes=25*1024*1024;
+      const oversized=all.filter(f=>f.size>maxBytes), unsupported=all.filter(f=>!supported(f));
+      if(oversized.length){ setUploadStatus('error',`${oversized[0].name} is larger than 25 MB. Choose a smaller file and retry.`); return; }
+      if(unsupported.length&&unsupported.length===all.length){ setUploadStatus('error','That file type is not supported. Choose a JPG, PNG, WebP, HEIC, or HEIF image.'); return; }
+      const files=all.filter(supported);
+      if(!files.length){ setUploadStatus('error','No supported photos were found.'); return; }
+      _upProcessing=true; _upDirty=true; setUploadStatus('loading',`Processing 0 of ${files.length} photos…`);
       const wasEmpty=_newPhotos.length===0; let firstFile=null, heicFallback=false;
-      for(const f of files){
+      for(let fileIndex=0;fileIndex<files.length;fileIndex++){
+        const f=files[fileIndex]; setUploadStatus('loading',`Processing ${fileIndex+1} of ${files.length} photos…`);
         const norm=await normalizeImage(f); if(!norm.url) continue;
         if(wasEmpty && !firstFile){ firstFile=f; _meta.dims = norm.ow ? {w:norm.ow,h:norm.oh} : null;
           if((/hei[cf]/i.test(f.type)||/\.hei[cf]$/i.test(f.name)) && !norm.ok) heicFallback=true; }
         _newPhotos.push(norm.url);
       }
-      if(!_newPhotos.length){ toast('Could not read those photos','fa-triangle-exclamation'); return; }
+      if(!_newPhotos.length){ _upProcessing=false; setUploadStatus('error','We could not process those photos. Choose different files or retry.'); return; }
       _newDataURL=_newPhotos[0];
       paintCoverPreview();
       document.getElementById('upPreview').classList.remove('hidden');
       const ch=document.getElementById('upChoose'); if(ch) ch.classList.add('hidden');
       const sg=document.getElementById('upSuggest'); if(sg){ sg.classList.remove('hidden'); sg.classList.add('flex'); }
       renderUpGallery(); updateUploadValid();
-      if(heicFallback) toast('HEIC photo saved — its details still read fine','fa-circle-info');
-      if(wasEmpty && firstFile) analyzePhoto(firstFile);   // EXIF from the ORIGINAL cover file
+      _upProcessing=false;
+      setUploadStatus('success',`${files.length} photo${files.length===1?'':'s'} ready. Reading date and location details…`);
+      if(heicFallback) toast('HEIC photo kept in its original format','fa-circle-info');
+      if(wasEmpty && firstFile) await analyzePhoto(firstFile);   // EXIF from the ORIGINAL cover file
+      if(window.matchMedia('(max-width:767px)').matches) setUploadStep(2);
     }
     function paintCoverPreview(){
       const img=document.getElementById('upPreviewImg'); if(img){ img.onerror=()=>{ img.removeAttribute('src'); img.alt='Preview not available'; }; img.src=_newDataURL; }
@@ -2383,6 +3025,7 @@
     }
     async function analyzePhoto(file){
       setAIState('reading');
+      setUploadStatus('loading','Reading date, camera, and GPS details…');
       if(!_meta.dims) _meta.dims = await imageDims(_newDataURL);
       const EX = await ensureExifr();
       let exif={}, gps={};
@@ -2404,6 +3047,9 @@
       const capEl=document.getElementById('upCaption'); if(capEl && !capEl.value){ capEl.value=sugg.caption; _meta.capSrc='ai'; }
       const moodEl=document.getElementById('upMood'); if(moodEl) moodEl.value=sugg.mood;
       renderMeta(); updateUploadValid(); setAIState('done');
+      const dateNote=(exif.DateTimeOriginal||exif.CreateDate)?'Photo date found':(taken?'No camera date found — using the file date':'No date found — choose the date manually');
+      const gpsNote=_meta.gps?'GPS location found':'No GPS found — search for a place or position the pin';
+      setUploadStatus('success',`${dateNote}. ${gpsNote}.`);
     }
 
     // the auto-detected metadata chips (each tagged with where it came from)
@@ -2426,7 +3072,7 @@
       renderCardPreview();
     }
 
-    function saveUpload(){
+    function performSave(){
       if(!_newDataURL){ toast('Choose a photo first','fa-image'); document.getElementById('upFile').click(); return; }
       const cap=(document.getElementById('upCaption').value||'').trim();
       if(!cap){ toast('Add a caption for this moment','fa-pen'); document.getElementById('upCaption').focus(); return; }
@@ -2458,10 +3104,10 @@
           photos.sort((a,b)=> new Date(a.y,a.mo,a.d) - new Date(b.y,b.mo,b.d));
           recomputeTravel(); rebuildMap(); renderCarousel(); renderRuler(); updateMemoryStats();
           const memModalOpen=!document.getElementById('modal').classList.contains('hidden');
-          closeUpload(); setActive(photos.indexOf(p));
+          closeUpload(true); setActive(photos.indexOf(p));
           if(memModalOpen) fillModal();   // refresh the open memory with the edits
           toast('Memory updated ✨','fa-check');
-        } else closeUpload();
+        } else closeUpload(true);
         _editId=null; return;
       }
       _uploads[id]=gallery[0];   // cover (used by imgFor across cards/stage/map)
@@ -2478,18 +3124,42 @@
       photos.push(np);
       photos.sort((a,b)=> new Date(a.y,a.mo,a.d) - new Date(b.y,b.mo,b.d));
       recomputeTravel(); rebuildMap(); renderCarousel(); renderRuler(); updateMemoryStats();
-      closeUpload(); setActive(photos.indexOf(np));
+      closeUpload(true); setActive(photos.indexOf(np));
       toast('Memory added to your journey ✨','fa-star'); confettiBurst();
     }
 
-    // ---- DELETE (with undo) ----
+    function saveUpload(){
+      if(_upProcessing){ setUploadStatus('loading','Your photo is still processing. Please wait a moment.'); return; }
+      if(!navigator.onLine) setUploadStatus('offline','Offline: this mockup will save the memory locally for this session.');
+      else setUploadStatus('loading',_editId!=null?'Saving your changes…':'Adding your memory…');
+      try{ performSave(); }
+      catch(err){ setUploadStatus('error','The memory could not be saved. Your draft is still here — retry when you’re ready.'); }
+    }
+
+    // ---- DELETE (confirmation first, then a short undo window) ----
+    let _pendingDelete=-1;
     function deleteMemory(i){
       if(photos.length<=1){ toast("That’s your only memory — keeping it 💛",'fa-heart'); return; }
+      const p=photos[i]; if(!p) return;
+      _pendingDelete=i;
+      const title=document.getElementById('deleteTitle'); if(title) title.textContent=`Delete “${p.name}”?`;
+      const thumb=document.getElementById('deleteThumb'); if(thumb){ thumb.classList.remove('hidden','opacity-25'); thumb.parentElement.classList.remove('media-failed'); thumb.alt=`Thumbnail for ${p.name}`; thumb.src=imgFor(p.id); }
+      const modal=document.getElementById('deleteModal'); modal.classList.remove('hidden'); modal.classList.add('flex'); syncBodyScroll();
+      focusDialog(modal,'#deleteCancel');
+    }
+    function closeDeleteConfirm(){
+      const modal=document.getElementById('deleteModal'); if(!modal||modal.classList.contains('hidden')) return;
+      modal.classList.add('hidden'); modal.classList.remove('flex'); _pendingDelete=-1; syncBodyScroll(); restoreDialogFocus();
+    }
+    function confirmDelete(){
+      const i=_pendingDelete; if(i<0||!photos[i]){ closeDeleteConfirm(); return; }
       const removed=photos[i];
+      const modal=document.getElementById('deleteModal'); modal.classList.add('hidden'); modal.classList.remove('flex'); _pendingDelete=-1; restoreDialogFocus();
       photos.splice(i,1);
       recomputeTravel(); rebuildMap(); renderCarousel(); renderRuler(); updateMemoryStats();
       setActive(Math.min(active, photos.length-1));
-      toast('Memory removed','fa-trash',{ label:'Undo', fn:()=>{
+      syncBodyScroll();
+      toast(`“${removed.name}” deleted`,'fa-trash',{ label:'Undo', fn:()=>{
         photos.push(removed); photos.sort((a,b)=> new Date(a.y,a.mo,a.d)-new Date(b.y,b.mo,b.d));
         recomputeTravel(); rebuildMap(); renderCarousel(); renderRuler(); updateMemoryStats();
         setActive(photos.indexOf(removed)); toast('Memory restored','fa-rotate-left');
@@ -2499,17 +3169,12 @@
     // rebuild Leaflet markers + route after the timeline changes
     function rebuildMap(){
       if(!sbMap) return;
-      markers.forEach(m=> sbMap.removeLayer(m)); markers=[];
-      const route=photos.map(p=>[p.lat,p.lng]);
-      if(futureLine) futureLine.setLatLngs(route);
-      markers=photos.map((p,i)=>{
-        const m=L.marker([p.lat,p.lng],{icon:pinIcon(i===active, modeIconFor(i))}).addTo(sbMap);
-        m.bindPopup(cardHTML(p,i),{closeButton:false,className:'pp-pop',maxWidth:164,autoPan:true,autoPanPadding:[14,24],keepInView:true});
-        m.on('mouseover',()=>m.openPopup()); m.on('mouseout',()=>m.closePopup());
-        m.on('click',()=>{ setActive(i); m.openPopup(); });
-        return m;
-      });
+      renderVisitedGeography();
       updateJourney();
+      renderMapMarkers();
+      renderTravelModeIndicators();
+      updateMapMemoryCard();
+      if(!photos.some(hasCoords)) showMapNotice('No memories have map coordinates yet. Add a location to begin your journey.');
     }
 
     // keep the header life-journey stats in sync after add / delete
@@ -2520,41 +3185,118 @@
       const ms=document.getElementById('memoryStats'); if(ms) ms.textContent=`${photos.length} moments · ${pc} places · ${cc} countries · ${minY}–${maxY}`;
     }
 
-    /* ============ REAL MAP (Leaflet) ============ */
-    let sbMap, markers = [], pastLine, futureLine, currentLine, prevActive = 0, mapLocked = false;
+    /* ============ MEMORY MAP (Leaflet) ============ */
+    const MAP_DETAIL_MODES=['journey','explore'];
+    const CARTO_ATTRIBUTION='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    const MAP_TILE_URLS={
+      light:{journey:'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png',explore:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'},
+      dark:{journey:'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',explore:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'}
+    };
+    const COUNTRY_MEMORY_SHAPES={
+      nepal:{label:'Nepal',center:[29.7,89.0],points:[[30.35,80.05],[30.42,81.3],[30.25,83.2],[30.45,85.7],[30.1,88.1],[27.85,88.2],[26.35,86.7],[26.4,84.5],[26.35,82.0],[27.1,80.05]]},
+      india:{label:'India',center:[15.0,83.5],points:[[35.5,76.7],[33.0,79.2],[28.2,88.0],[24.2,91.8],[21.5,89.0],[17.7,83.2],[8.1,77.5],[8.4,74.7],[15.0,72.0],[22.4,68.1],[29.5,72.0],[32.4,74.0]]},
+      italy:{label:'Italy',center:[44.7,8.6],points:[[47.1,6.6],[46.6,13.7],[45.4,13.8],[44.1,12.6],[42.7,13.6],[40.0,18.5],[37.8,16.5],[38.5,14.2],[41.0,12.0],[43.6,9.0],[45.8,7.0]]}
+    };
+    let savedMapDetail=null;
+    try{ savedMapDetail=sessionStorage.getItem('systemboom-memory-map-detail'); }catch(_err){}
+    if(!MAP_DETAIL_MODES.includes(savedMapDetail)) savedMapDetail=null;
+    let mapDetailMode=savedMapDetail||'journey';
+    let sbMap, markers=[], pastLine, futureLine, currentLine, prevActive=0, mapLocked=false;
+    let journeyBaseLayer, exploreBaseLayer, visitedCountryLayer, visitedCityLabelLayer, journeyRouteLayer, travelModeLayer, memoryMarkerLayer, activeMemoryLayer;
+    let cityChooserReturnFocus=null, mapTileFailures=0;
+
+    function placeParts(p){
+      const parts=String(p&&p.loc||'').split(',').map(x=>x.trim()).filter(Boolean);
+      return {city:parts[0]||'Location not named',country:parts.length>1?parts[parts.length-1]:'Location not named'};
+    }
+    function cityCountry(p){ const q=placeParts(p); return `${q.city}, ${q.country}`; }
+    function visitedPlaceGroups(maxIndex=photos.length-1){
+      const grouped=new Map();
+      photos.forEach((p,i)=>{
+        if(i>maxIndex||!hasCoords(p)) return;
+        const q=placeParts(p), unnamed=q.city==='Location not named'||q.country==='Location not named';
+        const key=(q.city+'|'+q.country+(unnamed?'|'+Number(p.lat).toFixed(3)+'|'+Number(p.lng).toFixed(3):'')).toLowerCase();
+        if(!grouped.has(key)) grouped.set(key,{city:q.city,country:q.country,indices:[],lat:0,lng:0,firstIndex:i});
+        const g=grouped.get(key); g.indices.push(i); g.lat+=Number(p.lat); g.lng+=Number(p.lng);
+      });
+      return [...grouped.values()].map(g=>{ g.lat/=g.indices.length; g.lng/=g.indices.length; g.first=photos[g.indices[0]]; g.last=photos[g.indices[g.indices.length-1]]; return g; }).sort((a,b)=>a.firstIndex-b.firstIndex);
+    }
+    function showMapNotice(message){
+      const state=document.getElementById('mapState'); if(!state) return;
+      const span=state.querySelector('span'); if(span) span.textContent=message;
+      state.classList.remove('hidden'); state.classList.add('flex');
+    }
+    function clearMapNotice(){ const state=document.getElementById('mapState'); if(state){ state.classList.add('hidden'); state.classList.remove('flex'); } }
+    function noteMapTileFailure(){ mapTileFailures++; if(mapTileFailures>=2) showMapNotice('Basemap unavailable. Your memories and journey are still shown.'); }
+    function noteMapTileLoad(){ mapTileFailures=0; clearMapNotice(); }
     // progressive trail: THIN DOTTED path already travelled, faint path still to come,
     // and a BOLD solid line for the latest leg (drawn/grown by the vehicle animation)
+    function routePath(from=0,to=photos.length-1){
+      const pts=[];
+      if(from<0||to<from||!photos.length) return pts;
+      for(let i=from;i<=to;i++){
+        const p=photos[i]; if(!hasCoords(p)) continue;
+        if(!pts.length){ pts.push([Number(p.lat),Number(p.lng)]); continue; }
+        let prev=i-1; while(prev>=from&&!hasCoords(photos[prev])) prev--;
+        if(prev<from){ pts.push([Number(p.lat),Number(p.lng)]); continue; }
+        const leg=legPath(photos[prev],p,modeOf(i).icon); pts.push(...leg.slice(1));
+      }
+      return pts;
+    }
     function updateJourney(){
-      const coords = photos.map(p=>[p.lat,p.lng]);
-      if(pastLine)   pastLine.setLatLngs(coords.slice(0, active+1));
-      if(futureLine) futureLine.setLatLngs(coords.slice(active));
+      if(pastLine)   pastLine.setLatLngs(routePath(0,active));
+      if(futureLine) futureLine.setLatLngs(routePath(active,photos.length-1));
       // when not mid-animation, show the full latest leg as the bold "current" line
       if(currentLine && !_vehRAF) currentLine.setLatLngs(active>0 ? legPath(photos[active-1], photos[active], modeOf(active).icon) : []);
+      const journey=mapDetailMode==='journey';
+      if(pastLine) pastLine.setStyle({color:journey?'#697983':'#7b5660',weight:journey?2.2:2.6,opacity:journey ? .58 : .62,dashArray:journey?'3 7':'5 7'});
+      if(futureLine) futureLine.setStyle({color:journey?'#697983':'#d92a20',weight:1.4,opacity:journey ? .16 : .22,dashArray:'1 9'});
+      if(currentLine) currentLine.setStyle({color:'#d92a20',weight:journey?4.5:4.2,opacity:.96});
     }
     // gently-curved path between two stops — flights get a visible arc (like a route map)
     function legPath(a, b, modeIcon){
+      if(!hasCoords(a)||!hasCoords(b)) return [];
       const n=72, pts=[], hop=haversineKm(a,b);
       const curve=(modeIcon==='fa-plane-up'||hop>1200) ? .16 : (hop>60 ? .05 : 0);
-      const mx=(a.lat+b.lat)/2, my=(a.lng+b.lng)/2, dx=b.lat-a.lat, dy=b.lng-a.lng;
-      const cx=mx - dy*curve, cy=my + dx*curve;
-      for(let i=0;i<=n;i++){ const t=i/n,u=1-t; pts.push([u*u*a.lat+2*u*t*cx+t*t*b.lat, u*u*a.lng+2*u*t*cy+t*t*b.lng]); }
+      const aLng=Number(a.lng), rawDelta=Number(b.lng)-aLng;
+      const bLng=rawDelta>180?Number(b.lng)-360:rawDelta<-180?Number(b.lng)+360:Number(b.lng);
+      const mx=(Number(a.lat)+Number(b.lat))/2, my=(aLng+bLng)/2, dx=Number(b.lat)-Number(a.lat), dy=bLng-aLng;
+      const cx=mx-dy*curve, cy=my+dx*curve;
+      for(let i=0;i<=n;i++){ const t=i/n,u=1-t; pts.push([u*u*Number(a.lat)+2*u*t*cx+t*t*Number(b.lat),u*u*aLng+2*u*t*cy+t*t*bLng]); }
       return pts;
     }
     // distance-aware camera: near hops zoom to CITY level (names readable, movement visible),
     // long flights stay continental — so clustered memories never hide the journey
     function zoomForHop(km){ return km>1200 ? 5 : km>350 ? 6 : km>80 ? 8 : km>15 ? 10 : 11; }
-    // whole life at a glance — zoom out to fit every stop of the journey
-    function viewWholeJourney(){
-      if(!sbMap || !photos.length) return;
-      sbMap.closePopup();
-      const bnds=L.latLngBounds(photos.map(p=>[p.lat,p.lng]));
-      sbMap.flyToBounds(bnds, { padding:[46,46], duration: REDUCED?0:1.2, maxZoom:6 });
+    function normalizedJourneyCoords(){
+      const coords=photos.filter(hasCoords).map(p=>[Number(p.lat),Number(p.lng)]);
+      if(coords.length<2) return coords;
+      let previous=coords[0][1];
+      return coords.map(([lat,rawLng],index)=>{
+        let lng=rawLng;
+        if(index){ while(lng-previous>180) lng-=360; while(lng-previous<-180) lng+=360; }
+        previous=lng; return [lat,lng];
+      });
     }
+    function fitMyJourney(userInitiated=false){
+      if(!sbMap) return;
+      const coords=normalizedJourneyCoords();
+      if(!coords.length){ showMapNotice('No memories have map coordinates yet. Add a location to begin your journey.'); return; }
+      if(mapTileFailures<2) clearMapNotice();
+      if(coords.length===1){ sbMap.setView(coords[0],7,{animate:false}); return; }
+      const mobile=window.matchMedia('(max-width:767px)').matches;
+      sbMap.flyToBounds(L.latLngBounds(coords),{
+        paddingTopLeft:mobile?[52,104]:[58,100], paddingBottomRight:mobile?[74,142]:[78,136],
+        duration:REDUCED?0:.8, maxZoom:6
+      });
+      if(userInitiated) toast('Your visited places are framed','fa-arrows-to-circle');
+    }
+    function viewWholeJourney(){ fitMyJourney(true); }
     // ===== JOURNEY MOTION v2 — a real trip in four phases =====
     //  A boarding (vehicle pops in, camera pulls back) · B takeoff (accelerate)
     //  C cruise (steady speed, plane banks with the curve, odometer ticks up)
     //  D landing (decelerate, camera glides in, pin drops with a pulse)
-    let vehicle, _vehRAF, _mapReady=false, _travelDirX=0;
+    let vehicle, _vehRAF, _mapReady=false, _travelDirX=0, journeyMotionEnabled=false, journeyPlaying=false, journeyTimer=null;
     // real vehicles never move at constant speed: slow-out → cruise → slow-in
     function easeTravel(t){
       const a=.18, d=.20, v=1/(1-a/2-d/2);
@@ -2565,9 +3307,11 @@
     function animateVehicle(from, to, onLand){
       if(!sbMap || from===to || from==null) return false;
       const a=photos[from], b=photos[to];
+      if(!hasCoords(a)||!hasCoords(b)) return false;
       const hop=haversineKm(a,b); if(hop<8) return false;      // negligible move — skip
       const tm=modeOf(to);   // honors the specific choice (taxi / motorbike / helicopter …)
       const pts=legPath(a,b,tm.icon), n=pts.length-1;
+      if(!journeyMotionEnabled){ if(currentLine) currentLine.setLatLngs(pts); return false; }
       _travelDirX = b.lng===a.lng ? 0 : (b.lng>a.lng ? 1 : -1);   // photos enter from the travel direction
       if(!vehicle){ vehicle=L.marker([a.lat,a.lng], {interactive:false, zIndexOffset:600, opacity:0}).addTo(sbMap); }
       vehicle.setIcon(L.divIcon({className:'', html:`<div class="veh veh-big veh-pop"><i class="fa-solid ${tm.icon}"></i></div>`, iconSize:[46,46], iconAnchor:[23,23]}));
@@ -2609,6 +3353,50 @@
       return true;   // we took over the camera
     }
 
+    function updateJourneyMotionButton(){
+      const b=document.getElementById('routeMotionBtn'); if(!b) return;
+      b.setAttribute('aria-pressed',String(journeyPlaying));
+      b.setAttribute('aria-label',journeyPlaying?'Pause my journey':'Play my journey');
+      b.title=journeyPlaying?'Pause my journey':'Play my journey';
+      b.innerHTML=`<i class="fa-solid fa-${journeyPlaying?'pause':'play'}"></i><span>${journeyPlaying?'Pause journey':'Play my journey'}</span>`;
+    }
+    function scheduleJourneyAdvance(delay=Math.max(2400,SLIDE_MS*1.5)){
+      clearTimeout(journeyTimer); journeyTimer=null;
+      if(!journeyPlaying) return;
+      if(active>=photos.length-1){ pauseJourneyPlayback(true); return; }
+      journeyTimer=setTimeout(()=>{ if(journeyPlaying) setActive(active+1,'journey'); },delay);
+    }
+    function startJourneyPlayback(){
+      if(photos.filter(hasCoords).length<2){ toast('Add another located memory to play your journey','fa-location-dot'); return; }
+      if(playing) togglePlay();
+      if(active>=photos.length-1){ prevActive=0; setActive(0,'journey'); }
+      journeyPlaying=true; journeyMotionEnabled=!REDUCED; updateJourneyMotionButton();
+      if(REDUCED) toast('Reduced motion is on — memories will update without vehicle animation','fa-universal-access');
+      scheduleJourneyAdvance(900);
+    }
+    function pauseJourneyPlayback(completed=false){
+      journeyPlaying=false; journeyMotionEnabled=false; clearTimeout(journeyTimer); journeyTimer=null;
+      if(_vehRAF){ cancelAnimationFrame(_vehRAF); _vehRAF=null; }
+      if(vehicle) vehicle.setOpacity(0);
+      updateJourney(); updateJourneyMotionButton();
+      if(completed) toast('Journey complete','fa-flag-checkered');
+    }
+    function toggleJourneyMotion(){
+      if(journeyPlaying) pauseJourneyPlayback(); else startJourneyPlayback();
+    }
+    function journeyStep(dir){
+      if(journeyPlaying) pauseJourneyPlayback();
+      const next=active+dir; if(next>=0&&next<photos.length) setActive(next,'journey-control');
+    }
+    function restartJourneyPlayback(){
+      pauseJourneyPlayback(); prevActive=0; setActive(0,'journey-restart'); startJourneyPlayback();
+    }
+    function journeyPlaybackLanded(){
+      renderMapMarkers(); updateMapMemoryCard();
+      if(journeyPlaying) scheduleJourneyAdvance();
+      updateJourneyMotionButton();
+    }
+
     // bearing (deg from north) between two coords — for the directional arrow
     function bearing(a, b){
       const toRad=d=>d*Math.PI/180, toDeg=r=>r*180/Math.PI;
@@ -2625,90 +3413,129 @@
       return 0;
     }
 
-    // active marker = the head of the trail, showing HOW you arrived (plane / train / car / on foot)
-    const modeIconFor = i => i>0 ? modeOf(i).icon : 'fa-baby';
-    const pinIcon = (activeFlag, modeIcon='fa-location-dot') => L.divIcon({
-      className: '',
-      html: activeFlag
-        ? `<div class="sb-arrow"><i class="arw fa-solid ${modeIcon}"></i></div>`
-        : `<div class="sb-dot"></div>`,
-      iconSize: activeFlag ? [46,46] : [13,13],
-      iconAnchor: activeFlag ? [23,23] : [7,7],
-      popupAnchor: activeFlag ? [0,-28] : [0,-8],
-    });
-
-    // small preview card shown on hover (or tap) — photo + how you travelled here
-    const cardHTML = (p,i) => {
-      const tm = i>0 ? modeOf(i) : {icon:'fa-baby',label:'born here'};
-      return `<div class="pp">
-        <img src="${imgFor(p.id)}" onerror="this.onerror=null;this.src='${imgAlt(p.id)}'"/>
-        <span class="pp-mode"><i class="fa-solid ${tm.icon}"></i> ${tm.label}</span>
-        <div class="pp-body">
-          <div class="pp-title">${p.name}</div>
-          <div class="pp-meta">${p.dmy} ${p.year} · ${p.time}</div>
-        </div></div>`;
-    };
-
-    // zoom so the single Earth fills the full width (no grey sides)
-    function fitWorld(){
+    const modeIconFor=i=>i>0?modeOf(i).icon:'fa-baby';
+    function mapThemeKey(){ return document.documentElement.classList.contains('dark')?'dark':'light'; }
+    function syncMapTheme(){
       if(!sbMap) return;
-      const w = sbMap.getSize().x || 1000;
-      const z = Math.max(1, Math.log2(w/256));
-      sbMap.setView([20, 0], z, { animate:false });
+      const theme=mapThemeKey();
+      if(journeyBaseLayer){ journeyBaseLayer.setUrl(MAP_TILE_URLS[theme].journey); journeyBaseLayer.setOpacity(theme==='dark' ? .48 : .38); }
+      if(exploreBaseLayer){ exploreBaseLayer.setUrl(MAP_TILE_URLS[theme].explore); exploreBaseLayer.setOpacity(1); }
+      renderVisitedGeography();
     }
-
-    function initMap() {
-      sbMap = L.map('map', { zoomControl:true, scrollWheelZoom:false, worldCopyJump:false,
-        zoomSnap:0, minZoom:1, maxBounds:[[-85,-180],[85,180]], maxBoundsViscosity:0.6 }).setView([20,0], 2);
-      window._tile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19, noWrap: true, bounds:[[-85,-180],[85,180]], attribution: '&copy; OpenStreetMap'
-      }).addTo(sbMap);
-
-      // faint "yet to come" path + a bright "travelled so far" trail that grows as you advance
-      const route = photos.map(p => [p.lat, p.lng]);
-      // past journeys = THIN DOTTED red (history); the LATEST leg = bold solid line drawn by currentLine
-      futureLine  = L.polyline(route, { color:'#d92a20', weight:1.2, opacity:.14, dashArray:'1 9', lineCap:'round' }).addTo(sbMap);
-      pastLine    = L.polyline([],    { color:'#d92a20', weight:1.6, opacity:.55, dashArray:'3 7', lineCap:'round', lineJoin:'round' }).addTo(sbMap);
-      currentLine = L.polyline([],    { color:'#d92a20', weight:4.5, opacity:.95, lineCap:'round', lineJoin:'round' }).addTo(sbMap);
-      fitWorld();
-
-      markers = photos.map((p,i) => {
-        const m = L.marker([p.lat, p.lng], { icon: pinIcon(i===active, modeIconFor(i)) }).addTo(sbMap);
-        // auto-panning popup so the card is NEVER clipped by the (short) map; hover shows it, tap selects + shows
-        m.bindPopup(cardHTML(p,i), { closeButton:false, className:'pp-pop', maxWidth:164, autoPan:true, autoPanPadding:[14,24], keepInView:true });
-        m.on('mouseover', () => m.openPopup());
-        m.on('mouseout',  () => m.closePopup());
-        m.on('click', () => { setActive(i); m.openPopup(); });
-        return m;
+    function setMapDetailMode(mode,userInitiated=false,initial=false){
+      if(!MAP_DETAIL_MODES.includes(mode)) return;
+      mapDetailMode=mode;
+      if(userInitiated){ try{ sessionStorage.setItem('systemboom-memory-map-detail',mode); }catch(_err){} }
+      const panel=document.getElementById('mapPanel'); if(panel) panel.dataset.mapDetail=mode;
+      document.querySelectorAll('#mapDetailSelector .map-detail-btn').forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.mapDetail===mode)));
+      closeCityMemoryChooser(false);
+      if(sbMap&&journeyBaseLayer&&exploreBaseLayer){
+        const journey=mode==='journey',add=layer=>{ if(!sbMap.hasLayer(layer)) layer.addTo(sbMap); },remove=layer=>{ if(sbMap.hasLayer(layer)) sbMap.removeLayer(layer); };
+        if(journey){ remove(exploreBaseLayer); add(journeyBaseLayer); add(visitedCountryLayer); add(visitedCityLabelLayer); }
+        else { remove(journeyBaseLayer); add(exploreBaseLayer); remove(visitedCountryLayer); remove(visitedCityLabelLayer); }
+        window._tile=journey?journeyBaseLayer:exploreBaseLayer;
+        updateJourney(); renderMapMarkers(); renderTravelModeIndicators();
+        setTimeout(()=>sbMap.invalidateSize(),initial?30:160);
+      }
+      if(userInitiated){ const live=document.getElementById('mapDetailLive'); if(live) live.textContent=(mode==='journey'?'My Journey':'Explore Map')+' selected'; }
+    }
+    document.querySelectorAll('#mapDetailSelector .map-detail-btn').forEach(btn=>btn.addEventListener('keydown',event=>{
+      if(event.key!=='Enter'&&event.key!==' ') return;
+      event.preventDefault(); setMapDetailMode(btn.dataset.mapDetail,true);
+    }));
+    function labelIcon(text,type){ return L.divIcon({className:'',html:`<span class="journey-${type}-label">${esc(text)}</span>`,iconSize:[1,1],iconAnchor:type==='city'?[-24,7]:[0,0]}); }
+    function renderVisitedGeography(){
+      if(!visitedCountryLayer||!visitedCityLabelLayer) return;
+      visitedCountryLayer.clearLayers(); visitedCityLabelLayer.clearLayers();
+      const groups=visitedPlaceGroups(),countries=new Set(groups.map(g=>g.country.toLowerCase()).filter(x=>x!=='location not named')),dark=mapThemeKey()==='dark';
+      countries.forEach(key=>{ const shape=COUNTRY_MEMORY_SHAPES[key]; if(!shape) return; L.polygon(shape.points,{pane:'journeyCountries',interactive:false,color:dark?'#e9b0aa':'#a95c56',weight:1.2,opacity:.5,fillColor:'#d92a20',fillOpacity:dark ? .14 : .105}).addTo(visitedCountryLayer); L.marker(shape.center,{pane:'journeyLabels',interactive:false,keyboard:false,icon:labelIcon(shape.label,'country')}).addTo(visitedCityLabelLayer); });
+      const activePlace=photos[active]?cityCountry(photos[active]).toLowerCase():'',occupied=[];
+      groups.slice().sort((a,b)=>(cityCountry(a.first).toLowerCase()===activePlace?-1:0)-(cityCountry(b.first).toLowerCase()===activePlace?-1:0)).forEach(g=>{
+        const point=sbMap?sbMap.latLngToLayerPoint([g.lat,g.lng]):null,isActive=cityCountry(g.first).toLowerCase()===activePlace;
+        if(!isActive&&point&&occupied.some(other=>point.distanceTo(other)<72)) return;
+        if(point) occupied.push(point);
+        L.marker([g.lat,g.lng],{pane:'journeyLabels',interactive:false,keyboard:false,icon:labelIcon(g.city,'city')}).addTo(visitedCityLabelLayer);
       });
     }
-
-    // fly to active photo's location + highlight + point arrow along travel path
-    function flyToActive() {
-      if(!sbMap) return;
-      sbMap.closePopup();   // clear any open preview card while moving
-      // a vehicle glides along the line to the new place (the "journey" feel) — only on real moves
-      const dest=active;
-      // the destination pin "drops" only when the vehicle actually lands (with a pulse)
-      const land=()=>{
-        if(dest!==active) return;   // a newer trip started mid-flight — let it own the landing
-        markers.forEach((m,i)=> m.setIcon(pinIcon(i===dest, modeIconFor(i))));
-        const el=markers[dest] && markers[dest].getElement && markers[dest].getElement();
-        const pin=el && el.querySelector('.sb-arrow');
-        if(pin){ pin.classList.add('pin-land'); setTimeout(()=>pin.classList.remove('pin-land'), 700); }
-      };
-      const cinematic = _mapReady ? animateVehicle(prevActive, active, land) : false;
-      if(!cinematic) land();   // small hops / reduced motion: pin updates immediately
-      updateJourney();
-      const p = photos[active];
-      // camera only moves when NOT locked — and the cinematic glide steers it during a trip.
-      // Non-animated moves (tiny hops between clustered spots) zoom to CITY level too.
-      if(!mapLocked && !cinematic){
-        const hk = (prevActive!=null && prevActive!==active) ? haversineKm(photos[prevActive], p) : 1500;
-        sbMap.flyTo([p.lat, p.lng], zoomForHop(hk), { duration: 1.1 });
+    function markerLabel(p){ const q=placeParts(p); return `${p.name}, ${p.dmy} ${p.year}, ${q.city}`; }
+    function memoryMarkerIcon(p,i,selected=false,count=0){
+      const tm=i>0?modeOf(i):{icon:'fa-baby'},cls=selected?'map-active-marker':count>1?'map-cluster-marker':'map-memory-marker',countHTML=count>1?`<span class="map-marker-count">${count}</span>`:'';
+      return L.divIcon({className:'',html:`<span class="${cls}"><img src="${imgFor(p.id)}" alt="" onerror="this.style.display='none'">${countHTML}<span class="map-marker-mode"><i class="fa-solid ${tm.icon}"></i></span></span>`,iconSize:selected?[54,54]:[44,44],iconAnchor:selected?[27,27]:[22,22]});
+    }
+    function bindMapMarker(marker,label,activate){
+      const enhance=()=>{ const el=marker.getElement(); if(!el||el.dataset.memoryMapBound) return; el.dataset.memoryMapBound='true'; el.setAttribute('role','button'); el.setAttribute('aria-label',label); el.setAttribute('tabindex','0'); el.addEventListener('keydown',event=>{ if(event.key==='Enter'||event.key===' '){ event.preventDefault(); activate(); } }); };
+      marker.on('click',activate); marker.on('add',()=>requestAnimationFrame(enhance)); enhance();
+    }
+    function addSingleMemoryMarker(i,latLng){
+      const p=photos[i],marker=L.marker(latLng||[p.lat,p.lng],{pane:'markerPane',keyboard:true,title:markerLabel(p),alt:markerLabel(p),icon:memoryMarkerIcon(p,i,false,0)}).addTo(memoryMarkerLayer);
+      bindMapMarker(marker,markerLabel(p),()=>setActive(i,'map-marker')); markers[i]=marker;
+    }
+    function addMemoryCluster(label,indices,lat,lng){
+      if(!indices.length) return; if(indices.length===1){ addSingleMemoryMarker(indices[0],[lat,lng]); return; }
+      const p=photos[indices[indices.length-1]],aria=`${label}, ${indices.length} memories`,marker=L.marker([lat,lng],{pane:'markerPane',keyboard:true,title:aria,alt:aria,icon:memoryMarkerIcon(p,indices[indices.length-1],false,indices.length)}).addTo(memoryMarkerLayer);
+      bindMapMarker(marker,aria,()=>showCityMemoryChooser(label,indices,marker)); indices.forEach(i=>{ markers[i]=marker; });
+    }
+    function renderMapMarkers(){
+      if(!sbMap||!memoryMarkerLayer||!activeMemoryLayer) return;
+      memoryMarkerLayer.clearLayers(); activeMemoryLayer.clearLayers(); markers=Array(photos.length).fill(null);
+      const located=photos.map((p,i)=>({p,i})).filter(o=>hasCoords(o.p)); if(!located.length) return;
+      const zoom=sbMap.getZoom(),inactive=located.filter(o=>o.i!==active);
+      if(zoom<5){
+        const byCountry=new Map(); inactive.forEach(o=>{ const q=placeParts(o.p),k=q.country.toLowerCase(); if(!byCountry.has(k)) byCountry.set(k,{label:q.country,indices:[],lat:0,lng:0}); const g=byCountry.get(k); g.indices.push(o.i); g.lat+=Number(o.p.lat); g.lng+=Number(o.p.lng); });
+        byCountry.forEach(g=>addMemoryCluster(g.label,g.indices,g.lat/g.indices.length,g.lng/g.indices.length));
+      } else if(zoom<9){
+        visitedPlaceGroups().forEach(g=>{
+          const ids=g.indices.filter(i=>i!==active); if(!ids.length) return;
+          let lat=g.lat,lng=g.lng;
+          if(g.indices.includes(active)){
+            const shifted=sbMap.layerPointToLatLng(sbMap.latLngToLayerPoint([lat,lng]).add(L.point(62,0)));
+            lat=shifted.lat; lng=shifted.lng;
+          }
+          addMemoryCluster(`${g.city}, ${g.country}`,ids,lat,lng);
+        });
+      } else {
+        const duplicateOrder=new Map(); inactive.forEach(o=>{ const key=`${Number(o.p.lat).toFixed(4)}|${Number(o.p.lng).toFixed(4)}`,pos=duplicateOrder.get(key)||0; duplicateOrder.set(key,pos+1); const angle=(pos%8)*(Math.PI/4),ring=1+Math.floor(pos/8),spread=.006*ring*Math.max(.35,11/Math.max(9,zoom)); addSingleMemoryMarker(o.i,[Number(o.p.lat)+Math.sin(angle)*spread,Number(o.p.lng)+Math.cos(angle)*spread]); });
       }
-      const lbl = document.getElementById('mapLabel'); if(lbl) lbl.textContent = p.name;
-      prevActive = active;
+      const p=photos[active]; if(hasCoords(p)){ const marker=L.marker([p.lat,p.lng],{pane:'markerPane',zIndexOffset:1000,keyboard:true,title:'Selected: '+markerLabel(p),alt:'Selected: '+markerLabel(p),icon:memoryMarkerIcon(p,active,true,0)}).addTo(activeMemoryLayer); bindMapMarker(marker,'Selected memory: '+markerLabel(p),()=>openActiveModal()); markers[active]=marker; }
+    }
+    function renderTravelModeIndicators(){
+      if(!sbMap||!travelModeLayer) return; travelModeLayer.clearLayers(); const zoom=sbMap.getZoom();
+      for(let i=1;i<photos.length;i++){ const a=photos[i-1],b=photos[i]; if(!hasCoords(a)||!hasCoords(b)) continue; const hop=haversineKm(a,b); if(hop<8||(zoom<6&&hop<80)) continue; const pts=legPath(a,b,modeOf(i).icon),mid=pts[Math.floor(pts.length/2)]; L.marker(mid,{pane:'journeyLabels',interactive:false,keyboard:false,icon:L.divIcon({className:'',html:`<span class="journey-mode-badge"><i class="fa-solid ${modeOf(i).icon}"></i></span>`,iconSize:[25,25],iconAnchor:[13,13]})}).addTo(travelModeLayer); }
+    }
+    function showCityMemoryChooser(label,indices,marker){
+      const chooser=document.getElementById('cityMemoryChooser'),title=document.getElementById('cityChooserTitle'),list=document.getElementById('cityChooserList'); if(!chooser||!list) return;
+      cityChooserReturnFocus=marker&&marker.getElement?marker.getElement():document.activeElement; if(title) title.textContent=label;
+      list.innerHTML=indices.map(i=>{ const p=photos[i],q=placeParts(p); return `<button type="button" class="city-memory-option" onclick="chooseCityMemory(${i})"><img src="${imgFor(p.id)}" alt="" onerror="this.style.display='none'"><span class="min-w-0"><b class="block truncate text-xs">${esc(p.name)}</b><span class="block truncate text-[10px] opacity-60">${p.dmy} ${p.year} · ${esc(q.city)}, ${esc(q.country)}</span></span></button>`; }).join('');
+      chooser.hidden=false; chooser.inert=false; chooser.removeAttribute('inert'); chooser.setAttribute('aria-hidden','false'); const close=chooser.querySelector('button[aria-label="Close place memories"]'); if(close) close.focus();
+    }
+    function closeCityMemoryChooser(restore=true){ const chooser=document.getElementById('cityMemoryChooser'); if(!chooser||chooser.hidden) return; chooser.hidden=true; chooser.inert=true; chooser.setAttribute('inert',''); chooser.setAttribute('aria-hidden','true'); if(restore&&cityChooserReturnFocus&&document.contains(cityChooserReturnFocus)) cityChooserReturnFocus.focus(); cityChooserReturnFocus=null; }
+    function chooseCityMemory(i){ closeCityMemoryChooser(false); setActive(i,'map-city'); }
+    function updateMapMemoryCard(){
+      const p=photos[active]; if(!p) return;
+      const q=placeParts(p),thumb=document.getElementById('mapMemoryThumb'),title=document.getElementById('mapLabel'),meta=document.getElementById('mapMemoryMeta'),privacy=document.getElementById('mapMemoryPrivacy'),open=document.getElementById('mapOpenMemory');
+      if(thumb){ thumb.classList.remove('hidden'); thumb.parentElement.classList.remove('media-failed'); thumb.alt=p.name; thumb.src=imgFor(p.id); }
+      if(title) title.textContent=p.name; if(meta) meta.textContent=`${p.dmy} ${p.year} · ${q.city}, ${q.country}`;
+      const pv={Private:['fa-lock','Private archive'],Friends:['fa-user-group','Friends only'],Public:['fa-globe','Public memory']}[p.privacy||'Private']; if(privacy) privacy.innerHTML=`<i class="fa-solid ${pv[0]}"></i> ${pv[1]}`;
+      if(open) open.setAttribute('aria-label',`Open ${p.name}`); const prev=document.getElementById('journeyPrev'),next=document.getElementById('journeyNext'); if(prev) prev.disabled=active<=0; if(next) next.disabled=active>=photos.length-1;
+    }
+    function initMap(){
+      sbMap=L.map('map',{zoomControl:false,scrollWheelZoom:false,worldCopyJump:true,zoomSnap:.25,minZoom:1}).setView([25,65],3);
+      L.control.zoom({position:'bottomright'}).addTo(sbMap); sbMap.createPane('journeyCountries'); sbMap.getPane('journeyCountries').style.zIndex='330'; sbMap.createPane('journeyLabels'); sbMap.getPane('journeyLabels').style.zIndex='450';
+      const theme=mapThemeKey(),tileOpts={subdomains:'abcd',maxZoom:20,noWrap:false,bounds:[[-85,-180],[85,180]],attribution:CARTO_ATTRIBUTION};
+      journeyBaseLayer=L.tileLayer(MAP_TILE_URLS[theme].journey,{...tileOpts,opacity:theme==='dark' ? .48 : .38}).on('tileerror',noteMapTileFailure).on('tileload',noteMapTileLoad); exploreBaseLayer=L.tileLayer(MAP_TILE_URLS[theme].explore,{...tileOpts,opacity:1}).on('tileerror',noteMapTileFailure).on('tileload',noteMapTileLoad);
+      visitedCountryLayer=L.layerGroup(); visitedCityLabelLayer=L.layerGroup(); journeyRouteLayer=L.layerGroup().addTo(sbMap); travelModeLayer=L.layerGroup().addTo(sbMap); memoryMarkerLayer=L.layerGroup().addTo(sbMap); activeMemoryLayer=L.layerGroup().addTo(sbMap);
+      futureLine=L.polyline([],{lineCap:'round'}).addTo(journeyRouteLayer); pastLine=L.polyline([],{lineCap:'round',lineJoin:'round'}).addTo(journeyRouteLayer); currentLine=L.polyline([],{lineCap:'round',lineJoin:'round'}).addTo(journeyRouteLayer);
+      renderVisitedGeography(); setMapDetailMode(mapDetailMode,false,true); updateJourney(); renderMapMarkers(); renderTravelModeIndicators(); updateMapMemoryCard(); sbMap.on('zoomend',()=>{ renderVisitedGeography(); renderMapMarkers(); renderTravelModeIndicators(); }); setTimeout(()=>{ sbMap.invalidateSize(); fitMyJourney(false); },80);
+    }
+    function flyToActive(){
+      if(!sbMap) return; closeCityMemoryChooser(false); const dest=active,p=photos[active]; updateMapMemoryCard();
+      if(!hasCoords(p)){ showMapNotice(`${p.name} has coordinates missing. Location not named.`); updateJourney(); renderMapMarkers(); prevActive=active; if(journeyPlaying) scheduleJourneyAdvance(); return; }
+      if(mapTileFailures>=2) showMapNotice('Basemap unavailable. Your memories and journey are still shown.');
+      else clearMapNotice();
+      const land=()=>{ if(dest!==active) return; journeyPlaybackLanded(); const el=markers[dest]&&markers[dest].getElement&&markers[dest].getElement(),pin=el&&el.querySelector('.map-active-marker'); if(pin&&!REDUCED){ pin.classList.add('pin-land'); setTimeout(()=>pin.classList.remove('pin-land'),700); } };
+      const cinematic=_mapReady&&journeyPlaying&&!REDUCED?animateVehicle(prevActive,active,land):false; updateJourney();
+      if(!mapLocked&&!cinematic){ const hk=prevActive!=null&&prevActive!==active&&hasCoords(photos[prevActive])?haversineKm(photos[prevActive],p):1500; sbMap.flyTo([p.lat,p.lng],zoomForHop(hk),{duration:REDUCED?0:.75}); }
+      if(!cinematic) land(); prevActive=active;
     }
 
     // lock toggle
@@ -2722,12 +3549,20 @@
       btn.classList.toggle('text-white', mapLocked);
       btn.classList.toggle('shadow-glow', mapLocked);
       btn.title = mapLocked ? 'Unlock map view' : 'Lock map view';
+      btn.setAttribute('aria-label',btn.title);
       badge.classList.toggle('hidden', !mapLocked);
       badge.classList.toggle('flex', mapLocked);
     });
 
-    initMap();
-    renderRuler(); setView('horizontal'); updateFab(); updateStory(); updateHeaderDate();
+    try{
+      if(!window.L) throw new Error('Map library unavailable');
+      initMap();
+    }catch(err){
+      showMapNotice('Map unavailable. Your memories remain available in the photo timeline.');
+      const map=document.getElementById('map'); if(map) map.setAttribute('aria-label','Map unavailable');
+    }
+    lockRuler(); lockReel(); renderRuler(); setView('horizontal'); updateFab(); updateStory(); updateHeaderDate(); updateStage(); updateTravel(); updateChapters();
+    setStageView(stageView,false,true); updateJourneyMotionButton();
     // dynamic counts
     (function(){
       const cc = new Set(photos.map(p=>p.loc.split(', ').pop())).size;   // countries
@@ -2830,6 +3665,7 @@
       const t=e.target, tag=(t.tagName||'').toLowerCase();
       if(tag==='input'||tag==='textarea'||tag==='select'||t.isContentEditable) return;
       if(e.metaKey||e.ctrlKey||e.altKey) return;
+      const dialog=topDialog(); if(dialog&&dialog.id!=='modal') return;
       const vis=visibleIdx();
       const modalOpen = !document.getElementById('modal').classList.contains('hidden');
       if(e.key==='ArrowLeft'){ e.preventDefault(); modalOpen ? modalPrevPhoto() : stepActive(-1); }
@@ -2849,15 +3685,13 @@
     const _latest=document.getElementById('rlLatest');
     if(_latest) _latest.addEventListener('click', jumpLatest);
     updateNavButtons();
-    // on load: show the full single Earth + center the ruler & reel on the active (newest) photo
+    // on load: frame the complete journey + center the ruler and reel on the newest photo
     setTimeout(()=>{
-      sbMap.invalidateSize();
-      fitWorld();
-      markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, modeIconFor(i))));
-      updateJourney(); updateTravel();
+      if(sbMap){ sbMap.invalidateSize(); fitMyJourney(false); renderMapMarkers(); }
+      updateJourney(); updateTravel(); updateMapMemoryCard();
       // center after the browser has painted (mobile lays out the narrow rail late)
-      requestAnimationFrame(()=>{ scrollRulerToActive('auto'); scrollActiveIntoView('auto'); });
-      _mapReady = true;   // from now on, moves animate the travelling vehicle
+      requestAnimationFrame(()=>{ lockRuler(); scrollRulerToActive('auto'); lockReel(); scrollActiveIntoView('auto'); });
+      _mapReady = !!sbMap;   // from now on, user-started moves may animate the travelling vehicle
     }, 300);
     // re-center once web fonts finish loading (they can shift layout after first paint)
     if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ scrollRulerToActive('auto'); });
@@ -2868,8 +3702,8 @@
     if(_hint){ setTimeout(()=>_hint.classList.add('show'),900); setTimeout(()=>_hint.classList.remove('show'),5200); }
     setTimeout(()=>{ if(_ph) _ph.classList.add('rl-nudge'); if(_pl) _pl.classList.add('rl-nudge'); },1000);
     ['pointerdown','wheel'].forEach(ev=>document.getElementById('timelineRail').addEventListener(ev,_stopRulerCues,{once:true,passive:true}));
-    // keep the world filling the width on resize (when not zoomed into a photo)
-    let _wt; window.addEventListener('resize', ()=>{ clearTimeout(_wt); _wt=setTimeout(()=>{ if(sbMap && !playing) { sbMap.invalidateSize(); fitWorld(); } },200); });
+    // Re-measure the map on resize without moving the user's chosen camera position.
+    let _wt; window.addEventListener('resize', ()=>{ clearTimeout(_wt); _wt=setTimeout(()=>{ if(sbMap){ sbMap.invalidateSize(); renderMapMarkers(); renderTravelModeIndicators(); } },200); });
   </script>
 </body>
 </html>
