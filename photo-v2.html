@@ -1075,7 +1075,7 @@
         </div>
         <div class="map-memory-actions" aria-label="Journey playback controls">
           <button id="journeyPrev" type="button" onclick="journeyStep(-1)" aria-label="Previous journey memory"><i class="fa-solid fa-chevron-left"></i></button>
-          <button id="routeMotionBtn" type="button" onclick="toggleJourneyMotion()" aria-pressed="false" aria-label="Play my journey"><i class="fa-solid fa-play"></i><span>Play my journey</span></button>
+          <button id="routeMotionBtn" type="button" onclick="enterWatchMode()" aria-pressed="false" aria-label="Watch my journey"><i class="fa-solid fa-play"></i><span>Watch my journey</span></button>
           <button id="journeyNext" type="button" onclick="journeyStep(1)" aria-label="Next journey memory"><i class="fa-solid fa-chevron-right"></i></button>
           <button id="journeyRestart" type="button" onclick="restartJourneyPlayback()" aria-label="Restart my journey" title="Restart my journey"><i class="fa-solid fa-rotate-left"></i></button>
         </div>
@@ -1438,11 +1438,16 @@
     .we-actions #weReplay{ background:linear-gradient(150deg,var(--brand),var(--brand-2)); color:#fff;
       box-shadow:0 6px 18px rgba(var(--brand-glow),.45); }
     .we-actions #weExit{ background:var(--glass); border:1px solid var(--glass-border); color:var(--ink); }
-    /* stage geometry during Watch — mobile: near-fullscreen scenes */
+    /* stage geometry during Watch — mobile: true full-bleed scenes, no dead bands */
     @media (max-width:1023px){
-      body.watch #mapPanel{ height:calc(100dvh - 170px) !important; }
-      body.watch #photoStage{ min-height:calc(100dvh - 170px) !important; }
+      body.watch main{ padding-top:4px !important; padding-bottom:0 !important; }
+      body.watch #rulerSec{ margin-bottom:6px; }
+      body.watch #mapPanel{ height:calc(100dvh - 148px) !important; }
+      body.watch #photoStage{ min-height:calc(100dvh - 148px) !important; }
     }
+    /* arrival photograph breathes — gentle Ken-Burns drift in Watch photo phase */
+    body.watch[data-watch-phase="photo"] #stageImg{ animation:kenburns 16s ease-out alternate infinite; }
+    html.reduce-motion body.watch[data-watch-phase="photo"] #stageImg{ animation:none !important; }
     /* desktop: 65% map / 35% photo while travelling; photo grows on arrival
        (#stageWrap is the real together-grid container) */
     @media (min-width:1180px){
@@ -3791,9 +3796,9 @@
     let watchSpeed=(function(){ try{ return sessionStorage.getItem('sb-watch-speed')||'normal'; }catch(_){ return 'normal'; } })();
     // ONE timing table drives all cinematic pacing (travel scales with distance; dwell = photo time)
     const WATCH_SPEEDS={
-      relaxed:{ k:2.6, min:6000, max:18000, dwell:9500 },
-      normal :{ k:1.6, min:3800, max:12000, dwell:7000 },
-      quick  :{ k:0.9, min:2200, max: 8000, dwell:5000 },
+      relaxed:{ k:3.0, min:7000, max:20000, dwell:10000 },
+      normal :{ k:2.0, min:4800, max:14000, dwell:7500 },
+      quick  :{ k:1.1, min:2600, max: 9000, dwell:5200 },
     };
     function announce(msg){ const el=document.getElementById('srLive'); if(el) el.textContent=msg; }
     // real vehicles never move at constant speed: slow-out → cruise → slow-in
@@ -3807,9 +3812,30 @@
       if(!sbMap || from===to || from==null) return false;
       const a=photos[from], b=photos[to];
       if(!hasCoords(a)||!hasCoords(b)) return false;
-      const hop=haversineKm(a,b); if(hop<8) return false;      // negligible move — skip
+      let hop=haversineKm(a,b); if(hop<8) return false;        // negligible move — skip
       const tm=modeOf(to);   // honors the specific choice (taxi / motorbike / helicopter …)
-      const pts=legPath(a,b,tm.icon), n=pts.length-1;
+      // NEVER SKIP A VISITED PLACE: a jump spanning several memories flies
+      // THROUGH each intermediate located stop in date order — one continuous
+      // path with a brief settle + pin pulse at every place actually visited.
+      let pts, stops=[];
+      const dir=to>from?1:-1, gap=Math.abs(to-from);
+      if(gap>1){
+        const chain=[from];
+        for(let i=from+dir; dir>0? i<to : i>to; i+=dir){ if(hasCoords(photos[i]) && haversineKm(photos[chain[chain.length-1]],photos[i])>=8) chain.push(i); }
+        chain.push(to);
+        pts=[]; hop=0;
+        for(let c=0;c<chain.length-1;c++){
+          const p1=photos[chain[c]], p2=photos[chain[c+1]];
+          const seg=legPath(p1,p2,modeOf(chain[c+1]).icon);
+          hop+=haversineKm(p1,p2);
+          if(c>0) seg.shift();                       // no duplicate joint points
+          pts=pts.concat(seg);
+          if(c<chain.length-2) stops.push({ ptIndex:pts.length-1, memIdx:chain[c+1] });
+        }
+      } else {
+        pts=legPath(a,b,tm.icon);
+      }
+      const n=pts.length-1;
       if(!journeyMotionEnabled){ if(currentLine) currentLine.setLatLngs(pts); return false; }
       _travelDirX = b.lng===a.lng ? 0 : (b.lng>a.lng ? 1 : -1);   // photos enter from the travel direction
       if(!vehicle){ vehicle=L.marker([a.lat,a.lng], {interactive:false, zIndexOffset:600, opacity:0}).addTo(sbMap); }
@@ -3819,7 +3845,7 @@
       if(REDUCED){ if(currentLine) currentLine.setLatLngs(pts); vehicle.setOpacity(0); if(onLand) onLand(); return false; }
       // Phase A/B — frame BOTH ends of the trip while the vehicle "boards"
       // (short hops between close places zoom IN to city level so the move is clearly visible)
-      if(!mapLocked && sbMap.getSize().x) sbMap.flyToBounds(L.latLngBounds([[a.lat,a.lng],[b.lat,b.lng]]), { paddingTopLeft:[70,70], paddingBottomRight:[70, 70+peekPadBottom()], duration:1.0, maxZoom: hop>1200 ? 6 : zoomForHop(hop)+1 });
+      if(!mapLocked && sbMap.getSize().x) sbMap.flyToBounds(L.latLngBounds(pts), { paddingTopLeft:[70,70], paddingBottomRight:[70, 70+peekPadBottom()], duration:1.0, maxZoom: hop>1200 ? 6 : zoomForHop(hop)+1 });
       if(currentLine) currentLine.setLatLngs([]);
       // 🎬 pacing comes from ONE speed table (Watch mode picks Relaxed/Normal/Quick)
       const S = WATCH_SPEEDS[watchMode ? watchSpeed : 'normal'];
@@ -3832,11 +3858,21 @@
       try{ new Image().src=imgFor(b.id); }catch(_){ }   // preload the arrival photo — no blank frame on landing
       // pausable flight state — Pause stores the elapsed position, Resume re-enters it exactly
       _vehState={ t0:performance.now()+delay, pausedAt:0, step:null };
+      let si=0;   // next intermediate stop to greet
       function step(now){
         if(!_vehState) return;
         if(now<_vehState.t0){ _vehRAF=requestAnimationFrame(step); return; }
         const p=Math.min(1,(now-_vehState.t0)/cruise), e=easeTravel(p), idx=Math.max(1,Math.min(n,Math.round(e*n)));
         vehicle.setLatLng(pts[idx]);
+        // greet every visited place we pass through — pulse its pin, name it
+        while(si<stops.length && idx>=stops[si].ptIndex){
+          const s=stops[si++], sp=photos[s.memIdx];
+          const m=(typeof markers!=='undefined')&&markers[s.memIdx], el=m&&m.getElement&&m.getElement();
+          const pin=el&&(el.querySelector('.map-active-marker')||el.firstElementChild);
+          if(pin&&!REDUCED){ pin.classList.add('pin-land'); setTimeout(()=>pin.classList.remove('pin-land'),650); }
+          const js=document.getElementById('jsCur'); if(js&&sp) js.textContent=sp.name;
+          if(sp) announce(`Passing ${sp.name}`);
+        }
         // the plane BANKS along the curve — nosing where it is heading right now
         if(isPlane){
           const el=vehicle.getElement && vehicle.getElement(), ic=el && el.querySelector('i');
