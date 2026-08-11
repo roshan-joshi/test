@@ -1400,6 +1400,65 @@
     #journeyStrip .js-track{ position:relative; flex:2; height:3px; border-radius:2px; background:var(--c-line); overflow:hidden; }
     #journeyStrip .js-track b{ position:absolute; inset:0 auto 0 0; width:0%; background:var(--brand); border-radius:2px; }
     body.watch #rulerSec .rl-bar, body.watch #rulerSec .rl-nav, body.watch #rulerSec .rl-latest{ display:none !important; }
+    /* ===== WATCH MODE — cinema: hide every non-essential control ===== */
+    body.watch #pageHeader, body.watch .watch-hero, body.watch #filters, body.watch #chapterRail,
+    body.watch #toolbar, body.watch #heroActions, body.watch #photosSec, body.watch #mapMemoryCard,
+    body.watch #mapAll, body.watch #mapLock, body.watch #mapLockBadge, body.watch #mobileDock,
+    body.watch #stagePlay, body.watch .leaflet-control-zoom, body.watch #siteFooter{ display:none !important; }
+    body.watch{ padding-bottom:0 !important; }
+    body.watch #experienceStage{ position:relative; }
+    /* playback bar */
+    #watchBar{ position:fixed; left:50%; bottom:calc(14px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+      z-index:2600; display:flex; align-items:center; gap:6px; padding:8px 10px; border-radius:999px;
+      background:var(--glass-strong); border:1px solid var(--glass-border);
+      backdrop-filter:blur(20px) saturate(150%); -webkit-backdrop-filter:blur(20px) saturate(150%);
+      box-shadow:0 12px 40px rgba(0,0,0,.45); transition:opacity .4s; }
+    #watchBar button{ display:grid; place-items:center; width:44px; height:44px; border-radius:50%;
+      color:var(--ink-2); font-size:15px; }
+    #watchBar button:hover{ color:var(--ink); background:var(--glass); }
+    #watchBar #wbPause{ width:52px; height:52px; background:linear-gradient(150deg,var(--brand),var(--brand-2));
+      color:#fff; box-shadow:0 0 0 4px rgba(var(--brand-glow),.2), 0 6px 18px rgba(var(--brand-glow),.5); }
+    #watchBar .wb-speed select{ min-height:44px; border-radius:999px; padding:0 12px; font-size:12.5px; font-weight:700;
+      background:var(--glass); border:1px solid var(--glass-border); color:var(--ink); }
+    /* idle: everything fades away except Pause (WCAG pause-stop-hide) */
+    #watchBar.idle button:not(#wbPause), #watchBar.idle .wb-speed{ display:none; }
+    #watchBar.idle{ background:transparent; border-color:transparent; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+    /* end card */
+    #watchEnd{ position:fixed; inset:0; z-index:2700; display:grid; place-items:center; padding:22px;
+      background:rgba(6,9,13,.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+    #watchEnd[hidden]{ display:none; }
+    .we-card{ max-width:420px; width:100%; border-radius:26px; padding:26px 24px; text-align:center; }
+    .we-kicker{ font-size:10.5px; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-3); }
+    .we-card h2{ margin-top:8px; font-size:26px; font-weight:800; color:var(--ink); }
+    .we-card #weStats{ margin-top:8px; font-size:14px; color:var(--ink-2); }
+    .we-actions{ margin-top:18px; display:flex; gap:10px; justify-content:center; }
+    .we-actions button{ min-height:44px; padding:0 20px; border-radius:999px; font-weight:800; font-size:14px; }
+    .we-actions #weReplay{ background:linear-gradient(150deg,var(--brand),var(--brand-2)); color:#fff;
+      box-shadow:0 6px 18px rgba(var(--brand-glow),.45); }
+    .we-actions #weExit{ background:var(--glass); border:1px solid var(--glass-border); color:var(--ink); }
+    /* stage geometry during Watch — mobile: near-fullscreen scenes */
+    @media (max-width:1023px){
+      body.watch #mapPanel{ height:calc(100dvh - 170px) !important; }
+      body.watch #photoStage{ min-height:calc(100dvh - 170px) !important; }
+    }
+    /* desktop: 65% map / 35% photo while travelling; photo grows on arrival
+       (#stageWrap is the real together-grid container) */
+    @media (min-width:1180px){
+      body.watch #stageWrap{
+        display:grid; grid-template-columns:minmax(0,35fr) minmax(0,65fr); column-gap:18px; align-items:stretch;
+        transition:grid-template-columns .8s cubic-bezier(.3,.7,.3,1);
+      }
+      body.watch[data-watch-phase="photo"] #stageWrap{ grid-template-columns:minmax(0,62fr) minmax(0,38fr); }
+      body.watch #stageWrap #photoStage{ grid-column:1; position:relative; height:64vh !important; }
+      body.watch #stageWrap #mapPanel{ grid-column:2; height:64vh !important; margin-top:0 !important; }
+      body.watch #stageWrap #rulerSec{ grid-column:1 / -1; }
+    }
+    /* 1024–1179px: stacked scenes like mobile, generous heights */
+    @media (min-width:1024px) and (max-width:1179px){
+      body.watch #mapPanel{ height:58vh !important; }
+      body.watch #photoStage{ min-height:58vh !important; }
+    }
+    html.reduce-motion body.watch #stageWrap{ transition:none; }
   </style>
   <div id="tvDash" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tvDashTitle" tabindex="-1">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeTvDash()"></div>
@@ -1671,6 +1730,35 @@
   </div>
 
   <!-- ===================== FOOTER ===================== -->
+  <!-- WATCH MODE — floating playback bar (auto-hides; Pause stays reachable) -->
+  <div id="watchBar" hidden role="toolbar" aria-label="Journey playback controls">
+    <button id="wbPrev" type="button" onclick="watchStep(-1)" aria-label="Previous memory"><i class="fa-solid fa-backward-step" aria-hidden="true"></i></button>
+    <button id="wbPause" type="button" onclick="watchTogglePause()" aria-label="Pause"><i class="fa-solid fa-pause" aria-hidden="true"></i></button>
+    <button id="wbNext" type="button" onclick="watchStep(1)" aria-label="Next memory"><i class="fa-solid fa-forward-step" aria-hidden="true"></i></button>
+    <button id="wbReplay" type="button" onclick="watchReplayLeg()" aria-label="Replay this leg"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+    <label class="wb-speed"><span class="sr-only">Playback speed</span>
+      <select id="wbSpeed" onchange="setWatchSpeed(this.value)" aria-label="Playback speed">
+        <option value="relaxed">Relaxed</option><option value="normal" selected>Normal</option><option value="quick">Quick</option>
+      </select>
+    </label>
+    <button id="wbSound" type="button" onclick="toggleWatchSound()" aria-pressed="false" aria-label="Ambient sound (off)"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i></button>
+    <button id="wbReduce" type="button" onclick="toggleReducedPref()" aria-pressed="false" aria-label="Reduce motion"><i class="fa-solid fa-universal-access" aria-hidden="true"></i></button>
+    <button id="wbExit" type="button" onclick="exitWatchMode()" aria-label="Exit playback"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+  </div>
+
+  <!-- WATCH MODE — the ending -->
+  <div id="watchEnd" hidden role="dialog" aria-modal="false" aria-labelledby="weTitle">
+    <div class="we-card liquid-light">
+      <p class="we-kicker">SYSTEMBOOM · Memory of Life</p>
+      <h2 id="weTitle">Your journey so far</h2>
+      <p id="weStats">—</p>
+      <div class="we-actions">
+        <button id="weReplay" type="button" onclick="watchReplayAll()"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Replay</button>
+        <button id="weExit" type="button" onclick="exitWatchMode()"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Exit</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MOBILE DOCK — brand-reference bottom nav: glass bar, elevated glowing Watch center -->
   <nav id="mobileDock" aria-label="Primary" class="lg:hidden">
     <button type="button" data-dock="together" onclick="setStageView('together',true)" aria-pressed="false" aria-label="Together view"><i class="fa-solid fa-table-columns" aria-hidden="true"></i><span>Together</span></button>
@@ -1922,7 +2010,9 @@
     let active = photos.length-1, playing = false, timer = null,
         viewMode = 'horizontal', playDir = 1, currentFilter = 'all', searchQuery = '';
     // honor the OS "reduce motion" setting → skip the smooth glide, jump instantly
-    const REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || new URLSearchParams(location.search).has('reduce-motion');
+    const REDUCED_SYS = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || new URLSearchParams(location.search).has('reduce-motion');
+    let REDUCED = REDUCED_SYS || (function(){ try{ return sessionStorage.getItem('sb-reduce')==='1'; }catch(_){ return false; } })();
+    if(REDUCED) document.documentElement.classList.add('reduce-motion');
     if(REDUCED) document.documentElement.classList.add('reduce-motion');
 
     function matchesFilter(p){
@@ -3380,8 +3470,169 @@
       const part=h<12?'morning':h<17?'afternoon':'evening';
       el.textContent=`Good ${part}, ${ME.name.split(' ')[0]}`;
     })();
-    // Watch My Journey entry — upgraded to the full cinematic mode in a later phase
-    function enterWatchMode(){ toggleJourneyMotion(); }
+    /* ================= WATCH MY JOURNEY — cinematic controller ================= */
+    function enterWatchMode(){
+      if(watchMode) return;
+      if(photos.filter(hasCoords).length<2){ toast('Add another located memory to watch your journey','fa-location-dot'); return; }
+      watchMode=true; watchPaused=false;
+      _preWatchView = (typeof stageView!=='undefined') ? stageView : 'together';
+      document.body.classList.add('watch');
+      const bar=document.getElementById('watchBar'); if(bar){ bar.hidden=false; bar.classList.remove('idle'); }
+      const strip=document.getElementById('journeyStrip'); if(strip){ strip.hidden=false; }
+      setWatchPhase('photo');                       // begin on the current photograph
+      updateJourneyStrip(0);
+      startJourneyPlayback();                       // existing engine drives advance + flights
+      clearTimeout(journeyTimer);
+      scheduleJourneyAdvance();                     // full dwell on the opening photo
+      startWatchIdle();
+      if(_watchSoundOn) padStart();
+      const p=document.getElementById('wbPause'); if(p) p.focus();
+      announce('Watching your journey. Press space to pause, escape to exit.');
+    }
+    function exitWatchMode(){
+      if(!watchMode) return;
+      watchMode=false; watchPaused=false;
+      pauseJourneyPlayback();
+      padStop(true);
+      hideWatchEnd();
+      document.body.classList.remove('watch');
+      delete document.body.dataset.watchPhase;
+      const bar=document.getElementById('watchBar'); if(bar) bar.hidden=true;
+      const strip=document.getElementById('journeyStrip'); if(strip) strip.hidden=true;
+      stopWatchIdle();
+      setStageView(_preWatchView||'together', false);
+      setTimeout(()=>{ if(sbMap){ sbMap.invalidateSize(); } },120);
+      const hero=document.getElementById('watchHero');
+      if(hero && hero.offsetParent) hero.focus(); else { const d=document.getElementById('dockWatch'); if(d) d.focus(); }
+      announce('Journey playback ended.');
+    }
+    function setWatchPhase(ph){
+      watchPhase=ph; document.body.dataset.watchPhase=ph;
+      const mobile=window.matchMedia('(max-width:1023px)').matches;
+      // mobile alternates full map (travel) ↔ full photo (arrival);
+      // desktop stays side-by-side and CSS shifts the 65/35 balance
+      setStageView(mobile ? (ph==='travel'?'map':'photo') : 'together', false);
+      setTimeout(()=>{ if(sbMap) sbMap.invalidateSize(); }, ph==='travel'?90:520);
+    }
+    function watchTogglePause(){
+      if(!watchMode) return;
+      watchPaused=!watchPaused;
+      const b=document.getElementById('wbPause');
+      if(b){ b.setAttribute('aria-label', watchPaused?'Resume':'Pause');
+        const i=b.querySelector('i'); if(i) i.className='fa-solid '+(watchPaused?'fa-play':'fa-pause'); }
+      if(watchPaused){
+        // freeze: flight keeps its exact progress; dwell keeps its remaining time
+        if(_vehRAF){ cancelAnimationFrame(_vehRAF); _vehRAF=null; if(_vehState) _vehState.pausedAt=performance.now(); }
+        if(journeyTimer){ clearTimeout(journeyTimer); journeyTimer=null;
+          _journeyTimerDelay=Math.max(400,_journeyTimerDelay-(performance.now()-_journeyTimerAt)); }
+        padDuck(true);
+        announce('Paused.');
+      } else {
+        if(_vehState && _vehState.step && _vehState.pausedAt){
+          _vehState.t0 += performance.now()-_vehState.pausedAt; _vehState.pausedAt=0;
+          _vehRAF=requestAnimationFrame(_vehState.step);
+        } else {
+          scheduleJourneyAdvance(_journeyTimerDelay||1200);
+        }
+        padDuck(false);
+        announce('Resumed.');
+      }
+    }
+    function _cancelFlight(){
+      if(_vehRAF){ cancelAnimationFrame(_vehRAF); _vehRAF=null; }
+      _vehState=null; if(vehicle) vehicle.setOpacity(0);
+    }
+    function watchStep(dir){
+      if(!watchMode) return;
+      hideWatchEnd(); _cancelFlight(); clearTimeout(journeyTimer); journeyTimer=null;
+      const next=active+dir;
+      if(next<0||next>=photos.length) return;
+      watchPaused=false; const b=document.getElementById('wbPause'); if(b){ const i=b.querySelector('i'); if(i) i.className='fa-solid fa-pause'; b.setAttribute('aria-label','Pause'); }
+      setActive(next,'journey');
+    }
+    function watchReplayLeg(){
+      if(!watchMode||active<1) return;
+      hideWatchEnd(); _cancelFlight(); clearTimeout(journeyTimer); journeyTimer=null;
+      watchPaused=false; prevActive=active-1;
+      const cur=active; setActive(cur,'journey');
+    }
+    function setWatchSpeed(v){
+      if(!WATCH_SPEEDS[v]) return; watchSpeed=v;
+      try{ sessionStorage.setItem('sb-watch-speed',v); }catch(_){ }
+      announce(`Speed: ${v}`);
+    }
+    function toggleReducedPref(){
+      REDUCED=!REDUCED;
+      try{ sessionStorage.setItem('sb-reduce', REDUCED?'1':'0'); }catch(_){ }
+      document.documentElement.classList.toggle('reduce-motion', REDUCED);
+      const b=document.getElementById('wbReduce'); if(b) b.setAttribute('aria-pressed', String(REDUCED));
+      toast(REDUCED?'Reduced motion on — gentle fades only':'Full motion on','fa-universal-access');
+    }
+    /* Watch end-card — every film needs an ending */
+    function showWatchEnd(){
+      const e=document.getElementById('watchEnd'); if(!e) return;
+      const kmT=km(_cumKm[photos.length-1]||0);
+      const pc=new Set(photos.map(p=>p.loc)).size;
+      const yrs=photos.map(p=>p.year); const span=Math.max(1,Math.max(...yrs)-Math.min(...yrs));
+      const s=document.getElementById('weStats'); if(s) s.textContent=`${kmT} km travelled · ${pc} places · ${span} years of memories`;
+      e.hidden=false; padDuck(true);
+      const rb=document.getElementById('weReplay'); if(rb) rb.focus();
+      announce('Your journey so far — playback complete.');
+    }
+    function hideWatchEnd(){ const e=document.getElementById('watchEnd'); if(e) e.hidden=true; }
+    function watchReplayAll(){ hideWatchEnd(); padDuck(false); restartJourneyPlayback(); }
+    /* controls auto-hide: fade after 3s idle; Pause alone stays reachable */
+    function startWatchIdle(){
+      const wake=()=>{ const bar=document.getElementById('watchBar'); if(!bar||bar.hidden) return;
+        bar.classList.remove('idle'); clearTimeout(_watchIdleT);
+        _watchIdleT=setTimeout(()=>bar.classList.add('idle'), 3000); };
+      document.addEventListener('pointermove', wake, {passive:true});
+      document.addEventListener('touchstart', wake, {passive:true});
+      document.addEventListener('keydown', wake);
+      window._watchWake=wake; wake();
+    }
+    function stopWatchIdle(){
+      clearTimeout(_watchIdleT);
+      if(window._watchWake){ document.removeEventListener('pointermove',window._watchWake); document.removeEventListener('touchstart',window._watchWake); document.removeEventListener('keydown',window._watchWake); window._watchWake=null; }
+    }
+    /* keyboard: Space pause · Esc exit · ← → prev/next (Watch mode only) */
+    document.addEventListener('keydown', e=>{
+      if(!watchMode) return;
+      const t=e.target, tag=(t.tagName||'').toLowerCase();
+      if(tag==='input'||tag==='textarea'||tag==='select'||t.isContentEditable) return;
+      if(e.key===' '){ e.preventDefault(); watchTogglePause(); }
+      else if(e.key==='Escape'){ e.preventDefault(); exitWatchMode(); }
+      else if(e.key==='ArrowLeft'){ e.preventDefault(); watchStep(-1); }
+      else if(e.key==='ArrowRight'){ e.preventDefault(); watchStep(1); }
+    }, true);
+    /* ===== ambient sound — generated Web-Audio pad; OFF by default, never autoplays ===== */
+    let _audioCtx=null,_audioGain=null;
+    let _watchSoundOn=(function(){ try{ return sessionStorage.getItem('sb-watch-sound')==='1'; }catch(_){ return false; } })();
+    function padStart(){
+      try{
+        if(!_audioCtx){
+          const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+          _audioCtx=new AC();
+          const g=_audioCtx.createGain(); g.gain.value=0; g.connect(_audioCtx.destination);
+          const f=_audioCtx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=340; f.Q.value=.4; f.connect(g);
+          [110,164.81,220].forEach((fr,i)=>{ const o=_audioCtx.createOscillator(); o.type='sine'; o.frequency.value=fr; o.detune.value=(i-1)*5; o.connect(f); o.start(); });
+          _audioGain=g;
+        }
+        _audioCtx.resume();
+        _audioGain.gain.cancelScheduledValues(_audioCtx.currentTime);
+        _audioGain.gain.linearRampToValueAtTime(0.045,_audioCtx.currentTime+1.4);
+      }catch(_){ }
+    }
+    function padStop(fast){ try{ if(_audioGain&&_audioCtx){ _audioGain.gain.cancelScheduledValues(_audioCtx.currentTime); _audioGain.gain.linearRampToValueAtTime(0.0001,_audioCtx.currentTime+(fast?0.25:0.9)); } }catch(_){ } }
+    function padDuck(down){ try{ if(_audioGain&&_audioCtx&&_watchSoundOn&&watchMode){ _audioGain.gain.cancelScheduledValues(_audioCtx.currentTime); _audioGain.gain.linearRampToValueAtTime(down?0.012:0.045,_audioCtx.currentTime+0.5); } }catch(_){ } }
+    function toggleWatchSound(){
+      _watchSoundOn=!_watchSoundOn;
+      try{ sessionStorage.setItem('sb-watch-sound',_watchSoundOn?'1':'0'); }catch(_){ }
+      const b=document.getElementById('wbSound');
+      if(b){ b.setAttribute('aria-pressed',String(_watchSoundOn));
+        const i=b.querySelector('i'); if(i) i.className='fa-solid '+(_watchSoundOn?'fa-volume-low':'fa-volume-xmark'); }
+      if(_watchSoundOn && watchMode) padStart(); else padStop();
+    }
 
     /* ============ MEMORY MAP (Leaflet) ============ */
     const MAP_DETAIL_MODES=['journey','explore'];
@@ -3494,7 +3745,16 @@
     //  A boarding (vehicle pops in, camera pulls back) · B takeoff (accelerate)
     //  C cruise (steady speed, plane banks with the curve, odometer ticks up)
     //  D landing (decelerate, camera glides in, pin drops with a pulse)
-    let vehicle, _vehRAF, _mapReady=false, _travelDirX=0, journeyMotionEnabled=false, journeyPlaying=false, journeyTimer=null;
+    let vehicle, _vehRAF, _vehState=null, _mapReady=false, _travelDirX=0, journeyMotionEnabled=false, journeyPlaying=false, journeyTimer=null;
+    let watchMode=false, watchPhase='photo', watchPaused=false, _preWatchView=null, _journeyTimerAt=0, _journeyTimerDelay=0, _watchIdleT=null;
+    let watchSpeed=(function(){ try{ return sessionStorage.getItem('sb-watch-speed')||'normal'; }catch(_){ return 'normal'; } })();
+    // ONE timing table drives all cinematic pacing (travel scales with distance; dwell = photo time)
+    const WATCH_SPEEDS={
+      relaxed:{ k:2.6, min:6000, max:18000, dwell:9500 },
+      normal :{ k:1.6, min:3800, max:12000, dwell:7000 },
+      quick  :{ k:0.9, min:2200, max: 8000, dwell:5000 },
+    };
+    function announce(msg){ const el=document.getElementById('srLive'); if(el) el.textContent=msg; }
     // real vehicles never move at constant speed: slow-out → cruise → slow-in
     function easeTravel(t){
       const a=.18, d=.20, v=1/(1-a/2-d/2);
@@ -3518,16 +3778,22 @@
       if(REDUCED){ if(currentLine) currentLine.setLatLngs(pts); vehicle.setOpacity(0); if(onLand) onLand(); return false; }
       // Phase A/B — frame BOTH ends of the trip while the vehicle "boards"
       // (short hops between close places zoom IN to city level so the move is clearly visible)
-      if(!mapLocked) sbMap.flyToBounds(L.latLngBounds([[a.lat,a.lng],[b.lat,b.lng]]), { paddingTopLeft:[70,70], paddingBottomRight:[70, 70+peekPadBottom()], duration:1.0, maxZoom: hop>1200 ? 6 : zoomForHop(hop)+1 });
+      if(!mapLocked && sbMap.getSize().x) sbMap.flyToBounds(L.latLngBounds([[a.lat,a.lng],[b.lat,b.lng]]), { paddingTopLeft:[70,70], paddingBottomRight:[70, 70+peekPadBottom()], duration:1.0, maxZoom: hop>1200 ? 6 : zoomForHop(hop)+1 });
       if(currentLine) currentLine.setLatLngs([]);
-      const cruise=Math.min(8000, Math.max(3800, hop*1.6)), delay=1050;   // 🎬 cinematic pacing
+      // 🎬 pacing comes from ONE speed table (Watch mode picks Relaxed/Normal/Quick)
+      const S = WATCH_SPEEDS[watchMode ? watchSpeed : 'normal'];
+      const cruise=Math.min(S.max, Math.max(S.min, hop*S.k)), delay=1050;
       const isPlane = tm.icon==='fa-plane-up';
       const odo=document.getElementById('tvTotal');
       const kmA=_cumKm[from]||0, kmB=_cumKm[to]||kmA;
-      const t0=performance.now()+delay;
-      (function step(now){
-        if(now<t0){ _vehRAF=requestAnimationFrame(step); return; }
-        const p=Math.min(1,(now-t0)/cruise), e=easeTravel(p), idx=Math.max(1,Math.min(n,Math.round(e*n)));
+      if(watchMode) setWatchPhase('travel');
+      announce(`Travelling to ${b.name}, ${b.loc}`);
+      // pausable flight state — Pause stores the elapsed position, Resume re-enters it exactly
+      _vehState={ t0:performance.now()+delay, pausedAt:0, step:null };
+      function step(now){
+        if(!_vehState) return;
+        if(now<_vehState.t0){ _vehRAF=requestAnimationFrame(step); return; }
+        const p=Math.min(1,(now-_vehState.t0)/cruise), e=easeTravel(p), idx=Math.max(1,Math.min(n,Math.round(e*n)));
         vehicle.setLatLng(pts[idx]);
         // the plane BANKS along the curve — nosing where it is heading right now
         if(isPlane){
@@ -3539,17 +3805,20 @@
         updateJourneyStrip(e);
         if(p<1){ _vehRAF=requestAnimationFrame(step); }
         else {
-          _vehRAF=null;
+          _vehRAF=null; _vehState=null;
           if(currentLine) currentLine.setLatLngs(pts);
           if(odo) odo.textContent = km(kmB) + ' km';
           updateJourneyStrip(1);
-          // Phase D — land: camera glides down, vehicle fades, pin drops with a pulse
-          // land at a zoom that matches the trip — city level after a short hop
-          if(!mapLocked){ const z=zoomForHop(hop); sbMap.flyTo(padTarget(b.lat,b.lng,z), z, { duration:1.0 }); }
+          announce(`Arrived: ${b.name}`);
+          // Phase D — land: camera glides down, vehicle fades, pin settles gently
+          // (guarded: if the pane went hidden mid-flight, skip the camera glide)
+          if(!mapLocked && sbMap.getSize().x){ const z=zoomForHop(hop); sbMap.flyTo(padTarget(b.lat,b.lng,z), z, { duration:1.0 }); }
           setTimeout(()=>vehicle.setOpacity(0), 250);
           if(onLand) onLand();
         }
-      })(performance.now());
+      }
+      _vehState.step=step;
+      _vehRAF=requestAnimationFrame(step);
       return true;   // we took over the camera
     }
 
@@ -3560,11 +3829,16 @@
       b.title=journeyPlaying?'Pause my journey':'Play my journey';
       b.innerHTML=`<i class="fa-solid fa-${journeyPlaying?'pause':'play'}"></i><span>${journeyPlaying?'Pause journey':'Play my journey'}</span>`;
     }
-    function scheduleJourneyAdvance(delay=Math.max(2400,SLIDE_MS*1.5)){
+    function scheduleJourneyAdvance(delay){
+      if(delay==null) delay = watchMode ? WATCH_SPEEDS[watchSpeed].dwell : Math.max(2400,SLIDE_MS*1.5);
       clearTimeout(journeyTimer); journeyTimer=null;
-      if(!journeyPlaying) return;
-      if(active>=photos.length-1){ pauseJourneyPlayback(true); return; }
-      journeyTimer=setTimeout(()=>{ if(journeyPlaying) setActive(active+1,'journey'); },delay);
+      if(!journeyPlaying || watchPaused) return;
+      if(active>=photos.length-1){
+        if(watchMode){ journeyTimer=setTimeout(showWatchEnd, delay); _journeyTimerAt=performance.now(); _journeyTimerDelay=delay; return; }
+        pauseJourneyPlayback(true); return;
+      }
+      _journeyTimerAt=performance.now(); _journeyTimerDelay=delay;
+      journeyTimer=setTimeout(()=>{ if(journeyPlaying&&!watchPaused) setActive(active+1,'journey'); },delay);
     }
     function startJourneyPlayback(){
       if(photos.filter(hasCoords).length<2){ toast('Add another located memory to play your journey','fa-location-dot'); return; }
@@ -3593,6 +3867,7 @@
     }
     function journeyPlaybackLanded(){
       renderMapMarkers(); updateMapMemoryCard();
+      if(watchMode) setWatchPhase('photo');   // arrival → the photograph takes the stage
       if(journeyPlaying) scheduleJourneyAdvance();
       updateJourneyMotionButton();
     }
@@ -3774,8 +4049,18 @@
       if(c && c.classList.contains('expanded')) togglePeek();
     });
     function flyToActive(){
-      if(!sbMap) return; closeCityMemoryChooser(false); const dest=active,p=photos[active]; updateMapMemoryCard();
+      if(!sbMap) return;
+      // a deferred re-entry (e.g. setStageView's delayed camera sync) must never
+      // "land" a leg the vehicle is still flying — the flight owns the camera
+      if(_vehState && prevActive===active){ return; }
+      closeCityMemoryChooser(false); const dest=active,p=photos[active]; updateMapMemoryCard();
       if(!hasCoords(p)){ showMapNotice(`${p.name} has coordinates missing. Location not named.`); updateJourney(); renderMapMarkers(); prevActive=active; if(journeyPlaying) scheduleJourneyAdvance(); return; }
+      // WATCH: a new leg must flip the stage to the map BEFORE the size guard,
+      // otherwise the hidden (photo-phase) map skips the whole flight on mobile.
+      if(watchMode && journeyPlaying && !watchPaused && prevActive!=null && prevActive!==active){
+        setWatchPhase('travel');
+        sbMap.invalidateSize({animate:false});
+      }
       // map pane hidden (Photo mode) → its container is 0×0 and flyTo would throw NaN,
       // aborting the rest of setActive. If the size is merely a stale cache (pane just
       // shown), one invalidateSize heals it; if truly hidden, skip camera work.
