@@ -1006,6 +1006,14 @@
           <button id="rlLatest" class="rl-nav tip" data-tip="Jump to latest" aria-label="Jump to the most recent photo"><i class="fa fa-angles-right"></i></button>
           <button id="rlAdd" class="rl-nav rl-add-btn tip" onclick="openUpload()" data-tip="Add today’s memory" aria-label="Add a memory"><i class="fa fa-plus"></i></button>
         </div>
+        <!-- Watch mode: the same section becomes a quiet journey-progress strip -->
+        <div id="journeyStrip" class="liquid-light rounded-[26px]" hidden>
+          <span class="js-place prev" id="jsPrev">—</span>
+          <span class="js-track" aria-hidden="true"><b id="jsFill"></b></span>
+          <span class="js-place cur" id="jsCur">—</span>
+          <span class="js-track" aria-hidden="true"><b id="jsFill2" style="width:0%"></b></span>
+          <span class="js-place next" id="jsNext">—</span>
+        </div>
         <div id="srLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
       </section>
 
@@ -1364,6 +1372,34 @@
     #heroAdd{ background:var(--glass-strong) !important; color:var(--ink) !important;
       border:1px solid var(--glass-border) !important; box-shadow:none !important; }
     @media (max-width:1023px){ #heroAdd{ display:none !important; } } /* the dock owns Add on phones */
+    /* ===== RULER — slim, neutral; red only for the selected date & playhead ===== */
+    .rl-yseg{ height:46px; flex-basis:44px; }
+    .rl-tk{ bottom:15px; height:7px; background:var(--c-line); }
+    .rl-tk.rl-maj{ height:12px; opacity:.5; }
+    .rl-yr{ bottom:1px; font-size:10px; color:var(--ink-3); opacity:.85; }
+    .rl-yr-dec{ opacity:1; color:var(--ink-2); }
+    .rl-yseg.rl-band{ background:rgba(120,150,180,.045); }
+    html.dark .rl-yseg.rl-band{ background:rgba(255,255,255,.03); }
+    .rl-dot{ bottom:21px; width:10px; height:10px;
+      background:var(--steel) !important; border:2px solid var(--bg-0) !important; box-shadow:none !important; }
+    .rl-dot:hover{ transform:translate(-50%,-2px) scale(1.15); background:var(--ink-2) !important; box-shadow:none !important; }
+    .rl-dot.active{ transform:translate(-50%,-2px) scale(1.35);
+      background:var(--brand) !important; box-shadow:0 0 8px 1px rgba(var(--brand-glow),.55) !important; }
+    .rl-dot-fav{ background:var(--gold) !important; }
+    .rl-dot-fav.active{ background:var(--brand) !important; }
+    .rl-dot-fav::after{ font-size:6px; }
+    .rl-nav:hover:not(:disabled){ background:var(--glass-strong); color:var(--brand); border-color:var(--brand-ring); box-shadow:none; }
+    .rl-add{ background:var(--glass) !important; color:var(--ink-2) !important; border:1px solid var(--glass-border) !important; box-shadow:none !important; }
+    .rl-add:hover{ color:var(--brand) !important; border-color:var(--brand-ring) !important; }
+    .rl-add-glow{ animation:none !important; }
+    /* ===== WATCH MODE — the ruler becomes a journey-progress strip ===== */
+    #journeyStrip{ display:flex; align-items:center; gap:12px; padding:10px 14px; }
+    #journeyStrip .js-place{ min-width:0; flex:1; font-size:12px; font-weight:700; color:var(--ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #journeyStrip .js-place.cur{ color:var(--ink); font-size:13px; text-align:center; }
+    #journeyStrip .js-place.next{ text-align:right; }
+    #journeyStrip .js-track{ position:relative; flex:2; height:3px; border-radius:2px; background:var(--c-line); overflow:hidden; }
+    #journeyStrip .js-track b{ position:absolute; inset:0 auto 0 0; width:0%; background:var(--brand); border-radius:2px; }
+    body.watch #rulerSec .rl-bar, body.watch #rulerSec .rl-nav, body.watch #rulerSec .rl-latest{ display:none !important; }
   </style>
   <div id="tvDash" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tvDashTitle" tabindex="-1">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeTvDash()"></div>
@@ -2044,7 +2080,7 @@
       const curY = TODAY.getFullYear();
       const birthY = Math.min(BORN, curY);
       const span = Math.max(1, curY - birthY);
-      const stepY = span<=30 ? 1 : (span<=70 ? 5 : 10);        // adaptive label density
+      const stepY = span<=16 ? 2 : (span<=40 ? 5 : 10);        // fewer, meaningful labels (decade-leaning)
       const byYear = {};                                        // group visible memories by year → dots
       vis.forEach(o=>{ (byYear[o.p.year]=byYear[o.p.year]||[]).push(o); });
       let segs='';
@@ -3500,11 +3536,13 @@
         }
         if(currentLine) currentLine.setLatLngs(pts.slice(0, idx+1));   // bold line grows behind the vehicle
         if(odo) odo.textContent = km(kmA + (kmB-kmA)*e) + ' km';       // ✈ live odometer
+        updateJourneyStrip(e);
         if(p<1){ _vehRAF=requestAnimationFrame(step); }
         else {
           _vehRAF=null;
           if(currentLine) currentLine.setLatLngs(pts);
           if(odo) odo.textContent = km(kmB) + ' km';
+          updateJourneyStrip(1);
           // Phase D — land: camera glides down, vehicle fades, pin drops with a pulse
           // land at a zoom that matches the trip — city level after a short hop
           if(!mapLocked){ const z=zoomForHop(hop); sbMap.flyTo(padTarget(b.lat,b.lng,z), z, { duration:1.0 }); }
@@ -3702,6 +3740,18 @@
       const pad=peekPadBottom(); if(!pad || !sbMap) return L.latLng(lat,lng);
       const pt=sbMap.project(L.latLng(lat,lng), zoom);
       return sbMap.unproject(pt.add([0, pad/2]), zoom);
+    }
+    // Watch-mode journey strip: previous place ── current memory ── next place
+    function updateJourneyStrip(prog){
+      const s=document.getElementById('journeyStrip'); if(!s||s.hidden) return;
+      const cityOf=p=>{ try{ return placeParts(p).city; }catch(_){ return p&&p.loc||'—'; } };
+      const pv=photos[active-1], cu=photos[active], nx=photos[active+1];
+      const a=document.getElementById('jsPrev'), b=document.getElementById('jsCur'), c=document.getElementById('jsNext');
+      if(a) a.textContent = pv?cityOf(pv):'The beginning';
+      if(b) b.textContent = cu?cu.name:'—';
+      if(c) c.textContent = nx?cityOf(nx):'Today';
+      const f=document.getElementById('jsFill');
+      if(f && typeof prog==='number') f.style.width=(Math.max(0,Math.min(1,prog))*100).toFixed(1)+'%';
     }
     function togglePeek(){
       const c=document.getElementById('mapMemoryCard'), x=document.getElementById('mapMemoryExtra'), t=document.getElementById('peekToggle');
