@@ -905,6 +905,7 @@
     <!-- (A) HEADER — date on the left, the life-journey summary + Play all on the right -->
     <header id="pageHeader" class="fade-up mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
+        <p id="greetLine" class="mb-1 text-xs font-bold uppercase tracking-[.14em] text-accent-blue/50">Good evening, Roshan</p>
         <span class="page-kicker chip inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-light-blue">
           <i class="fa-regular fa-image"></i> Photo · Timeline
         </span>
@@ -927,6 +928,16 @@
         </button>
       </div>
     </header>
+
+    <!-- HERO — the ONE red action on this screen (brand-reference CTA card) -->
+    <button id="watchHero" class="watch-hero fade-up" onclick="enterWatchMode()"
+      aria-label="Watch My Journey — a cinematic playback of your life story">
+      <span class="wh-txt">
+        <b>Watch My Journey</b>
+        <span id="watchHeroSub">Relive your story so far</span>
+      </span>
+      <span class="wh-orb" aria-hidden="true"><i class="fa-solid fa-play"></i></span>
+    </button>
 
     <div id="experienceStage">
 
@@ -1292,6 +1303,39 @@
       background:radial-gradient(50% 100% at 50% 0%, rgba(var(--brand-glow),.55), transparent 75%);
       filter:blur(4px); pointer-events:none; }
     @media (prefers-reduced-motion: reduce){ .logo-plaque::after{ filter:none; } }
+    /* ===== HERO CTA — Watch My Journey (the one red; brand-reference card) ===== */
+    .watch-hero{ display:flex; width:100%; align-items:center; justify-content:space-between; gap:14px;
+      margin:2px 0 14px; padding:15px 18px; border-radius:22px; text-align:left; cursor:pointer;
+      background:linear-gradient(120deg, var(--brand-soft), rgba(var(--brand-glow),.08));
+      border:1px solid var(--brand-ring);
+      box-shadow:0 10px 34px -10px rgba(var(--brand-glow),.5), inset 0 1px 0 rgba(255,255,255,.12);
+      transition:transform .18s, box-shadow .25s, filter .25s; }
+    .watch-hero:hover{ filter:brightness(1.08); box-shadow:0 14px 40px -10px rgba(var(--brand-glow),.62), inset 0 1px 0 rgba(255,255,255,.14); }
+    .watch-hero:active{ transform:scale(.99); }
+    .watch-hero .wh-txt{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+    .watch-hero .wh-txt b{ font-size:17px; font-weight:800; color:var(--ink); letter-spacing:.01em; }
+    .watch-hero .wh-txt span{ font-size:12.5px; color:var(--ink-2); }
+    .watch-hero .wh-orb{ display:grid; place-items:center; width:46px; height:46px; border-radius:50%;
+      background:linear-gradient(150deg,var(--brand),var(--brand-2)); color:#fff; font-size:15px; flex:0 0 auto;
+      box-shadow:0 0 0 5px rgba(var(--brand-glow),.16), 0 6px 18px rgba(var(--brand-glow),.5); }
+    @media (max-width:1023px){ .watch-hero{ display:none; } } /* mobile: the dock's center orb is the red */
+    /* ===== MOBILE DOCK ===== */
+    #mobileDock{ position:fixed; left:0; right:0; bottom:0; z-index:1500;
+      display:flex; align-items:stretch; justify-content:space-around; gap:2px;
+      padding:6px 8px calc(7px + env(safe-area-inset-bottom));
+      background:var(--glass-strong); backdrop-filter:blur(20px) saturate(150%); -webkit-backdrop-filter:blur(20px) saturate(150%);
+      border-top:1px solid var(--glass-border); }
+    #mobileDock button{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+      flex:1; min-height:48px; min-width:44px; border-radius:14px; color:var(--ink-3); font-size:16px; }
+    #mobileDock button span{ font-size:10px; font-weight:700; letter-spacing:.02em; }
+    #mobileDock button[aria-pressed="true"]{ color:var(--ink); box-shadow:inset 0 -2px 0 var(--brand); }
+    #mobileDock button[aria-pressed="true"] i{ color:var(--brand); }
+    #mobileDock #dockWatch{ flex:0 0 auto; width:56px; height:56px; margin-top:-22px; border-radius:50%;
+      background:linear-gradient(150deg,var(--brand),var(--brand-2)); color:#fff; font-size:18px;
+      border:3px solid var(--bg-0); box-shadow:0 0 0 4px rgba(var(--brand-glow),.22), 0 8px 22px rgba(var(--brand-glow),.55); }
+    html:not(.dark) #mobileDock #dockWatch{ border-color:#fff; }
+    @media (max-width:1023px){ body{ padding-bottom:calc(78px + env(safe-area-inset-bottom)); } }
+    @media (min-width:1024px){ #mobileDock{ display:none; } }
   </style>
   <div id="tvDash" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tvDashTitle" tabindex="-1">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeTvDash()"></div>
@@ -1563,6 +1607,15 @@
   </div>
 
   <!-- ===================== FOOTER ===================== -->
+  <!-- MOBILE DOCK — brand-reference bottom nav: glass bar, elevated glowing Watch center -->
+  <nav id="mobileDock" aria-label="Primary" class="lg:hidden">
+    <button type="button" data-dock="together" onclick="setStageView('together',true)" aria-pressed="false" aria-label="Together view"><i class="fa-solid fa-table-columns" aria-hidden="true"></i><span>Together</span></button>
+    <button type="button" data-dock="photo" onclick="setStageView('photo',true)" aria-pressed="false" aria-label="Photo view"><i class="fa-regular fa-image" aria-hidden="true"></i><span>Photo</span></button>
+    <button type="button" id="dockWatch" onclick="enterWatchMode()" aria-label="Watch My Journey"><i class="fa-solid fa-play" aria-hidden="true"></i></button>
+    <button type="button" data-dock="map" onclick="setStageView('map',true)" aria-pressed="false" aria-label="Map view"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>Map</span></button>
+    <button type="button" onclick="openUpload()" aria-label="Add a memory"><i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add</span></button>
+  </nav>
+
   <footer id="siteFooter" class="ftr relative mt-6 overflow-hidden text-white">
     <!-- brand accent line + soft glow -->
     <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-theme via-primary-red to-primary-theme"></div>
@@ -2453,6 +2506,9 @@
       document.querySelectorAll('#stageViewSelector .stage-mode-btn').forEach(btn=>{
         btn.setAttribute('aria-pressed',String(btn.dataset.stageView===view));
       });
+      document.querySelectorAll('#mobileDock [data-dock]').forEach(btn=>{
+        btn.setAttribute('aria-pressed',String(btn.dataset.dock===view));
+      });
       const showPhoto=view==='together'||view==='photo';
       const showMap=view==='together'||view==='map';
       setPanelAvailability(document.getElementById('photoStage'),showPhoto);
@@ -3251,7 +3307,17 @@
       const pc=new Set(photos.map(p=>p.loc)).size;
       const yrs=photos.map(p=>p.year), minY=Math.min(...yrs), maxY=Math.max(...yrs);
       const ms=document.getElementById('memoryStats'); if(ms) ms.textContent=`${photos.length} moments · ${pc} places · ${cc} countries · ${minY}–${maxY}`;
+      const whs=document.getElementById('watchHeroSub'); if(whs) whs.textContent=`Relive your story — ${pc} places, ${Math.max(1,maxY-minY)} years of memories`;
     }
+    // Personalized greeting (brand-reference header pattern)
+    (function(){
+      const el=document.getElementById('greetLine'); if(!el) return;
+      const h=new Date().getHours();
+      const part=h<12?'morning':h<17?'afternoon':'evening';
+      el.textContent=`Good ${part}, ${ME.name.split(' ')[0]}`;
+    })();
+    // Watch My Journey entry — upgraded to the full cinematic mode in a later phase
+    function enterWatchMode(){ toggleJourneyMotion(); }
 
     /* ============ MEMORY MAP (Leaflet) ============ */
     const MAP_DETAIL_MODES=['journey','explore'];
