@@ -1394,6 +1394,7 @@
     .rl-add-glow{ animation:none !important; }
     /* ===== WATCH MODE — the ruler becomes a journey-progress strip ===== */
     #journeyStrip{ display:flex; align-items:center; gap:12px; padding:10px 14px; }
+    #journeyStrip[hidden]{ display:none !important; }
     #journeyStrip .js-place{ min-width:0; flex:1; font-size:12px; font-weight:700; color:var(--ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     #journeyStrip .js-place.cur{ color:var(--ink); font-size:13px; text-align:center; }
     #journeyStrip .js-place.next{ text-align:right; }
@@ -1408,6 +1409,7 @@
     body.watch{ padding-bottom:0 !important; }
     body.watch #experienceStage{ position:relative; }
     /* playback bar */
+    #watchBar[hidden]{ display:none !important; }
     #watchBar{ position:fixed; left:50%; bottom:calc(14px + env(safe-area-inset-bottom)); transform:translateX(-50%);
       z-index:2600; display:flex; align-items:center; gap:6px; padding:8px 10px; border-radius:999px;
       background:var(--glass-strong); border:1px solid var(--glass-border);
@@ -1466,6 +1468,11 @@
       color:var(--ink) !important; box-shadow:0 0 14px rgba(140,180,255,.25) !important; }
     #aiState .ai-shimmer i{ color:var(--ai) !important; }
     /* mobile: the wizard is a true bottom sheet */
+    /* tiny phones: stage-mode selector goes icons-only so nothing overlaps */
+    @media (max-width:479px){
+      .stage-mode-btn span{ display:none; }
+      .stage-mode-btn{ min-width:44px; }
+    }
     @media (max-width:767px){
       #uploadModal{ align-items:flex-end !important; padding:0 !important; }
       #uploadModal .upload-sheet{ max-width:none !important; width:100% !important;
