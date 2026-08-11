@@ -944,6 +944,10 @@
     <!-- Canonical stage order: selector, chapters, ruler, then the responsive photo/map stage. -->
     <div id="stageWrap" class="relative">
       <div id="toolbar" class="fade-up flex items-center justify-between gap-2">
+        <div id="mapDetailSelector" class="map-detail-selector in-toolbar" role="group" aria-label="Choose map detail level">
+          <button type="button" class="map-detail-btn" data-map-detail="journey" aria-pressed="false" onclick="setMapDetailMode('journey',true)"><i class="fa-solid fa-route" aria-hidden="true"></i><span>My Journey</span></button>
+          <button type="button" class="map-detail-btn" data-map-detail="explore" aria-pressed="false" onclick="setMapDetailMode('explore',true)"><i class="fa-solid fa-map" aria-hidden="true"></i><span>Explore Map</span></button>
+        </div>
         <div id="stageViewSelector" class="stage-view-selector" role="group" aria-label="Choose memory stage view">
           <button type="button" class="stage-mode-btn" data-stage-view="together" aria-pressed="false" onclick="setStageView('together',true)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setStageView('together',true)}"><i class="fa-solid fa-table-columns" aria-hidden="true"></i><span>Together</span></button>
           <button type="button" class="stage-mode-btn" data-stage-view="photo" aria-pressed="false" onclick="setStageView('photo',true)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setStageView('photo',true)}"><i class="fa-regular fa-image" aria-hidden="true"></i><span>Photo</span></button>
@@ -1021,11 +1025,7 @@
       <!-- (C) MAP PANEL (real Leaflet map) -->
       <section id="mapPanel" aria-label="Map and journey" class="fade-up relative w-full overflow-hidden rounded-4xl shadow-card transition-all duration-500">
       <div id="map" class="h-full w-full"></div>
-      <div id="mapTopControls" class="absolute left-3 right-3 top-3 z-[600] flex items-start justify-between gap-2">
-        <div id="mapDetailSelector" class="map-detail-selector" role="group" aria-label="Choose map detail level">
-          <button type="button" class="map-detail-btn" data-map-detail="journey" aria-pressed="false" onclick="setMapDetailMode('journey',true)"><i class="fa-solid fa-route" aria-hidden="true"></i><span>My Journey</span></button>
-          <button type="button" class="map-detail-btn" data-map-detail="explore" aria-pressed="false" onclick="setMapDetailMode('explore',true)"><i class="fa-solid fa-map" aria-hidden="true"></i><span>Explore Map</span></button>
-        </div>
+      <div id="mapTopControls" class="absolute left-3 right-3 top-3 z-[600] flex items-start justify-end gap-2">
         <div id="mapDetailLive" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
       </div>
       <button id="mapAll" type="button" onclick="fitMyJourney(true)" class="map-utility-btn absolute left-3 top-[66px] z-[600] flex items-center gap-2 rounded-xl px-3 text-xs font-extrabold" aria-label="Fit my journey">
@@ -1049,7 +1049,7 @@
         <div id="cityChooserList" class="mt-2 max-h-36 space-y-1 overflow-y-auto pr-1 boom-scrollbar"></div>
       </section>
 
-      <article id="mapMemoryCard" class="map-memory-card" aria-label="Selected map memory" aria-live="polite">
+      <article id="mapMemoryCard" class="map-memory-card peek" aria-label="Selected map memory" aria-live="polite">
         <div class="map-memory-head">
           <img id="mapMemoryThumb" src="img/life20.jpg" alt="" onerror="imageFailed(this)" />
           <div class="min-w-0 flex-1">
@@ -1057,7 +1057,9 @@
             <p id="mapMemoryMeta" class="truncate text-[11px] font-semibold text-accent-blue/65">21 Mar 2026 · Kathmandu, Nepal</p>
           </div>
           <button id="mapOpenMemory" type="button" onclick="openActiveModal()" class="map-open-memory shrink-0 rounded-xl px-3 text-xs font-extrabold" aria-label="Open selected memory">Open</button>
+          <button id="peekToggle" type="button" onclick="togglePeek()" aria-expanded="false" aria-label="More about this memory" class="peek-chevron"><i class="fa-solid fa-chevron-up" aria-hidden="true"></i></button>
         </div>
+        <div id="mapMemoryExtra" hidden>
         <div class="map-memory-context">
           <span id="mapMemoryPrivacy" class="map-privacy"><i class="fa-solid fa-lock"></i> Private archive</span>
           <button type="button" onclick="openTvDash('dist')" class="truncate text-primary-theme underline-offset-2 hover:underline">Journey Insights</button>
@@ -1069,6 +1071,7 @@
           <button id="journeyNext" type="button" onclick="journeyStep(1)" aria-label="Next journey memory"><i class="fa-solid fa-chevron-right"></i></button>
           <button id="journeyRestart" type="button" onclick="restartJourneyPlayback()" aria-label="Restart my journey" title="Restart my journey"><i class="fa-solid fa-rotate-left"></i></button>
         </div>
+        </div><!-- /mapMemoryExtra -->
       </article>
       </section>
 
@@ -1336,6 +1339,31 @@
     html:not(.dark) #mobileDock #dockWatch{ border-color:#fff; }
     @media (max-width:1023px){ body{ padding-bottom:calc(78px + env(safe-area-inset-bottom)); } }
     @media (min-width:1024px){ #mobileDock{ display:none; } }
+    /* ===== PEEK CARD (collapsed by default; expands upward on demand) ===== */
+    .map-memory-card.peek{ padding:8px; }
+    .peek-chevron{ display:grid; place-items:center; width:38px; min-height:38px; border-radius:12px;
+      background:var(--glass); border:1px solid var(--glass-border); color:var(--ink-2); flex:0 0 auto; }
+    .peek-chevron:hover{ color:var(--brand); border-color:var(--brand-ring); }
+    .peek-chevron i{ transition:transform .25s; }
+    .map-memory-card.expanded .peek-chevron i{ transform:rotate(180deg); }
+    #mapMemoryExtra{ margin-top:8px; }
+    /* map-detail selector relocated into the toolbar (outside the canvas) */
+    .map-detail-selector.in-toolbar{ position:static; order:9; display:flex; gap:4px; padding:3px; border-radius:12px;
+      background:var(--glass); border:1px solid var(--glass-border); box-shadow:none; }
+    .map-detail-selector.in-toolbar .map-detail-btn{ min-height:40px; padding:6px 11px; font-size:12px; border-radius:9px; }
+    @media (max-width:1023px){ .map-detail-selector.in-toolbar .map-detail-btn{ min-height:44px; }
+      .map-detail-selector.in-toolbar .map-detail-btn span{ display:none; } }
+    #experienceStage[data-stage-view="photo"] #mapDetailSelector{ display:none; }
+    /* residual red blocks → quiet (red discipline) */
+    #routeMotionBtn{ background:var(--glass-strong) !important; color:var(--ink) !important;
+      border:1px solid var(--brand-ring) !important; box-shadow:none !important; }
+    #routeMotionBtn i{ color:var(--brand); }
+    .map-open-memory{ background:var(--glass-strong) !important; color:var(--ink) !important;
+      border:1px solid var(--glass-border) !important; box-shadow:none !important; }
+    .map-open-memory:hover{ border-color:var(--brand-ring) !important; color:var(--brand) !important; }
+    #heroAdd{ background:var(--glass-strong) !important; color:var(--ink) !important;
+      border:1px solid var(--glass-border) !important; box-shadow:none !important; }
+    @media (max-width:1023px){ #heroAdd{ display:none !important; } } /* the dock owns Add on phones */
   </style>
   <div id="tvDash" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tvDashTitle" tabindex="-1">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeTvDash()"></div>
@@ -3454,7 +3482,7 @@
       if(REDUCED){ if(currentLine) currentLine.setLatLngs(pts); vehicle.setOpacity(0); if(onLand) onLand(); return false; }
       // Phase A/B — frame BOTH ends of the trip while the vehicle "boards"
       // (short hops between close places zoom IN to city level so the move is clearly visible)
-      if(!mapLocked) sbMap.flyToBounds(L.latLngBounds([[a.lat,a.lng],[b.lat,b.lng]]), { padding:[70,70], duration:1.0, maxZoom: hop>1200 ? 6 : zoomForHop(hop)+1 });
+      if(!mapLocked) sbMap.flyToBounds(L.latLngBounds([[a.lat,a.lng],[b.lat,b.lng]]), { paddingTopLeft:[70,70], paddingBottomRight:[70, 70+peekPadBottom()], duration:1.0, maxZoom: hop>1200 ? 6 : zoomForHop(hop)+1 });
       if(currentLine) currentLine.setLatLngs([]);
       const cruise=Math.min(8000, Math.max(3800, hop*1.6)), delay=1050;   // 🎬 cinematic pacing
       const isPlane = tm.icon==='fa-plane-up';
@@ -3479,7 +3507,7 @@
           if(odo) odo.textContent = km(kmB) + ' km';
           // Phase D — land: camera glides down, vehicle fades, pin drops with a pulse
           // land at a zoom that matches the trip — city level after a short hop
-          if(!mapLocked) sbMap.flyTo([b.lat,b.lng], zoomForHop(hop), { duration:1.0 });
+          if(!mapLocked){ const z=zoomForHop(hop); sbMap.flyTo(padTarget(b.lat,b.lng,z), z, { duration:1.0 }); }
           setTimeout(()=>vehicle.setOpacity(0), 250);
           if(onLand) onLand();
         }
@@ -3661,6 +3689,40 @@
       futureLine=L.polyline([],{lineCap:'round'}).addTo(journeyRouteLayer); pastLine=L.polyline([],{lineCap:'round',lineJoin:'round'}).addTo(journeyRouteLayer); currentLine=L.polyline([],{lineCap:'round',lineJoin:'round'}).addTo(journeyRouteLayer);
       renderVisitedGeography(); setMapDetailMode(mapDetailMode,false,true); updateJourney(); renderMapMarkers(); renderTravelModeIndicators(); updateMapMemoryCard(); sbMap.on('zoomend',()=>{ renderVisitedGeography(); renderMapMarkers(); renderTravelModeIndicators(); }); setTimeout(()=>{ sbMap.invalidateSize(); fitMyJourney(false); },80);
     }
+    /* ===== PEEK CARD + camera safe-space =====
+       The expanded card must never hide the route/vehicle/destination: its
+       measured height feeds Leaflet camera padding (flyToBounds) or an
+       offset target (flyTo has no padding option). */
+    function peekPadBottom(){
+      const c=document.getElementById('mapMemoryCard');
+      if(!c || c.hidden || !c.offsetHeight) return 0;
+      return Math.min(280, c.offsetHeight + 18);
+    }
+    function padTarget(lat, lng, zoom){
+      const pad=peekPadBottom(); if(!pad || !sbMap) return L.latLng(lat,lng);
+      const pt=sbMap.project(L.latLng(lat,lng), zoom);
+      return sbMap.unproject(pt.add([0, pad/2]), zoom);
+    }
+    function togglePeek(){
+      const c=document.getElementById('mapMemoryCard'), x=document.getElementById('mapMemoryExtra'), t=document.getElementById('peekToggle');
+      if(!c||!x||!t) return;
+      const open=x.hidden;
+      x.hidden=!open; c.classList.toggle('expanded', open);
+      t.setAttribute('aria-expanded', String(open));
+      if(open){ const f=x.querySelector('button'); if(f) f.focus(); }
+      else t.focus();
+      // re-frame so the (new) card height never covers the active memory
+      const p=photos[active];
+      if(sbMap && p && hasCoords(p) && !mapLocked && sbMap.getSize().x){
+        const z=sbMap.getZoom();
+        sbMap.panTo(padTarget(p.lat,p.lng,z), {animate:!REDUCED, duration:.35});
+      }
+    }
+    document.addEventListener('keydown', e=>{
+      if(e.key!=='Escape') return;
+      const c=document.getElementById('mapMemoryCard');
+      if(c && c.classList.contains('expanded')) togglePeek();
+    });
     function flyToActive(){
       if(!sbMap) return; closeCityMemoryChooser(false); const dest=active,p=photos[active]; updateMapMemoryCard();
       if(!hasCoords(p)){ showMapNotice(`${p.name} has coordinates missing. Location not named.`); updateJourney(); renderMapMarkers(); prevActive=active; if(journeyPlaying) scheduleJourneyAdvance(); return; }
@@ -3674,7 +3736,7 @@
       else clearMapNotice();
       const land=()=>{ if(dest!==active) return; journeyPlaybackLanded(); const el=markers[dest]&&markers[dest].getElement&&markers[dest].getElement(),pin=el&&el.querySelector('.map-active-marker'); if(pin&&!REDUCED){ pin.classList.add('pin-land'); setTimeout(()=>pin.classList.remove('pin-land'),700); } };
       const cinematic=_mapReady&&journeyPlaying&&!REDUCED?animateVehicle(prevActive,active,land):false; updateJourney();
-      if(!mapLocked&&!cinematic){ const hk=prevActive!=null&&prevActive!==active&&hasCoords(photos[prevActive])?haversineKm(photos[prevActive],p):1500; sbMap.flyTo([p.lat,p.lng],zoomForHop(hk),{duration:REDUCED?0:.75}); }
+      if(!mapLocked&&!cinematic){ const hk=prevActive!=null&&prevActive!==active&&hasCoords(photos[prevActive])?haversineKm(photos[prevActive],p):1500; const z=zoomForHop(hk); sbMap.flyTo(padTarget(p.lat,p.lng,z),z,{duration:REDUCED?0:.75}); }
       if(!cinematic) land(); prevActive=active;
     }
 
