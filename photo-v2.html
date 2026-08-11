@@ -3530,6 +3530,12 @@
     function flyToActive(){
       if(!sbMap) return; closeCityMemoryChooser(false); const dest=active,p=photos[active]; updateMapMemoryCard();
       if(!hasCoords(p)){ showMapNotice(`${p.name} has coordinates missing. Location not named.`); updateJourney(); renderMapMarkers(); prevActive=active; if(journeyPlaying) scheduleJourneyAdvance(); return; }
+      // map pane hidden (Photo mode) → its container is 0×0 and flyTo would throw NaN,
+      // aborting the rest of setActive. If the size is merely a stale cache (pane just
+      // shown), one invalidateSize heals it; if truly hidden, skip camera work.
+      let _sz=sbMap.getSize();
+      if(!_sz.x||!_sz.y){ sbMap.invalidateSize({animate:false}); _sz=sbMap.getSize(); }
+      if(!_sz.x||!_sz.y){ updateJourney(); renderMapMarkers(); prevActive=active; if(journeyPlaying) scheduleJourneyAdvance(); return; }
       if(mapTileFailures>=2) showMapNotice('Basemap unavailable. Your memories and journey are still shown.');
       else clearMapNotice();
       const land=()=>{ if(dest!==active) return; journeyPlaybackLanded(); const el=markers[dest]&&markers[dest].getElement&&markers[dest].getElement(),pin=el&&el.querySelector('.map-active-marker'); if(pin&&!REDUCED){ pin.classList.add('pin-land'); setTimeout(()=>pin.classList.remove('pin-land'),700); } };
