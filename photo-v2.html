@@ -1459,6 +1459,19 @@
       body.watch #photoStage{ min-height:58vh !important; }
     }
     html.reduce-motion body.watch #stageWrap{ transition:none; }
+    /* ===== SMART CAPTURE polish ===== */
+    /* AI assist chips carry the crystal --ai accent (the only place it appears) */
+    #aiState .ai-shimmer, #aiState .ai-done{
+      background:var(--glass-strong) !important; border:1px solid var(--ai) !important;
+      color:var(--ink) !important; box-shadow:0 0 14px rgba(140,180,255,.25) !important; }
+    #aiState .ai-shimmer i{ color:var(--ai) !important; }
+    /* mobile: the wizard is a true bottom sheet */
+    @media (max-width:767px){
+      #uploadModal{ align-items:flex-end !important; padding:0 !important; }
+      #uploadModal .upload-sheet{ max-width:none !important; width:100% !important;
+        border-radius:22px 22px 0 0 !important; max-height:94dvh !important;
+        padding-bottom:calc(18px + env(safe-area-inset-bottom)) !important; }
+    }
   </style>
   <div id="tvDash" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tvDashTitle" tabindex="-1">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeTvDash()"></div>
@@ -2917,6 +2930,7 @@
       const di=document.getElementById('upDate'), today=new Date().toISOString().slice(0,10);
       if(di){ di.max=today; di.value=today; _meta.dateSrc='you'; }
       const m=document.getElementById('uploadModal'); m.classList.remove('hidden'); m.classList.add('flex'); syncBodyScroll();
+      setTimeout(()=>{ if(window.restoreUpDraft) restoreUpDraft(); }, 160);   // Smart Capture: bring back an unsaved draft
       setUploadStep(1); _upDirty=false;
       if(!navigator.onLine) setUploadStatus('offline','You’re offline. This mockup will keep the draft on this device until you save.');
       focusDialog(m,'button[aria-label="Close add memory flow"]');
@@ -3260,8 +3274,8 @@
     function setAIState(state){
       const el=document.getElementById('aiState'); if(!el) return; el.classList.remove('hidden');
       el.innerHTML = state==='reading'
-        ? `<span class="ai-shimmer"><i class="fa-solid fa-wand-magic-sparkles"></i> AI is reading your photo…</span>`
-        : `<span class="ai-done"><i class="fa-solid fa-circle-check"></i> Auto-filled what I could find</span>`;
+        ? `<span class="ai-shimmer"><i class="fa-solid fa-wand-magic-sparkles"></i> SYSTEMBOOM AI · reading your photo…</span>`
+        : `<span class="ai-done"><i class="fa-solid fa-circle-check"></i> SYSTEMBOOM AI · filled what it found</span>`;
       if(state!=='reading') setTimeout(()=>el.classList.add('hidden'), 2400);
     }
     // reverse-geocode GPS → a human place name (free OSM Nominatim; graceful fallback)
@@ -3402,10 +3416,30 @@
       photos.push(np);
       photos.sort((a,b)=> new Date(a.y,a.mo,a.d) - new Date(b.y,b.mo,b.d));
       recomputeTravel(); rebuildMap(); renderCarousel(); renderRuler(); updateMemoryStats();
+      if(window.clearUpDraft) clearUpDraft();      // saved for real → the draft has served its purpose
       closeUpload(true); setActive(photos.indexOf(np));
       toast('Memory added to your journey ✨','fa-star'); confettiBurst();
     }
 
+    /* ===== Smart Capture: draft autosave — an accidental close never loses typing ===== */
+    (function(){
+      const KEY='sb-up-draft', m=document.getElementById('uploadModal');
+      if(!m) return;
+      const F=['upCaption','upPlace','upDate','upStory','upSong','upMood','upMilestone'];
+      m.addEventListener('input', ()=>{ try{
+        const d={}; F.forEach(id=>{ const el=document.getElementById(id); if(el) d[id]=el.value; });
+        sessionStorage.setItem(KEY, JSON.stringify(d));
+      }catch(_){ } });
+      window.restoreUpDraft=function(){ try{
+        const d=JSON.parse(sessionStorage.getItem(KEY)||'null'); if(!d) return;
+        const cap=document.getElementById('upCaption');
+        if(cap && cap.value) return;               // editing / prefilled — never clobber
+        F.forEach(id=>{ const el=document.getElementById(id); if(el && d[id]) el.value=d[id]; });
+        if(typeof renderCardPreview==='function') renderCardPreview();
+        if(typeof updateUploadValid==='function') updateUploadValid();
+      }catch(_){ } };
+      window.clearUpDraft=function(){ try{ sessionStorage.removeItem(KEY); }catch(_){ } };
+    })();
     function saveUpload(){
       if(_upProcessing){ setUploadStatus('loading','Your photo is still processing. Please wait a moment.'); return; }
       if(!navigator.onLine) setUploadStatus('offline','Offline: this mockup will save the memory locally for this session.');
@@ -3788,6 +3822,7 @@
       const kmA=_cumKm[from]||0, kmB=_cumKm[to]||kmA;
       if(watchMode) setWatchPhase('travel');
       announce(`Travelling to ${b.name}, ${b.loc}`);
+      try{ new Image().src=imgFor(b.id); }catch(_){ }   // preload the arrival photo — no blank frame on landing
       // pausable flight state — Pause stores the elapsed position, Resume re-enters it exactly
       _vehState={ t0:performance.now()+delay, pausedAt:0, step:null };
       function step(now){
