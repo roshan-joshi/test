@@ -165,19 +165,26 @@
     .rl-track { display:flex; align-items:flex-end; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
       -webkit-mask-image: linear-gradient(to right, transparent, #000 11%, #000 89%, transparent); mask-image: linear-gradient(to right, transparent, #000 11%, #000 89%, transparent); }
     .rl-track::-webkit-scrollbar { display:none; }
-    .rl-tick { position:relative; flex:0 0 54px; height:58px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:4px; cursor:pointer; background:none; padding-bottom:2px; }
-    .rl-line { width:2px; height:10px; background:var(--c-line); border-radius:2px; transition:height .25s, background .25s, width .25s, box-shadow .25s; }
-    .rl-major { height:16px; background:var(--c-a2); opacity:.5; }
-    /* clean YEAR-only scale (the precise day/month lives on the playhead pill + header) */
-    .rl-yr { font-size:11px; font-weight:700; color:var(--c-text); opacity:.42; transition:all .25s; letter-spacing:.01em; }
-    .rl-tick:hover .rl-yr { color:var(--brand); opacity:.85; }   /* hover hint: tap a year to jump there */
-    .rl-ydiv { position:absolute; left:-1px; top:8px; bottom:9px; border-left:1px dashed var(--c-a2); opacity:.4; }
+    /* continuous LIFE-LINE: one fixed-width segment per YEAR (birth → today) */
+    .rl-yseg { position:relative; flex:0 0 46px; height:58px; }
+    .rl-tk { position:absolute; left:0; bottom:20px; width:2px; height:9px; background:var(--c-line); border-radius:2px; transform:translateX(-50%); }
+    .rl-tk.rl-maj { height:15px; background:var(--c-a2); opacity:.55; }
+    /* year labels — shown at regular intervals, NOT driven by whether a memory exists that year */
+    .rl-yr { position:absolute; left:0; bottom:2px; transform:translateX(-50%); font-size:11px; font-weight:700; color:var(--c-text); opacity:.42; transition:color .25s, opacity .25s; letter-spacing:.01em; white-space:nowrap; }
+    .rl-yr-dec { opacity:.62; font-weight:800; }   /* decade years read a touch stronger */
+    .rl-ydiv { position:absolute; left:0; top:8px; bottom:9px; border-left:1px dashed var(--c-a2); opacity:.30; }
     /* decade chapters: alternating band tint + a stronger solid divider at decade boundaries */
-    .rl-tick.rl-band { background:rgba(45,104,143,.07); }
-    html.dark .rl-tick.rl-band { background:rgba(255,255,255,.05); }
-    .rl-ydiv-dec { top:4px; bottom:5px; border-left:2px solid var(--c-a2); opacity:.5; }
-    .rl-tick.active .rl-line { background:var(--brand); height:24px; width:3px; box-shadow:0 0 10px 1px rgba(var(--brand-glow),.55); }
-    .rl-tick.active .rl-yr { color:var(--brand); opacity:1; transform:scale(1.18); font-weight:800; }
+    .rl-yseg.rl-band { background:rgba(45,104,143,.06); }
+    html.dark .rl-yseg.rl-band { background:rgba(255,255,255,.045); }
+    .rl-ydiv-dec { position:absolute; left:0; top:4px; bottom:5px; border-left:2px solid var(--c-a2); opacity:.45; }
+    /* a memory = a coral DOT on the life-line, placed by its day of that year */
+    .rl-dot { position:absolute; bottom:27px; width:12px; height:12px; padding:0; border-radius:50%; transform:translate(-50%,0); cursor:pointer; z-index:2;
+      background:var(--brand); border:2px solid #fff; box-shadow:0 1px 5px rgba(var(--brand-glow),.5); transition:transform .2s, box-shadow .2s; }
+    html.dark .rl-dot { border-color:#141c26; }
+    .rl-dot:hover { transform:translate(-50%,-2px) scale(1.16); box-shadow:0 0 10px 2px rgba(var(--brand-glow),.7); }
+    .rl-dot.active { transform:translate(-50%,-3px) scale(1.42); box-shadow:0 0 12px 3px rgba(var(--brand-glow),.9); z-index:3; }
+    .rl-dot-fav { background:linear-gradient(135deg,var(--brand-lt),var(--brand)); }
+    .rl-dot-fav::after { content:'★'; position:absolute; inset:0; display:grid; place-items:center; font-size:7px; line-height:1; color:#fff; }
     /* narrative bookends fill the empty ends */
     .rl-spacer { flex:0 0 50%; display:flex; align-items:center; overflow:hidden; }
     .rl-cap-l { justify-content:flex-end; padding-right:8px; gap:12px; }
@@ -622,14 +629,19 @@
         class="glass absolute right-4 top-4 z-[500] grid h-10 w-10 place-items-center rounded-xl text-accent-blue shadow-soft transition hover:text-primary-theme">
         <i id="mapLockIcon" class="fa fa-lock-open"></i>
       </button>
+      <!-- See the WHOLE life journey at once -->
+      <button id="mapAll" title="See whole journey" onclick="viewWholeJourney()"
+        class="glass absolute right-4 top-16 z-[500] grid h-10 w-10 place-items-center rounded-xl text-accent-blue shadow-soft transition hover:text-primary-theme">
+        <i class="fa-solid fa-earth-americas"></i>
+      </button>
       <div id="mapLockBadge" class="hidden absolute bottom-4 right-4 z-[500] items-center gap-1.5 rounded-full bg-primary-theme px-3 py-1 text-xs font-semibold text-white shadow-glow">
         <i class="fa fa-lock"></i> Map locked
       </div>
       <!-- TRAVEL RECORDS — distance roamed + how the latest move happened (floats on the map) -->
       <div id="travelBar" class="pointer-events-none absolute bottom-4 left-4 right-4 z-[500] flex flex-wrap items-center gap-2 text-sm sm:right-16">
-        <span class="liquid-light tv-chip pointer-events-auto" data-tip="Distance roamed so far" title="Distance roamed so far"><i class="fa-solid fa-earth-asia tv-ic"></i><b id="tvTotal">0 km</b><span class="tv-sub">roamed</span></span>
-        <span class="liquid-light tv-chip pointer-events-auto"><i class="fa-solid fa-cake-candles tv-ic"></i><span id="tvAge">Newborn</span></span>
-        <span class="liquid-light tv-chip pointer-events-auto"><i id="tvHopIcon" class="fa-solid fa-baby tv-ic"></i><span id="tvHop">Born here</span></span>
+        <span role="button" tabindex="0" onclick="openTvDash('dist')" onkeydown="if(event.key==='Enter')openTvDash('dist')" class="liquid-light tv-chip tv-click pointer-events-auto" data-tip="Distance roamed — tap for details" title="Distance roamed — tap for details"><i class="fa-solid fa-earth-asia tv-ic"></i><b id="tvTotal">0 km</b><span class="tv-sub">roamed</span><i class="fa-solid fa-chevron-right tv-go"></i></span>
+        <span role="button" tabindex="0" onclick="openTvDash('life')" onkeydown="if(event.key==='Enter')openTvDash('life')" class="liquid-light tv-chip tv-click pointer-events-auto" data-tip="Life at this moment — tap for details" title="Life at this moment — tap for details"><i class="fa-solid fa-cake-candles tv-ic"></i><span id="tvAge">Newborn</span><i class="fa-solid fa-chevron-right tv-go"></i></span>
+        <span role="button" tabindex="0" onclick="openTvDash('hop')" onkeydown="if(event.key==='Enter')openTvDash('hop')" class="liquid-light tv-chip tv-click pointer-events-auto" data-tip="This trip — tap for details" title="This trip — tap for details"><i id="tvHopIcon" class="fa-solid fa-baby tv-ic"></i><span id="tvHop">Born here</span><i class="fa-solid fa-chevron-right tv-go"></i></span>
       </div>
     </section>
 
@@ -768,6 +780,42 @@
   </div>
 
   <!-- ===================== SHARE SHEET ===================== -->
+  <!-- TRAVEL / LIFE DASHBOARD (opened from the map chips) -->
+  <style>
+    .tv-click { cursor:pointer; transition:transform .18s, box-shadow .18s; }
+    .tv-click:hover { transform:translateY(-2px); box-shadow:0 10px 26px -8px rgba(54,69,79,.35); }
+    .tv-click:active { transform:translateY(0) scale(.97); }
+    .tv-go { font-size:10px; opacity:.45; margin-left:2px; }
+    .tv-click:hover .tv-go { opacity:.9; color:var(--brand); }
+    .veh-big { width:46px; height:46px; font-size:20px; }
+    .tvd-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px dashed var(--c-line); font-size:13px; }
+    .tvd-row:last-child { border-bottom:none; }
+    .tvd-ic { width:30px; height:30px; display:grid; place-items:center; border-radius:10px; background:rgba(var(--brand-glow),.12); color:var(--brand); flex:0 0 auto; }
+    .tvd-big { font-size:26px; font-weight:800; color:var(--brand); line-height:1.1; }
+    .tvd-bar { height:8px; border-radius:6px; background:var(--c-line); overflow:hidden; }
+    .tvd-bar>span { display:block; height:100%; border-radius:6px; background:linear-gradient(90deg,var(--brand-lt),var(--brand)); }
+    /* Journey Motion v2 — boarding pop, landing pulse, photos enter from the travel direction */
+    .veh-pop { animation:vehPop .45s cubic-bezier(.2,.9,.3,1.4) both; }
+    @keyframes vehPop { from{transform:scale(.3);opacity:0} to{transform:scale(1);opacity:1} }
+    .pin-land { animation:pinLand .65s cubic-bezier(.2,.9,.3,1.3); }
+    @keyframes pinLand { 0%{transform:scale(.45)} 60%{transform:scale(1.22)} 100%{transform:scale(1)} }
+    .img-in-e { animation:imgInE .6s ease both; }
+    .img-in-w { animation:imgInW .6s ease both; }
+    @keyframes imgInE { from{opacity:0;transform:translateX(30px) scale(1.02)} to{opacity:1;transform:none} }
+    @keyframes imgInW { from{opacity:0;transform:translateX(-30px) scale(1.02)} to{opacity:1;transform:none} }
+    @media (prefers-reduced-motion: reduce){ .veh-pop,.pin-land,.img-in-e,.img-in-w { animation:none !important; } }
+  </style>
+  <div id="tvDash" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeTvDash()"></div>
+    <div class="relative w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl dark:bg-[#1b2430] max-h-[86vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 id="tvDashTitle" class="text-base font-extrabold text-accent-blue"></h3>
+        <button onclick="closeTvDash()" class="grid h-9 w-9 place-items-center rounded-full text-accent-blue transition hover:bg-grey-light" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="tvDashBody" class="mt-3"></div>
+    </div>
+  </div>
+
   <div id="shareModal" class="hidden fixed inset-0 z-[3000] items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeShare()"></div>
     <div class="relative w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl dark:bg-[#1b2430]">
@@ -1238,6 +1286,13 @@
     // when the filtered set changes, rebuild the ruler and keep the active photo valid + centred
     function reflowFilter(){ renderCarousel(); renderRuler(); setActive(clampVisible(active)); }
     function searchPhotos(q){ searchQuery=(q||'').trim().toLowerCase(); reflowFilter(); }
+    // empty-state "Show all" — clear search + reset to the All filter (reuses the normal filter flow)
+    function clearFilters(){
+      searchQuery='';
+      const si=document.querySelector('input[oninput^="searchPhotos"]'); if(si) si.value='';
+      const allBtn=[...document.querySelectorAll('[onclick="setFilter(this)"]')].find(b=>b.textContent.trim().toLowerCase()==='all');
+      if(allBtn) setFilter(allBtn); else { currentFilter='all'; reflowFilter(); }
+    }
 
     function setView(mode){
       viewMode = mode;
@@ -1312,25 +1367,38 @@
     // ---- TIMELINE RULER ----
     function renderRuler(){
       const rail=document.getElementById('timelineRail');
-      let lastYear=null, lastDec=null;
       const vis = photos.map((p,i)=>({p,i})).filter(o=>matchesFilter(o.p));
-      const ticks = vis.map(({p,i})=>{
-        const newYear=(p.year!==lastYear), firstEver=(lastYear===null); const showYear=newYear||firstEver; lastYear=p.year;
-        const dec=Math.floor(p.year/10), newDec=(lastDec!==null && dec!==lastDec); lastDec=dec;
-        const band = (dec%2===1) ? ' rl-band' : '';       // alternating decade chapters (1990s / 2010s tinted)
-        return `<button data-rt="${i}" onclick="setActive(${i})" aria-label="${p.dmy} ${p.year}" title="${p.monFull} ${p.d}, ${p.year}" class="rl-tick${band} ${i===active?'active':''}">
-          ${(newDec||firstEver)?`<span class="rl-ydiv rl-ydiv-dec"></span>`:''}
-          ${p.fav?`<span class="rl-fav"></span>`:''}
-          <span class="rl-line ${showYear?'rl-major':''}"></span>
-          ${showYear?`<span class="rl-yr">${p.year}</span>`:''}
-        </button>`;
-      }).join('');
+      // The ruler is a continuous LIFE-LINE: it always spans birth year → this year,
+      // with year labels at REGULAR intervals — independent of where memories fall.
+      // Each memory is a coral DOT placed on its real date. So a brand-new user with
+      // just a few memories still sees a full, evenly-labelled lifeline (never empty-looking).
+      const curY = TODAY.getFullYear();
+      const birthY = Math.min(BORN, curY);
+      const span = Math.max(1, curY - birthY);
+      const stepY = span<=30 ? 1 : (span<=70 ? 5 : 10);        // adaptive label density
+      const byYear = {};                                        // group visible memories by year → dots
+      vis.forEach(o=>{ (byYear[o.p.year]=byYear[o.p.year]||[]).push(o); });
+      let segs='';
+      for(let y=birthY; y<=curY; y++){
+        const dec=Math.floor(y/10), band=(dec%2===1)?' rl-band':'', decStart=(y%10===0);
+        const showYear=(y%stepY===0)||y===birthY||y===curY;
+        let dots='';
+        (byYear[y]||[]).forEach(o=>{ const p=o.p, i=o.i;
+          const frac=Math.min(0.94, Math.max(0.06, (p.mo + (p.d-1)/31)/12));   // day-of-year → position in the segment
+          dots += `<button data-rt="${i}" onclick="setActive(${i})" title="${p.monFull} ${p.d}, ${p.year} — ${p.name}" aria-label="${p.name}, ${p.monFull} ${p.d}, ${p.year}" class="rl-dot${p.fav?' rl-dot-fav':''}${i===active?' active':''}" style="left:${(frac*100).toFixed(1)}%"></button>`;
+        });
+        segs += `<div class="rl-yseg${band}" data-y="${y}">`
+          + (decStart?`<span class="rl-ydiv-dec"></span>`:`<span class="rl-ydiv"></span>`)
+          + `<span class="rl-tk${showYear?' rl-maj':''}"></span>`
+          + dots
+          + (showYear?`<span class="rl-yr${decStart?' rl-yr-dec':''}">${y}</span>`:'')
+          + `</div>`;
+      }
       // narrative bookends so the ends never look empty
-      const birth = vis.length ? vis[0].p.year : '';
       // before birth there are no dated moments — that space links to the Ancestry Tree (separate module)
       const leftCap  = `<div class="rl-spacer rl-cap-l">
         <button class="rl-anc" onclick="openAncestry()" title="Before your story began — explore your family roots"><i class="fa-solid fa-sitemap"></i> Ancestry</button>
-        <span class="rl-cap"><i class="fa-solid fa-seedling"></i> The beginning · ${birth}</span></div>`;
+        <span class="rl-cap"><i class="fa-solid fa-seedling"></i> The beginning · ${birthY}</span></div>`;
       // the journey ends at "today" — the add pill lives here on desktop (wide ruler shows it);
       // on mobile the ruler is too narrow to reach it, so the fixed "+" button takes over (see updateAddBtn)
       const todayHas = photos.some(p=> p.y===TODAY.getFullYear() && p.mo===TODAY.getMonth() && p.d===TODAY.getDate());
@@ -1338,7 +1406,7 @@
         <span class="rl-cap"><i class="fa-regular fa-clock"></i> Today · ${TODAY.getDate()} ${_mo[TODAY.getMonth()]} ${TODAY.getFullYear()}</span>
         <button class="rl-add${todayHas?'':' rl-add-glow'}" onclick="openUpload()" title="Add a memory — any date up to today"><i class="fa-solid fa-plus"></i> ${todayHas?'Add a memory':'Add today’s memory'}</button>
         <span class="rl-future">the rest is unwritten…</span></div>`;
-      rail.innerHTML = leftCap + ticks + rightCap;
+      rail.innerHTML = leftCap + segs + rightCap;
       updateAddBtn();
     }
     // the persistent + button glows until today has a memory
@@ -1349,14 +1417,14 @@
       b.setAttribute('data-tip', todayHas ? 'Add a memory' : 'Add today’s memory');
     }
     function renderTimelineActive(){
-      document.querySelectorAll('.rl-tick').forEach(t=>t.classList.toggle('active', +t.dataset.rt===active));
+      document.querySelectorAll('.rl-dot').forEach(t=>t.classList.toggle('active', +t.dataset.rt===active));
     }
     // Center the active tick under the playhead. CSS scroll-snap is intentionally
     // OFF so native smooth scrolling glides cleanly (snap would cancel it).
     function scrollRulerToActive(behavior, idx){
       const rail=document.getElementById('timelineRail');
       const which=(idx==null?active:idx);
-      const tick=rail && rail.querySelector('.rl-tick[data-rt="'+which+'"]'); if(!tick) return;
+      const tick=rail && rail.querySelector('.rl-dot[data-rt="'+which+'"]'); if(!tick) return;
       const rr=rail.getBoundingClientRect(), tr=tick.getBoundingClientRect();
       const target=Math.round(rail.scrollLeft + (tr.left-rr.left) - (rr.width-tr.width)/2);
       rail.scrollTo({ left: target, behavior: (REDUCED||behavior==='auto')?'auto':'smooth' });
@@ -1369,7 +1437,7 @@
         const rail=document.getElementById('timelineRail');
         const rr=rail.getBoundingClientRect(), cx=rr.left+rr.width/2;
         let best=-1, bestD=1e9;
-        rail.querySelectorAll('.rl-tick').forEach(t=>{
+        rail.querySelectorAll('.rl-dot').forEach(t=>{
           const r=t.getBoundingClientRect(); const d=Math.abs((r.left+r.width/2)-cx);
           if(d<bestD){ bestD=d; best=+t.dataset.rt; }
         });
@@ -1389,6 +1457,13 @@
       const apply=()=>{
         if(img._want!==src) return;   // superseded by a newer request → don't clobber it
         img.style.opacity='0'; void img.offsetWidth; img.src=src; img.style.opacity='1';
+        // enter from the direction we travelled (flying east → the new photo slides in from the east)
+        if(_travelDirX && !REDUCED){
+          img.classList.remove('img-in-e','img-in-w'); void img.offsetWidth;
+          img.classList.add(_travelDirX>0 ? 'img-in-e' : 'img-in-w');
+          clearTimeout(img._din);
+          img._din=setTimeout(()=>img.classList.remove('img-in-e','img-in-w'), 700);
+        }
         clearTimeout(img._fs);
         img._fs=setTimeout(()=>{ img.style.transition='none'; img.style.opacity='1'; void img.offsetWidth; img.style.transition=''; }, 650);
       };
@@ -1480,11 +1555,27 @@
       const hid = p=>matchesFilter(p)?'':'hidden';
       const big = !mapShown; // when map is hidden, show bigger photos
 
-      // empty state when the active filter / search matches nothing
+      // empty state when the active filter / search matches nothing — friendly card + actions
       if(!photos.some(matchesFilter)){
-        const msg = searchQuery ? `No results for “${searchQuery}”.` : `No ${currentFilter} in your timeline yet.`;
-        el.className = 'liquid-light flex items-center justify-center gap-2 rounded-3xl py-12 text-sm font-medium text-accent-blue/60';
-        el.innerHTML = `<i class="fa-regular fa-circle-xmark"></i> ${msg}`;
+        let icon='fa-image', head, sub;
+        if(searchQuery){ icon='fa-magnifying-glass'; head=`No results for “${esc(searchQuery)}”`; sub='Try a different name or place.'; }
+        else if(currentFilter==='videos'){ icon='fa-film'; head='No videos yet'; sub='Memories with a video clip will show up here.'; }
+        else if(currentFilter==='faves'){ icon='fa-star'; head='No favourites yet'; sub='Tap the ★ on a memory to keep it here.'; }
+        else if(currentFilter==='photos'){ icon='fa-image'; head='No photos yet'; sub='Add a photo memory to see it here.'; }
+        else { icon='fa-camera-retro'; head='Nothing here yet'; sub='Add a memory to start your timeline.'; }
+        el.className = 'flex justify-center py-2';
+        el.innerHTML = `
+          <div class="liquid-light flex w-full max-w-md flex-col items-center gap-3 rounded-3xl px-6 py-12 text-center">
+            <span class="grid h-14 w-14 place-items-center rounded-2xl bg-primary-theme/10 text-xl text-primary-theme"><i class="fa-solid ${icon}"></i></span>
+            <div>
+              <p class="text-base font-bold text-accent-blue">${head}</p>
+              <p class="mt-1 text-sm text-accent-blue/55">${sub}</p>
+            </div>
+            <div class="mt-1 flex flex-wrap items-center justify-center gap-2">
+              <button onclick="clearFilters()" class="rounded-full border border-grey-light px-4 py-2 text-sm font-semibold text-accent-blue/80 transition hover:bg-grey-light hover:text-primary-theme">Show all</button>
+              <button onclick="openUpload()" class="rounded-full bg-primary-theme px-4 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-95"><i class="fa fa-plus"></i> Add a memory</button>
+            </div>
+          </div>`;
         return;
       }
 
@@ -1823,6 +1914,48 @@
       const m=document.getElementById('shareModal'); m.classList.remove('hidden'); m.classList.add('flex'); syncBodyScroll();
     }
     function closeShare(){ const m=document.getElementById('shareModal'); m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); }
+
+    /* ===== TRAVEL / LIFE DASHBOARDS (opened from the map chips) ===== */
+    function openTvDash(kind){
+      const t=document.getElementById('tvDashTitle'), b=document.getElementById('tvDashBody');
+      if(!t||!b) return;
+      const upto=active;                                  // everything is "as of" the active memory
+      const row=(ic,l,r)=>`<div class="tvd-row"><span class="tvd-ic"><i class="fa-solid ${ic}"></i></span><span class="flex-1">${l}</span><b>${r}</b></div>`;
+      if(kind==='dist'){
+        t.innerHTML='<i class="fa-solid fa-earth-asia mr-1 text-primary-theme"></i> Distance roamed';
+        // split the kilometres by HOW they were travelled (computed from the map coordinates)
+        const split={};
+        for(let i=1;i<=upto;i++){ const m=modeOf(i); (split[m.label]=split[m.label]||{icon:m.icon,km:0}).km+=_hopKm[i]; }
+        const total=_cumKm[upto]||0, life=_cumKm[_cumKm.length-1]||0;
+        let far={i:0,km:0}; for(let i=1;i<=upto;i++) if(_hopKm[i]>far.km) far={i,km:_hopKm[i]};
+        const cc=new Set(photos.slice(0,upto+1).map(p=>p.loc.split(', ').pop())).size;
+        const bars=Object.entries(split).sort((x,y)=>y[1].km-x[1].km).map(([label,v])=>
+          `<div class="mb-2">${row(v.icon,label,km(v.km)+' km')}<div class="tvd-bar"><span style="width:${Math.max(3,Math.round(v.km/Math.max(1,total)*100))}%"></span></div></div>`).join('');
+        b.innerHTML=`<div class="tvd-big">${km(total)} km</div><div class="mb-3 text-xs opacity-60">roamed so far · ${km(life)} km across the whole story</div>${bars}
+          ${far.km>0?row('fa-route','Longest trip — '+photos[far.i-1].loc.split(',')[0]+' → '+photos[far.i].loc.split(',')[0], km(far.km)+' km'):''}
+          ${row('fa-flag','Countries so far', cc)}`;
+      } else if(kind==='life'){
+        t.innerHTML='<i class="fa-solid fa-cake-candles mr-1 text-primary-theme"></i> Life at this moment';
+        const p=photos[upto];
+        const places=new Set(photos.slice(0,upto+1).map(x=>x.loc)).size;
+        const ms=photos.slice(0,upto+1).filter(x=>x.milestone).map(x=>row('fa-medal',x.milestone+' <span class="opacity-50">· '+x.year+'</span>', x.dmy)).join('');
+        b.innerHTML=`<div class="tvd-big">${p.age<=0?'Newborn':('Age '+p.age)}</div><div class="mb-3 text-xs opacity-60">on ${p.monFull} ${p.d}, ${p.year} · born ${photos[0].year}</div>
+          ${row('fa-images','Moments captured', upto+1)}${row('fa-location-dot','Places lived & visited', places)}
+          ${ms?'<div class="mt-2 mb-1 text-xs font-bold opacity-60">MILESTONES</div>'+ms:''}`;
+      } else {
+        t.innerHTML='<i class="fa-solid fa-route mr-1 text-primary-theme"></i> This trip';
+        if(upto===0){ b.innerHTML=row('fa-baby','The story begins here','')+`<div class="mt-1 text-xs opacity-60">${photos[0].loc} · ${photos[0].year}</div>`; }
+        else {
+          const a=photos[upto-1], p=photos[upto], m=modeOf(upto), hop=_hopKm[upto], total=_cumKm[upto]||1;
+          b.innerHTML=`<div class="tvd-big">${km(hop)} km</div><div class="mb-3 text-xs opacity-60">${a.loc.split(',')[0]} → ${p.loc.split(',')[0]} · ${m.label}</div>
+            ${row(m.icon,'Travelled', m.label)}${row('fa-calendar','When', p.dmy+' '+p.year)}
+            ${row('fa-percent','Share of all roaming', Math.round(hop/total*100)+'%')}
+            <div class="tvd-bar mt-1"><span style="width:${Math.max(3,Math.round(hop/total*100))}%"></span></div>`;
+        }
+      }
+      const m=document.getElementById('tvDash'); m.classList.remove('hidden'); m.classList.add('flex'); syncBodyScroll();
+    }
+    function closeTvDash(){ const m=document.getElementById('tvDash'); m.classList.add('hidden'); m.classList.remove('flex'); syncBodyScroll(); }
     function copyShareLink(){
       const lk=document.getElementById('shareLink');
       if(lk && navigator.clipboard){ navigator.clipboard.writeText(lk.value).catch(()=>{}); }
@@ -1870,7 +2003,7 @@
 
     // lock the page behind any open overlay so a touch-scroll doesn't bleed through
     function syncBodyScroll(){
-      const anyOpen=['uploadModal','shareModal','ancModal','modal'].some(id=>{ const m=document.getElementById(id); return m && !m.classList.contains('hidden'); });
+      const anyOpen=['uploadModal','shareModal','ancModal','modal','tvDash'].some(id=>{ const m=document.getElementById(id); return m && !m.classList.contains('hidden'); });
       document.body.style.overflow = anyOpen ? 'hidden' : '';
     }
     // ---- ANCESTRY (teaser; full module lives elsewhere) ----
@@ -2120,7 +2253,7 @@
     // Esc closes whichever overlay is open
     document.addEventListener('keydown', e=>{
       if(e.key!=='Escape') return;
-      const order=[['uploadModal',closeUpload],['shareModal',closeShare],['ancModal',closeAncestry]];
+      const order=[['tvDash',closeTvDash],['uploadModal',closeUpload],['shareModal',closeShare],['ancModal',closeAncestry]];
       for(const [id,fn] of order){ const m=document.getElementById(id); if(m && !m.classList.contains('hidden')){ fn(); return; } }
       const pm=document.getElementById('modal'); if(pm && !pm.classList.contains('hidden')) closeModal();
     });
@@ -2388,32 +2521,92 @@
     }
 
     /* ============ REAL MAP (Leaflet) ============ */
-    let sbMap, markers = [], pastLine, futureLine, prevActive = 0, mapLocked = false;
-    // progressive trail: bright path already travelled (→ active), faint path still to come,
-    // plus a travel-mode badge on the latest hop (plane / train / car / on foot)
+    let sbMap, markers = [], pastLine, futureLine, currentLine, prevActive = 0, mapLocked = false;
+    // progressive trail: THIN DOTTED path already travelled, faint path still to come,
+    // and a BOLD solid line for the latest leg (drawn/grown by the vehicle animation)
     function updateJourney(){
       const coords = photos.map(p=>[p.lat,p.lng]);
       if(pastLine)   pastLine.setLatLngs(coords.slice(0, active+1));
       if(futureLine) futureLine.setLatLngs(coords.slice(active));
-      // (the travel mode now rides the active marker itself — the head of the trail)
+      // when not mid-animation, show the full latest leg as the bold "current" line
+      if(currentLine && !_vehRAF) currentLine.setLatLngs(active>0 ? legPath(photos[active-1], photos[active], modeOf(active).icon) : []);
     }
-    // animate a vehicle (plane / car / train…) gliding along the line to the destination
-    let vehicle, _vehRAF, _mapReady=false;
-    function animateVehicle(from, to){
-      if(!sbMap || from===to || from==null) return;
+    // gently-curved path between two stops — flights get a visible arc (like a route map)
+    function legPath(a, b, modeIcon){
+      const n=72, pts=[], hop=haversineKm(a,b);
+      const curve=(modeIcon==='fa-plane-up'||hop>1200) ? .16 : (hop>60 ? .05 : 0);
+      const mx=(a.lat+b.lat)/2, my=(a.lng+b.lng)/2, dx=b.lat-a.lat, dy=b.lng-a.lng;
+      const cx=mx - dy*curve, cy=my + dx*curve;
+      for(let i=0;i<=n;i++){ const t=i/n,u=1-t; pts.push([u*u*a.lat+2*u*t*cx+t*t*b.lat, u*u*a.lng+2*u*t*cy+t*t*b.lng]); }
+      return pts;
+    }
+    // distance-aware camera: near hops zoom to CITY level (names readable, movement visible),
+    // long flights stay continental — so clustered memories never hide the journey
+    function zoomForHop(km){ return km>1200 ? 5 : km>350 ? 6 : km>80 ? 8 : km>15 ? 10 : 11; }
+    // whole life at a glance — zoom out to fit every stop of the journey
+    function viewWholeJourney(){
+      if(!sbMap || !photos.length) return;
+      sbMap.closePopup();
+      const bnds=L.latLngBounds(photos.map(p=>[p.lat,p.lng]));
+      sbMap.flyToBounds(bnds, { padding:[46,46], duration: REDUCED?0:1.2, maxZoom:6 });
+    }
+    // ===== JOURNEY MOTION v2 — a real trip in four phases =====
+    //  A boarding (vehicle pops in, camera pulls back) · B takeoff (accelerate)
+    //  C cruise (steady speed, plane banks with the curve, odometer ticks up)
+    //  D landing (decelerate, camera glides in, pin drops with a pulse)
+    let vehicle, _vehRAF, _mapReady=false, _travelDirX=0;
+    // real vehicles never move at constant speed: slow-out → cruise → slow-in
+    function easeTravel(t){
+      const a=.18, d=.20, v=1/(1-a/2-d/2);
+      if(t<a)   return v*t*t/(2*a);
+      if(t>1-d) return 1 - v*(1-t)*(1-t)/(2*d);
+      return v*(t-a/2);
+    }
+    function animateVehicle(from, to, onLand){
+      if(!sbMap || from===to || from==null) return false;
       const a=photos[from], b=photos[to];
-      const hop=haversineKm(a,b); if(hop<8) return;           // negligible move — skip
+      const hop=haversineKm(a,b); if(hop<8) return false;      // negligible move — skip
       const tm=modeOf(to);   // honors the specific choice (taxi / motorbike / helicopter …)
+      const pts=legPath(a,b,tm.icon), n=pts.length-1;
+      _travelDirX = b.lng===a.lng ? 0 : (b.lng>a.lng ? 1 : -1);   // photos enter from the travel direction
       if(!vehicle){ vehicle=L.marker([a.lat,a.lng], {interactive:false, zIndexOffset:600, opacity:0}).addTo(sbMap); }
-      vehicle.setIcon(L.divIcon({className:'', html:`<div class="veh"><i class="fa-solid ${tm.icon}"></i></div>`, iconSize:[36,36], iconAnchor:[18,18]}));
+      vehicle.setIcon(L.divIcon({className:'', html:`<div class="veh veh-big veh-pop"><i class="fa-solid ${tm.icon}"></i></div>`, iconSize:[46,46], iconAnchor:[23,23]}));
       vehicle.setLatLng([a.lat,a.lng]); vehicle.setOpacity(1);
       if(_vehRAF) cancelAnimationFrame(_vehRAF);
-      const dur=1100, t0=performance.now(), ease=t=> t<.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+      if(REDUCED){ if(currentLine) currentLine.setLatLngs(pts); vehicle.setOpacity(0); if(onLand) onLand(); return false; }
+      // Phase A/B — frame BOTH ends of the trip while the vehicle "boards"
+      // (short hops between close places zoom IN to city level so the move is clearly visible)
+      if(!mapLocked) sbMap.flyToBounds(L.latLngBounds([[a.lat,a.lng],[b.lat,b.lng]]), { padding:[70,70], duration:1.0, maxZoom: hop>1200 ? 6 : zoomForHop(hop)+1 });
+      if(currentLine) currentLine.setLatLngs([]);
+      const cruise=Math.min(8000, Math.max(3800, hop*1.6)), delay=1050;   // 🎬 cinematic pacing
+      const isPlane = tm.icon==='fa-plane-up';
+      const odo=document.getElementById('tvTotal');
+      const kmA=_cumKm[from]||0, kmB=_cumKm[to]||kmA;
+      const t0=performance.now()+delay;
       (function step(now){
-        const p=Math.min(1,(now-t0)/dur), e=ease(p);
-        vehicle.setLatLng([a.lat+(b.lat-a.lat)*e, a.lng+(b.lng-a.lng)*e]);
-        if(p<1){ _vehRAF=requestAnimationFrame(step); } else { vehicle.setOpacity(0); }
-      })(t0);
+        if(now<t0){ _vehRAF=requestAnimationFrame(step); return; }
+        const p=Math.min(1,(now-t0)/cruise), e=easeTravel(p), idx=Math.max(1,Math.min(n,Math.round(e*n)));
+        vehicle.setLatLng(pts[idx]);
+        // the plane BANKS along the curve — nosing where it is heading right now
+        if(isPlane){
+          const el=vehicle.getElement && vehicle.getElement(), ic=el && el.querySelector('i');
+          if(ic) ic.style.transform='rotate('+bearing({lat:pts[idx-1][0],lng:pts[idx-1][1]},{lat:pts[idx][0],lng:pts[idx][1]})+'deg)';
+        }
+        if(currentLine) currentLine.setLatLngs(pts.slice(0, idx+1));   // bold line grows behind the vehicle
+        if(odo) odo.textContent = km(kmA + (kmB-kmA)*e) + ' km';       // ✈ live odometer
+        if(p<1){ _vehRAF=requestAnimationFrame(step); }
+        else {
+          _vehRAF=null;
+          if(currentLine) currentLine.setLatLngs(pts);
+          if(odo) odo.textContent = km(kmB) + ' km';
+          // Phase D — land: camera glides down, vehicle fades, pin drops with a pulse
+          // land at a zoom that matches the trip — city level after a short hop
+          if(!mapLocked) sbMap.flyTo([b.lat,b.lng], zoomForHop(hop), { duration:1.0 });
+          setTimeout(()=>vehicle.setOpacity(0), 250);
+          if(onLand) onLand();
+        }
+      })(performance.now());
+      return true;   // we took over the camera
     }
 
     // bearing (deg from north) between two coords — for the directional arrow
@@ -2473,8 +2666,10 @@
 
       // faint "yet to come" path + a bright "travelled so far" trail that grows as you advance
       const route = photos.map(p => [p.lat, p.lng]);
-      futureLine = L.polyline(route, { color:'#d92a20', weight:1.5, opacity:.18, dashArray:'1 9', lineCap:'round' }).addTo(sbMap);
-      pastLine   = L.polyline([],    { color:'#d92a20', weight:3.5, opacity:.92, lineCap:'round', lineJoin:'round' }).addTo(sbMap);
+      // past journeys = THIN DOTTED red (history); the LATEST leg = bold solid line drawn by currentLine
+      futureLine  = L.polyline(route, { color:'#d92a20', weight:1.2, opacity:.14, dashArray:'1 9', lineCap:'round' }).addTo(sbMap);
+      pastLine    = L.polyline([],    { color:'#d92a20', weight:1.6, opacity:.55, dashArray:'3 7', lineCap:'round', lineJoin:'round' }).addTo(sbMap);
+      currentLine = L.polyline([],    { color:'#d92a20', weight:4.5, opacity:.95, lineCap:'round', lineJoin:'round' }).addTo(sbMap);
       fitWorld();
 
       markers = photos.map((p,i) => {
@@ -2493,13 +2688,25 @@
       if(!sbMap) return;
       sbMap.closePopup();   // clear any open preview card while moving
       // a vehicle glides along the line to the new place (the "journey" feel) — only on real moves
-      if(_mapReady) animateVehicle(prevActive, active);
-      // active marker shows the travel mode (how you arrived); others are dots
-      markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, modeIconFor(i))));
+      const dest=active;
+      // the destination pin "drops" only when the vehicle actually lands (with a pulse)
+      const land=()=>{
+        if(dest!==active) return;   // a newer trip started mid-flight — let it own the landing
+        markers.forEach((m,i)=> m.setIcon(pinIcon(i===dest, modeIconFor(i))));
+        const el=markers[dest] && markers[dest].getElement && markers[dest].getElement();
+        const pin=el && el.querySelector('.sb-arrow');
+        if(pin){ pin.classList.add('pin-land'); setTimeout(()=>pin.classList.remove('pin-land'), 700); }
+      };
+      const cinematic = _mapReady ? animateVehicle(prevActive, active, land) : false;
+      if(!cinematic) land();   // small hops / reduced motion: pin updates immediately
       updateJourney();
       const p = photos[active];
-      // camera only moves when NOT locked
-      if(!mapLocked) sbMap.flyTo([p.lat, p.lng], 5, { duration: 1.1 });
+      // camera only moves when NOT locked — and the cinematic glide steers it during a trip.
+      // Non-animated moves (tiny hops between clustered spots) zoom to CITY level too.
+      if(!mapLocked && !cinematic){
+        const hk = (prevActive!=null && prevActive!==active) ? haversineKm(photos[prevActive], p) : 1500;
+        sbMap.flyTo([p.lat, p.lng], zoomForHop(hk), { duration: 1.1 });
+      }
       const lbl = document.getElementById('mapLabel'); if(lbl) lbl.textContent = p.name;
       prevActive = active;
     }
@@ -2564,11 +2771,12 @@
         _rail.scrollLeft += amt;
         onRulerScroll();                 // explicit (programmatic scroll doesn't always emit a 'scroll' event)
       }, {passive:false});
-      // click-drag to grab and scrub (desktop mouse)
-      let _drag=null, _suppressClick=false;
+      // click-drag to grab and scrub (desktop mouse) — with flick inertia like a real wheel
+      let _drag=null, _suppressClick=false, _inertRAF=null;
       _rail.addEventListener('pointerdown', e=>{
         if(e.button!==0) return;
-        _drag={x:e.clientX, sl:_rail.scrollLeft, moved:false, pid:e.pointerId};
+        if(_inertRAF){ cancelAnimationFrame(_inertRAF); _inertRAF=null; }   // grabbing stops the glide
+        _drag={x:e.clientX, sl:_rail.scrollLeft, moved:false, pid:e.pointerId, v:0, lx:e.clientX, lt:performance.now()};
         // capture the pointer only once a real drag starts (in pointermove) — capturing here
         // would swallow plain clicks on the ticks, the Add-memory button and the Ancestry link
       });
@@ -2576,9 +2784,26 @@
         if(!_drag) return;
         const dx=e.clientX-_drag.x;
         if(!_drag.moved && Math.abs(dx)>3){ _drag.moved=true; _rail.classList.add('dragging'); try{ _rail.setPointerCapture(_drag.pid); }catch(_){} if(playing) togglePlay(); }
-        if(_drag.moved){ _rail.scrollLeft=_drag.sl-dx; onRulerScroll(); }
+        if(_drag.moved){
+          const now=performance.now(), dt=Math.max(1, now-_drag.lt);
+          _drag.v = .8*_drag.v + .2*((_drag.lx - e.clientX)/dt);   // px/ms, smoothed
+          _drag.lx=e.clientX; _drag.lt=now;
+          _rail.scrollLeft=_drag.sl-dx; onRulerScroll();
+        }
       });
-      const _endDrag=()=>{ if(_drag&&_drag.moved){ _suppressClick=true; setTimeout(()=>{_suppressClick=false;},60); } _drag=null; _rail.classList.remove('dragging'); };
+      const _endDrag=()=>{
+        if(_drag&&_drag.moved){
+          _suppressClick=true; setTimeout(()=>{_suppressClick=false;},60);
+          // 🪁 flick inertia — keep gliding with friction; the auto-snap then settles on a memory
+          let v=(_drag.v||0)*16;   // px per frame (~60fps)
+          if(Math.abs(v)>2 && !REDUCED){
+            const glide=()=>{ if(_drag) return;               // re-grabbed — stop
+              _rail.scrollLeft+=v; v*=.94; onRulerScroll();
+              if(Math.abs(v)>.5) _inertRAF=requestAnimationFrame(glide); else _inertRAF=null; };
+            _inertRAF=requestAnimationFrame(glide);
+          }
+        }
+        _drag=null; _rail.classList.remove('dragging'); };
       _rail.addEventListener('pointerup', _endDrag);
       _rail.addEventListener('pointercancel', _endDrag);
       // a real drag shouldn't also "click" the tick under the cursor
@@ -2630,9 +2855,12 @@
       fitWorld();
       markers.forEach((m,i)=> m.setIcon(pinIcon(i===active, modeIconFor(i))));
       updateJourney(); updateTravel();
-      scrollRulerToActive('auto'); scrollActiveIntoView('auto');
+      // center after the browser has painted (mobile lays out the narrow rail late)
+      requestAnimationFrame(()=>{ scrollRulerToActive('auto'); scrollActiveIntoView('auto'); });
       _mapReady = true;   // from now on, moves animate the travelling vehicle
     }, 300);
+    // re-center once web fonts finish loading (they can shift layout after first paint)
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ scrollRulerToActive('auto'); });
     // one-time hint + handle wiggle so the ruler reads as a draggable scrubber
     const _hint=document.getElementById('rlHint');
     const _ph=document.querySelector('.playhead'), _pl=document.getElementById('rlPill');
