@@ -3557,6 +3557,14 @@
       const strip=document.getElementById('journeyStrip'); if(strip){ strip.hidden=false; }
       setWatchPhase('photo');                       // begin on the current photograph
       updateJourneyStrip(0);
+      // one calm establishing shot: the whole life-route in frame, then the camera rests
+      setTimeout(()=>{ try{
+        if(sbMap && sbMap.getSize().x && !mapLocked){
+          const located=photos.filter(hasCoords);
+          if(located.length>1) sbMap.flyToBounds(L.latLngBounds(located.map(p=>[p.lat,p.lng])),
+            { padding:[70,70], duration:1.6, easeLinearity:.15 });
+        }
+      }catch(_){ } }, 350);
       startJourneyPlayback();                       // existing engine drives advance + flights
       clearTimeout(journeyTimer);
       scheduleJourneyAdvance();                     // full dwell on the opening photo
@@ -3896,15 +3904,26 @@
       vehicle.setLatLng([a.lat,a.lng]); vehicle.setOpacity(1);
       if(_vehRAF) cancelAnimationFrame(_vehRAF);
       if(REDUCED){ if(currentLine) currentLine.setLatLngs(pts); vehicle.setOpacity(0); if(onLand) onLand(); return false; }
-      // Phase A/B — frame BOTH ends of the trip while the vehicle "boards"
-      // (short hops between close places zoom IN to city level so the move is clearly visible)
-      if(!mapLocked && sbMap.getSize().x) sbMap.flyToBounds(L.latLngBounds(pts), { paddingTopLeft:[70,70], paddingBottomRight:[70, 70+peekPadBottom()], duration:1.0, maxZoom: hop>1200 ? 6 : zoomForHop(hop)+1 });
+      // Phase A/B — THE MAP STAYS CALM. Re-frame ONLY if this leg would leave the
+      // current view — and then slowly, before the vehicle starts. If the whole
+      // leg already fits on screen, the camera does not move at all.
+      let _framed=false;
+      if(!mapLocked && sbMap.getSize().x){
+        const legB=L.latLngBounds(pts);
+        const inView=sbMap.getBounds().pad(-0.06).contains(legB);
+        if(!inView){
+          _framed=true;
+          sbMap.flyToBounds(legB, { paddingTopLeft:[70,95], paddingBottomRight:[70, 95+peekPadBottom()],
+            duration:1.8, easeLinearity:.15, maxZoom: hop>1200 ? 6 : zoomForHop(hop)+1 });
+        }
+      }
       if(currentLine) currentLine.setLatLngs([]);
       // 🎬 pacing comes from ONE speed table (Watch mode picks Relaxed/Normal/Quick)
       // The camera sets the stage FIRST (both places in frame), THEN the vehicle
       // moves — and the map holds still for the whole crossing.
       const S = WATCH_SPEEDS[watchMode ? watchSpeed : 'normal'];
-      const cruise=Math.min(S.max, Math.max(S.min, hop*S.k)), delay=1400;
+      // if the camera had to glide, wait for it to settle; if it held still, roll almost at once
+      const cruise=Math.min(S.max, Math.max(S.min, hop*S.k)), delay=_framed?2100:700;
       let curIcon = startIcon;
       const odo=document.getElementById('tvTotal');
       const kmA=_cumKm[from]||0, kmB=_cumKm[to]||kmA;
@@ -4222,7 +4241,15 @@
       else clearMapNotice();
       const land=()=>{ if(dest!==active) return; journeyPlaybackLanded(); const el=markers[dest]&&markers[dest].getElement&&markers[dest].getElement(),pin=el&&el.querySelector('.map-active-marker'); if(pin&&!REDUCED){ pin.classList.add('pin-land'); setTimeout(()=>pin.classList.remove('pin-land'),700); } };
       const cinematic=_mapReady&&journeyPlaying&&!REDUCED?animateVehicle(prevActive,active,land):false; updateJourney();
-      if(!mapLocked&&!cinematic){ const hk=prevActive!=null&&prevActive!==active&&hasCoords(photos[prevActive])?haversineKm(photos[prevActive],p):1500; const z=zoomForHop(hk); sbMap.flyTo(padTarget(p.lat,p.lng,z),z,{duration:REDUCED?0:.75}); }
+      if(!mapLocked&&!cinematic){
+        // Watch keeps the camera CALM: if the place is already on screen, hold still
+        const onScreen = watchMode && sbMap.getSize().x && sbMap.getBounds().pad(-0.1).contains(L.latLng(p.lat,p.lng));
+        if(!onScreen){
+          const hk=prevActive!=null&&prevActive!==active&&hasCoords(photos[prevActive])?haversineKm(photos[prevActive],p):1500;
+          const z=zoomForHop(hk);
+          sbMap.flyTo(padTarget(p.lat,p.lng,z),z,{duration:REDUCED?0:(watchMode?1.5:.75), easeLinearity:.15});
+        }
+      }
       if(!cinematic) land(); prevActive=active;
     }
 
