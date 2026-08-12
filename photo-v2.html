@@ -1263,6 +1263,12 @@
     .tv-go { font-size:10px; opacity:.45; margin-left:2px; }
     .tv-click:hover .tv-go { opacity:.9; color:var(--brand); }
     .veh-big { width:56px; height:56px; font-size:24px; }   /* the vehicle is the star — big, legible icon */
+    /* the TRAVELLING vehicle is the real silhouette — a plane that looks like a plane,
+       not a badge: no circle, big glyph, white halo so it reads on any map */
+    .veh-fly { width:56px; height:56px; display:grid; place-items:center;
+      background:none; border:none; box-shadow:none; border-radius:0; }
+    .veh-fly i { font-size:34px; color:var(--brand);
+      filter:drop-shadow(0 0 3px rgba(255,255,255,.95)) drop-shadow(0 0 9px rgba(255,255,255,.55)) drop-shadow(0 2px 4px rgba(0,0,0,.45)); }
     .tvd-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px dashed var(--c-line); font-size:13px; }
     .tvd-row:last-child { border-bottom:none; }
     .tvd-ic { width:30px; height:30px; display:grid; place-items:center; border-radius:10px; background:rgba(var(--brand-glow),.12); color:var(--brand); flex:0 0 auto; }
@@ -2727,7 +2733,9 @@
         const current=document.querySelector('#chapterRail .ch-seg-active');
         centerActiveChapter(current,'auto');
       });
-      if(showMap && sbMap){ setTimeout(()=>{ sbMap.invalidateSize(); initial?fitMyJourney(false):flyToActive(); },initial?30:260); }
+      // Same rule here: a flight in progress owns the camera — this deferred
+      // re-measure must not fire mid-animation (it was corrupting the zoom).
+      if(showMap && sbMap){ setTimeout(()=>{ if(_vehState) return; sbMap.invalidateSize(); initial?fitMyJourney(false):flyToActive(); },initial?30:260); }
       if(userInitiated){
         const live=document.getElementById('stageViewLive');
         const label=view==='together'?'Together view: photo and map':view==='photo'?'Photo view':'Map view';
@@ -3596,7 +3604,10 @@
       // mobile alternates full map (travel) ↔ full photo (arrival);
       // desktop stays side-by-side and CSS shifts the 65/35 balance
       setStageView(mobile ? (ph==='travel'?'map':'photo') : 'together', false);
-      setTimeout(()=>{ if(sbMap) sbMap.invalidateSize(); }, ph==='travel'?90:520);
+      // Re-measure AFTER the layout/CSS-grid transition settles — but never while
+      // the vehicle is mid-flight: invalidateSize's resize-pan-correction was
+      // found to corrupt an in-progress flyToBounds zoom (camera would snap back).
+      setTimeout(()=>{ if(sbMap && !_vehState) sbMap.invalidateSize(); }, ph==='travel'?90:520);
     }
     function watchTogglePause(){
       if(!watchMode) return;
@@ -3814,6 +3825,7 @@
     }
     function fitMyJourney(userInitiated=false){
       if(!sbMap) return;
+      if(!sbMap.getSize().x){ sbMap.invalidateSize({animate:false}); if(!sbMap.getSize().x) return; }   // never fit a 0-size map
       const coords=normalizedJourneyCoords();
       if(!coords.length){ showMapNotice('No memories have map coordinates yet. Add a location to begin your journey.'); return; }
       if(mapTileFailures<2) clearMapNotice();
@@ -3900,18 +3912,22 @@
       if(!journeyMotionEnabled){ if(currentLine) currentLine.setLatLngs(pts); return false; }
       _travelDirX = b.lng===a.lng ? 0 : (b.lng>a.lng ? 1 : -1);   // photos enter from the travel direction
       if(!vehicle){ vehicle=L.marker([a.lat,a.lng], {interactive:false, zIndexOffset:600, opacity:0}).addTo(sbMap); }
-      vehicle.setIcon(L.divIcon({className:'', html:`<div class="veh veh-big veh-pop"><i class="fa-solid ${startIcon}"></i></div>`, iconSize:[56,56], iconAnchor:[28,28]}));
+      vehicle.setIcon(L.divIcon({className:'', html:`<div class="veh-fly veh-pop"><i class="fa-solid ${startIcon}"></i></div>`, iconSize:[56,56], iconAnchor:[28,28]}));
       vehicle.setLatLng([a.lat,a.lng]); vehicle.setOpacity(1);
       if(_vehRAF) cancelAnimationFrame(_vehRAF);
       if(REDUCED){ if(currentLine) currentLine.setLatLngs(pts); vehicle.setOpacity(0); if(onLand) onLand(); return false; }
-      // Phase A/B — THE MAP STAYS CALM. Re-frame ONLY if this leg would leave the
-      // current view — and then slowly, before the vehicle starts. If the whole
-      // leg already fits on screen, the camera does not move at all.
+      // Phase A/B — THE MAP STAYS CALM, but every leg's movement must be SEEN.
+      // Re-frame (slowly, before departure) if the leg is off-screen OR so small
+      // on screen that the motion would be invisible; once framed, the camera
+      // holds perfectly still for the whole crossing.
       let _framed=false;
       if(!mapLocked && sbMap.getSize().x){
         const legB=L.latLngBounds(pts);
         const inView=sbMap.getBounds().pad(-0.06).contains(legB);
-        if(!inView){
+        const pA=sbMap.latLngToContainerPoint([a.lat,a.lng]), pB=sbMap.latLngToContainerPoint([b.lat,b.lng]);
+        const sz=sbMap.getSize();
+        const tooSmall = pA.distanceTo(pB) < Math.min(sz.x,sz.y)*0.35;   // motion must span the screen
+        if(!inView || tooSmall){
           _framed=true;
           sbMap.flyToBounds(legB, { paddingTopLeft:[70,95], paddingBottomRight:[70, 95+peekPadBottom()],
             duration:1.8, easeLinearity:.15, maxZoom: hop>1200 ? 6 : zoomForHop(hop)+1 });
@@ -4402,11 +4418,13 @@
     updateNavButtons();
     // on load: frame the complete journey + center the ruler and reel on the newest photo
     setTimeout(()=>{
-      if(sbMap){ sbMap.invalidateSize(); fitMyJourney(false); renderMapMarkers(); }
-      updateJourney(); updateTravel(); updateMapMemoryCard();
-      // center after the browser has painted (mobile lays out the narrow rail late)
-      requestAnimationFrame(()=>{ lockRuler(); scrollRulerToActive('auto'); lockReel(); scrollActiveIntoView('auto'); });
-      _mapReady = !!sbMap;   // from now on, user-started moves may animate the travelling vehicle
+      _mapReady = !!sbMap;   // set FIRST — Watch must never die to a fragile first paint
+      try{
+        if(sbMap){ sbMap.invalidateSize(); if(sbMap.getSize().x) fitMyJourney(false); renderMapMarkers(); }
+        updateJourney(); updateTravel(); updateMapMemoryCard();
+        // center after the browser has painted (mobile lays out the narrow rail late)
+        requestAnimationFrame(()=>{ lockRuler(); scrollRulerToActive('auto'); lockReel(); scrollActiveIntoView('auto'); });
+      }catch(_){ /* a hidden background tab must never break the app */ }
     }, 300);
     // re-center once web fonts finish loading (they can shift layout after first paint)
     if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ scrollRulerToActive('auto'); });
