@@ -3909,7 +3909,11 @@
         pts=legPath(a,b,tm.icon);
       }
       const n=pts.length-1;
-      if(!journeyMotionEnabled){ if(currentLine) currentLine.setLatLngs(pts); return false; }
+      // journeyMotionEnabled is Watch's own pause switch (true while playing, false
+      // while paused) — it only has meaning INSIDE a journeyPlaying flow. Ordinary
+      // click/drag browsing isn't part of that flow at all, so it must not be
+      // blocked by a flag that was never turned on for it.
+      if(journeyPlaying && !journeyMotionEnabled){ if(currentLine) currentLine.setLatLngs(pts); return false; }
       _travelDirX = b.lng===a.lng ? 0 : (b.lng>a.lng ? 1 : -1);   // photos enter from the travel direction
       if(!vehicle){ vehicle=L.marker([a.lat,a.lng], {interactive:false, zIndexOffset:600, opacity:0}).addTo(sbMap); }
       vehicle.setIcon(L.divIcon({className:'', html:`<div class="veh-fly veh-pop"><i class="fa-solid ${startIcon}"></i></div>`, iconSize:[56,56], iconAnchor:[28,28]}));
@@ -4247,19 +4251,30 @@
         setWatchPhase('travel');
         sbMap.invalidateSize({animate:false});
       }
-      // map pane hidden (Photo mode) → its container is 0×0 and flyTo would throw NaN,
-      // aborting the rest of setActive. If the size is merely a stale cache (pane just
-      // shown), one invalidateSize heals it; if truly hidden, skip camera work.
-      let _sz=sbMap.getSize();
-      if(!_sz.x||!_sz.y){ sbMap.invalidateSize({animate:false}); _sz=sbMap.getSize(); }
+      // map pane hidden (Photo mode) → its container is 0×0 and flyTo would throw NaN.
+      // Leaflet's getSize() is a CACHE — it goes stale the instant CSS hides/shows
+      // #mapPanel and can read non-zero right after the pane was just hidden (or
+      // zero right after it was just shown). Always force one fresh, synchronous
+      // re-measure here (cheap, and this runs before any flight state exists, so
+      // it can never corrupt an in-progress animation) so the visibility check
+      // that gates the whole rest of this function — including whether the
+      // travelling-vehicle animation is even allowed to start — is never stale.
+      sbMap.invalidateSize({animate:false});
+      const _sz=sbMap.getSize();
       if(!_sz.x||!_sz.y){ updateJourney(); renderMapMarkers(); prevActive=active; if(journeyPlaying) scheduleJourneyAdvance(); return; }
       if(mapTileFailures>=2) showMapNotice('Basemap unavailable. Your memories and journey are still shown.');
       else clearMapNotice();
       const land=()=>{ if(dest!==active) return; journeyPlaybackLanded(); const el=markers[dest]&&markers[dest].getElement&&markers[dest].getElement(),pin=el&&el.querySelector('.map-active-marker'); if(pin&&!REDUCED){ pin.classList.add('pin-land'); setTimeout(()=>pin.classList.remove('pin-land'),700); } };
-      const cinematic=_mapReady&&journeyPlaying&&!REDUCED?animateVehicle(prevActive,active,land):false; updateJourney();
+      // The travelling vehicle is no longer Watch-exclusive: ANY move between two
+      // located memories, whenever the map is on screen (we already know it is —
+      // the size guard above just passed), plays the same calm "still map, slow
+      // visible vehicle" crossing. journeyPlaying/watchMode still separately gate
+      // the Watch-only scheduling/dwell/phase logic elsewhere — untouched here.
+      const cinematic=_mapReady&&!REDUCED&&!mapLocked?animateVehicle(prevActive,active,land):false; updateJourney();
       if(!mapLocked&&!cinematic){
-        // Watch keeps the camera CALM: if the place is already on screen, hold still
-        const onScreen = watchMode && sbMap.getSize().x && sbMap.getBounds().pad(-0.1).contains(L.latLng(p.lat,p.lng));
+        // Calm camera everywhere: if the place is already on screen, hold still
+        // (this now covers tiny/reduced-motion hops in both browsing and Watch)
+        const onScreen = sbMap.getSize().x && sbMap.getBounds().pad(-0.1).contains(L.latLng(p.lat,p.lng));
         if(!onScreen){
           const hk=prevActive!=null&&prevActive!==active&&hasCoords(photos[prevActive])?haversineKm(photos[prevActive],p):1500;
           const z=zoomForHop(hk);
